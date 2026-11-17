@@ -30,7 +30,7 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 | **Aktivitäten** | Kacheln mit Symbolen, laufende hervorgehoben, Halten zum Ausschalten, optional Halten zum Wechseln |
 | **Fernbedienung** | Lautstärke, Steuerkreuz, Kanal, Wiedergabe, Farbtasten, Ziffern, jeweils an das richtige Gerät der Aktivität |
 | **Geräte** | Eine Fernbedienung pro Gerät, Tasten in Gruppen (Eingänge, Ton, Menüs …), Tastatur für PC/Mac |
-| **Favoriten** | Pro Gerät und pro Aktivität |
+| **Favoriten** | Pro Gerät und pro Aktivität; Tasten, die du nie brauchst, lassen sich pro Gerät ausblenden |
 | **Aktionen** | Eigene Tasten für Lampen, Szenen, Skripte und jede Home-Assistant-Entität, für alle Aktivitäten oder nur eine |
 | **Fire TV** | Apps, Wiedergabe/Pause, Standby, Texteingabe und Zusatztasten per ADB; beim Fire TV Cube Lautstärke über den Infrarot-Sender |
 | **Sperre** | Aus / Immer / Zeitplan, zeitliche Freigabe, erlaubte Aktivitäten und Apps, Geräte, die mit dem Fire TV ausgehen, letzte 100 Eingriffe |

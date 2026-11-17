@@ -143,7 +143,18 @@ export const dataMixin = {
 
   _has(hubId, device, action) { return !!this._cmd(hubId, device, action) || !!this._adbCode(hubId, device, action); },
 
+  // Keys the user hid for a device (own list per hub, separate from the lock); the editor in hide mode still sees everything.
+  _hiddenKeys(hubId, dev) { return this._settings().hideKeys?.[hubId]?.[dev] || []; },
+  _hideMode() { return this._editMode === "favs" && this._favKind === "hide"; },
+
   _devicesOf(hubId) {
+    const all = this._devicesRaw(hubId);
+    const hide = this._settings().hideKeys?.[hubId];
+    if (!hide || this._hideMode()) return all;
+    return Object.fromEntries(Object.entries(all).map(([d, c]) => [d, hide[d]?.length ? c.filter((x) => !hide[d].includes(x)) : c]));
+  },
+
+  _devicesRaw(hubId) {
     const fromHub = this._info?.hubs?.[hubId]?.devices;
     if (fromHub && Object.keys(fromHub).length) return fromHub;
     const cfg = this._config.devices?.[hubId];

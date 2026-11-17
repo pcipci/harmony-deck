@@ -3,7 +3,7 @@ import { ACTION_ICONS } from "../shared/icons.js";
 import { esc } from "../shared/util.js";
 
 export const actionsMixin = {
-  _actionsEdit(h, t, standalone = false) {
+  _actionsEdit(h, t) {
     const list = this._settings().actions?.[h.id] || [];
     const acts = h.list.filter((n) => n !== "PowerOff");
     const ents = Object.keys(this._hass.states).filter((id) => /^(light|switch|scene|script|button|input_boolean|input_button|cover|fan|automation|lock|media_player)\./.test(id)).sort().slice(0, 600);
@@ -14,14 +14,14 @@ export const actionsMixin = {
     const cur = ACTION_ICONS.find(([i]) => i === icon);
     const open = !!this._actIconOpen;
     const grid = open ? `<div class="icongrid">${ACTION_ICONS.map(([i, n]) => `<button type="button" class="iconcell ${i === icon ? "sel" : ""}" data-acticonpick="${esc(i)}" title="${esc(t.iconNames?.[i] || n)}"><ha-icon icon="${esc(i)}"></ha-icon></button>`).join("")}</div>` : "";
-    return `<div class="esec actedit" ${standalone ? "" : 'data-t="actions"'} data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
+    return `<div class="esec actedit" data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
       <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.actionsHint}</div>${rows}
-      <label class="erow"><span>${t.actName}</span><input type="text" data-act="name" placeholder="${t.actNamePh}" value="${esc(d.name || "")}"></label>
+      <div class="esub">${t.actAdd}</div><div class="egrp"><label class="erow"><span>${t.actName}</span><input type="text" data-act="name" placeholder="${t.actNamePh}" value="${esc(d.name || "")}"></label>
       <label class="erow"><span>${t.actEntity}</span>${this._entSelect('data-act', ents, d.entity || "", t)}</label>
       <label class="erow"><span>${t.actOp}</span><select data-act="op">${Object.entries(ops).map(([k, v]) => `<option value="${k}" ${d.op === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
       <div class="iconrow"><span class="iname">${t.actIcon}</span>
         <button type="button" class="iconbtn" data-acticonopen aria-expanded="${open}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(cur ? t.iconNames?.[cur[0]] || cur[1] : "")}</span><ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>${grid}</div>
-      <label class="erow"><span>${t.actScope}</span><select data-act="scope"><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+      <label class="erow"><span>${t.actScope}</span><select data-act="scope"><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label></div>
       <button class="key addact" data-actadd><ha-icon icon="mdi:plus"></ha-icon><span>${t.actAdd}</span></button></div>`;
   },
 

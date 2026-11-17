@@ -50,8 +50,8 @@ export const keyboardMixin = {
     const K = (c, label, cls = "", icon = "", w = 1, pre = "") => {
       if (!c) return `<span class="kk ghost" style="flex: ${w} 1 0"></span>`;
       used.add(c);
-      const star = this._edit ? `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>` : "";
-      return `<button class="key cell kk ${icon ? "ic" : ""} ${cls} ${favs.includes(c) ? "isfav" : ""}" style="flex: ${w} 1 0" title="${esc(pre ? `${pre} + ${c}` : c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}" ${pre ? `data-pre="${esc(pre)}"` : ""}>${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(label)}</span>${star}</button>`;
+      const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+      return `<button class="key cell kk ${icon ? "ic" : ""} ${cls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" style="flex: ${w} 1 0" title="${esc(pre ? `${pre} + ${c}` : c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}" ${pre ? `data-pre="${esc(pre)}"` : ""}>${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(label)}</span>${star}</button>`;
     };
     const lay = this._config.keyboard_layout || ((this._config.language || this._hass?.locale?.language || "en").startsWith("de") ? "qwertz" : "qwerty");
     const rows = lay === "qwertz" ? ["QWERTZUIOP", "ASDFGHJKL", "YXCVBNM"] : ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];

@@ -7,8 +7,9 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
@@ -16,8 +17,8 @@ from .status import collect_status, unreachable_fire_tvs
 
 _LOGGER = logging.getLogger(__name__)
 _MISSING = "harmony_missing"
-# A Fire TV that sleeps is often unreachable for ADB; only report it after this many refreshes in a row (30 minutes).
-_FIRE_STREAK = 15
+# A Fire TV that sleeps is often unreachable for ADB; only report it after this many refreshes in a row (3 x 2 minutes).
+_FIRE_STREAK = 3
 
 
 def _translation_key(issue_id: str) -> str:
@@ -33,6 +34,8 @@ class DeckCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=timedelta(minutes=2))
         self._issues: set[str] = set()
         self._fire_down: dict[str, int] = {}
+        self._watched: tuple[str, ...] = ()
+        self._unwatch = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         status = collect_status(self.hass)
@@ -48,6 +51,7 @@ class DeckCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 wanted[f"hub_unreadable_{hub_id}"] = {"hub": hub["title"]}
         direct = self.hass.data.get(DOMAIN, {}).get("settings", {}).get("direct")
         entities = [cfg["entity"] for cfg in (direct or {}).values() if isinstance(cfg, dict) and cfg.get("entity")]
+        self._watch_fire(entities)
         down = unreachable_fire_tvs(direct, {e: s for e in entities if (s := self.hass.states.get(e))})
         # unreachable now: count the streak; reachable again: forget it
         self._fire_down = {e: self._fire_down.get(e, 0) + 1 for e in down}
@@ -68,7 +72,33 @@ class DeckCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
         self._issues = set(wanted)
 
+    def _watch_fire(self, entities: list[str]) -> None:
+        """Follow the Fire TV entities, so the repair hint goes away the moment the device is back."""
+        key = tuple(sorted(set(entities)))
+        if key == self._watched:
+            return
+        if self._unwatch:
+            self._unwatch()
+        self._watched = key
+        self._unwatch = async_track_state_change_event(self.hass, list(key), self._fire_changed) if key else None
+
+    @callback
+    def _fire_changed(self, event: Event) -> None:
+        new = event.data.get("new_state")
+        if new is None or new.state in ("unavailable", "unknown"):
+            return
+        entity = event.data["entity_id"]
+        self._fire_down.pop(entity, None)
+        issue_id = f"fire_unreachable_{entity}"
+        if issue_id in self._issues:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            self._issues.discard(issue_id)
+
     def clear_issues(self) -> None:
+        if self._unwatch:
+            self._unwatch()
+            self._unwatch = None
+            self._watched = ()
         for issue_id in self._issues:
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
         self._issues = set()

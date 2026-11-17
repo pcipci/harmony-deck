@@ -113,11 +113,11 @@
   },
   "tabs": {
     "look": "Look",
+    "behave": "Behaviour",
     "devs": "Devices",
     "acts": "Activities",
     "fire": "Fire TV",
     "misc": "Hub",
-    "actions": "Actions",
     "info": "Info"
   },
   "directShowKeys": "Show keys",
@@ -712,13 +712,26 @@
   "offlineLock": "Lock activity when not reachable",
   "fireOfflineTile": "Fire TV not reachable",
   "tabHints": {
-    "look": "How the card looks: look, tiles, keys and behaviour. Applies to all rooms of this profile.",
+    "look": "How the card looks: look, tiles and keys. Applies to all rooms of this profile.",
+    "behave": "How the card is operated: tapping, holding, keyboard and what it does by itself. Applies to all rooms of this profile.",
     "devs": "Own symbols for the devices of this hub.",
     "acts": "Symbols of the activities, which are shown as tiles, favourites per activity and the link to another entity.",
     "fire": "Fire TV directly over ADB: link, apps, colour keys and keys. Without a Fire TV you can ignore this tab.",
     "misc": "Name and visibility of this hub and what happens when switching off.",
-    "actions": "Own buttons for lights, scenes, scripts and other Home Assistant entities. They appear below the remote, for all activities or only one.",
     "info": "Technical details of the hub and the meaning of the symbols."
   },
-  "adbHelp": "Fire TV not reachable. Check: Fire TV switched on and on the network? ADB debugging on (Settings › My Fire TV › Developer options)? Reload the “Android TV” integration in Home Assistant. Then “Test connection”."
+  "adbHelp": "Fire TV not reachable. Check: Fire TV switched on and on the network? ADB debugging on (Settings › My Fire TV › Developer options)? Reload the “Android TV” integration in Home Assistant. Then “Test connection”.",
+  "groups": {
+    "skin": "Style",
+    "tiles": "Tiles",
+    "keys": "Keys",
+    "touch": "Tap and hold",
+    "view": "View",
+    "conn": "Connection",
+    "fireAct": "In activities",
+    "colorKeys": "Colour keys"
+  },
+  "hideKeys": "Hide keys",
+  "hideEditHint": "Tap keys that should no longer appear for this device (eye). They disappear in the device view and in the remotes of the activities. This is not the lock: tap again to bring them back.",
+  "pkgUnmap": "Remove mapping (package: {0})"
 }

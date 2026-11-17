@@ -113,11 +113,11 @@
   },
   "tabs": {
     "look": "Darstellung",
+    "behave": "Bedienung",
     "devs": "Geräte",
     "acts": "Aktivitäten",
     "fire": "Fire TV",
     "misc": "Hub",
-    "actions": "Aktionen",
     "info": "Info"
   },
   "directShowKeys": "Tasten anzeigen",
@@ -712,13 +712,26 @@
   "offlineLock": "Aktivität sperren, wenn nicht erreichbar",
   "fireOfflineTile": "Fire TV nicht erreichbar",
   "tabHints": {
-    "look": "Wie die Karte aussieht: Look, Kacheln, Tasten und Verhalten. Gilt für alle Räume dieses Profils.",
+    "look": "Wie die Karte aussieht: Look, Kacheln und Tasten. Gilt für alle Räume dieses Profils.",
+    "behave": "Wie sich die Karte bedienen lässt: Tippen, Halten, Tastatur und was sie von selbst tut. Gilt für alle Räume dieses Profils.",
     "devs": "Eigene Symbole für die Geräte dieses Hubs.",
     "acts": "Symbole der Aktivitäten, welche als Kachel sichtbar sind, Favoriten pro Aktivität und die Verknüpfung mit einer anderen Entität.",
     "fire": "Fire TV direkt per ADB: Verknüpfung, Apps, Farbtasten und Tasten. Ohne Fire TV kannst du diesen Reiter ignorieren.",
     "misc": "Name und Sichtbarkeit dieses Hubs und das Verhalten beim Ausschalten.",
-    "actions": "Eigene Tasten für Lampen, Szenen, Skripte und andere Home-Assistant-Entitäten. Sie erscheinen unter der Fernbedienung, für alle Aktivitäten oder nur für eine.",
     "info": "Technische Angaben zum Hub und die Erklärung der Symbole."
   },
-  "adbHelp": "Fire TV nicht erreichbar. Prüfe: Fire TV eingeschaltet und im Netz? ADB-Debugging an (Einstellungen › Mein Fire TV › Entwickleroptionen)? In Home Assistant die Integration „Android TV“ neu laden. Danach „Verbindung testen“."
+  "adbHelp": "Fire TV nicht erreichbar. Prüfe: Fire TV eingeschaltet und im Netz? ADB-Debugging an (Einstellungen › Mein Fire TV › Entwickleroptionen)? In Home Assistant die Integration „Android TV“ neu laden. Danach „Verbindung testen“.",
+  "groups": {
+    "skin": "Look",
+    "tiles": "Kacheln",
+    "keys": "Tasten",
+    "touch": "Tippen und Halten",
+    "view": "Ansicht",
+    "conn": "Verbindung",
+    "fireAct": "In Aktivitäten",
+    "colorKeys": "Farbtasten"
+  },
+  "hideKeys": "Tasten ausblenden",
+  "hideEditHint": "Tippe Tasten an, die für dieses Gerät nicht mehr erscheinen sollen (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten. Das ist keine Sperre: Mit erneutem Antippen kommen sie zurück.",
+  "pkgUnmap": "Zuordnung entfernen (Paket: {0})"
 }

@@ -33,7 +33,7 @@ export const infoMixin = {
       [t.infoEntity, h.id],
     ].filter(([, v]) => v);
     const canEdit = this._hass?.user?.is_admin !== false && !this._config.compact;
-    const edit = canEdit ? `<div class="infoedits"><button class="infoedit" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${t.editSettings}</span></button><button class="infoedit" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${t.editFavs}</span></button><button class="infoedit" data-edit="settings" data-goetab="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>` : "";
+    const edit = canEdit ? `<div class="infoedits"><button class="infoedit" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${t.editSettings}</span></button><button class="infoedit" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${t.editFavs}</span></button><button class="infoedit" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>` : "";
     const head = `<div class="infohead"><i class="sdot ${down ? "bad" : "ok"}"></i><b>${esc(h.name)}</b><span>${esc([meta.manufacturer, meta.model].filter(Boolean).join(" "))}</span></div>`;
     return `<div class="infopanel">${head}${rows.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}${edit}</div>`;
   },

@@ -25,9 +25,9 @@ type: custom:harmony-deck-card
 Jeder Hub erscheint als Reiter (Raum). Oben steht, was gerade läuft, darunter die Aktivitäten als Kacheln, darunter die Fernbedienung der laufenden Aktivität.
 
 Über **ⓘ** öffnest du die Infos zum Hub und die drei Bearbeitungswege:
-- **Einstellungen**: Aussehen, Symbole, Hub, Aktionen, Fire TV, Info. Jeder Reiter beginnt mit einem Satz, wofür er da ist.
-- **Favoriten**: Tasten mit Stern markieren, pro Gerät oder pro Aktivität.
-- **Aktionen**: eigene Tasten für Home-Assistant-Entitäten.
+- **Einstellungen**: Darstellung, Bedienung, Symbole, Hub, Fire TV, Info. Jeder Reiter beginnt mit einem Satz, wofür er da ist. Jede Option ist eine Zeile: Du kannst irgendwo auf die Zeile tippen, um sie umzuschalten.
+- **Favoriten**: Tasten mit Stern markieren, pro Gerät oder pro Aktivität. Mit dem dritten Knopf **Tasten ausblenden** versteckst du Tasten, die du nie brauchst (siehe Abschnitt 6).
+- **Aktionen**: eigene Tasten für Home-Assistant-Entitäten, als eigener Bearbeitungsmodus.
 
 Mit **Fertig** speicherst du, mit **Abbrechen** verwirfst du alle Änderungen dieser Sitzung. Die Einstellungen liegen in Home Assistant und gelten auf allen Geräten.
 
@@ -35,7 +35,7 @@ Mit **Fertig** speicherst du, mit **Abbrechen** verwirfst du alle Änderungen di
 
 - Antippen einer Kachel startet die Aktivität. Die laufende ist hervorgehoben.
 - **Ausschalten:** Die Power-Kachel (oder der Power-Knopf in der eingeklappten Kopfzeile) kurz **halten**, bis der Ring voll ist. So passiert es nicht aus Versehen.
-- **Halten zum Wechseln** (Einstellungen › Darstellung): Läuft eine Aktivität, wechselt eine andere erst nach langem Drücken.
+- **Halten zum Wechseln** (Einstellungen › Bedienung): Läuft eine Aktivität, wechselt eine andere erst nach langem Drücken.
 - Die Fernbedienung schickt Lautstärke, Steuerkreuz, Kanal und Wiedergabe jeweils an das Gerät, das der Hub dafür in der Aktivität vorsieht.
 - **Kopf einklappen** (Standard an): Sobald eine Fernbedienung offen ist, schrumpft der Kopf auf eine Zeile. Antippen klappt ihn wieder auf.
 
@@ -51,19 +51,21 @@ Startet eine Aktivität nicht richtig (Fernseher aus, falscher Eingang), öffnes
 
 ## 6. Favoriten
 
-**ⓘ › Favoriten** → Gerät wählen → Tasten antippen (Stern). Favoriten erscheinen als eigener Block über der Fernbedienung. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
+**ⓘ › Favoriten** → Gerät wählen → Tasten antippen (Stern). Favoriten erscheinen als eigener Block über der Fernbedienung.
+
+**Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
 
 ## 7. Aktionen
 
-**ⓘ › Aktionen** (oder Einstellungen › Aktionen): Name, Entität (Licht, Schalter, Szene, Skript, Automation, Taste …), was passieren soll (umschalten, an, aus, ausführen), Symbol und wann sie sichtbar ist (immer oder nur in einer Aktivität). Aktionen erscheinen unter der Fernbedienung und zeigen ihren Zustand (an = hervorgehoben).
+**ⓘ › Aktionen** (eigener Bearbeitungsmodus mit Fertig und Abbrechen wie bei den Einstellungen): Name, Entität (Licht, Schalter, Szene, Skript, Automation, Taste …), was passieren soll (umschalten, an, aus, ausführen), Symbol und wann sie sichtbar ist (immer oder nur in einer Aktivität). Aktionen erscheinen unter der Fernbedienung und zeigen ihren Zustand (an = hervorgehoben).
 
 ## 8. Fire TV
 
 Einstellungen › **Fire TV**:
 1. Entität wählen (der `media_player` der Android-TV-Integration) und das Harmony-Gerät, zu dem er gehört.
 2. **Verbindung testen**. Ist der Fire TV nicht erreichbar, steht darunter, was zu prüfen ist.
-3. **Installierte Apps lesen** holt die Apps vom Gerät. Auswählen, welche Apps als Tasten erscheinen, Farbtasten belegen, eigene Apps mit Paketnamen ergänzen.
-4. Optional: **Modell** (zum Beispiel Cube), **Lautstärke ohne Aktivität über den IR-Sender** (nur Cube), **Auch in Aktivitäten anzeigen**, **Aktivität sperren, wenn nicht erreichbar**.
+3. **Installierte Apps lesen** holt die Apps vom Gerät. Auswählen, welche Apps als Tasten erscheinen, Farbtasten belegen, eigene Apps mit Paketnamen ergänzen. Den Paketnamen einer App zeigt ein langer Druck (oder Darüberfahren) auf ihren Namen. Eine falsche Paketzuordnung entfernst du mit dem kleinen Ketten-Knopf neben der App.
+4. Optional: **Modell** (zum Beispiel Cube), **Lautstärke ohne Aktivität über den IR-Sender** (nur Cube), **Auch in Aktivitäten anzeigen** und **Aktivität sperren, wenn nicht erreichbar** (beides Schalter).
 
 Der Fire TV hat eine eigene Statuszeile mit Wiedergabe/Pause und Standby, auch wenn Harmony nichts davon weiß.
 
@@ -75,7 +77,8 @@ Einstellungen › **Aktivitäten** › Verknüpfung: Eine Aktivität mit einer a
 
 ## 10. Aussehen und Profile
 
-- Einstellungen › **Darstellung**: Look (11 Stück), Kachelstil, Tastenstil, Beschriftung, Leuchten, farbige Symbole, Vibration, Tastatursteuerung, Anordnung.
+- Einstellungen › **Darstellung**: Look (11 Stück), Kachelstil, Anordnung, Stil der laufenden Aktivität, Tastenform, Beschriftung, Aufleuchten, farbige Symbole.
+- Einstellungen › **Bedienung**: Vibration, Wechsel nur durch Halten, Tastatursteuerung, Kopf einklappen, zur laufenden Aktivität springen, Gerätenamen in der Hilfe.
 - **Symbole** für Geräte und Aktivitäten unter den Reitern „Geräte" und „Aktivitäten".
 - **Profile** (Profil-Knopf in der Statuszeile): verschiedene Einstellungen für verschiedene Personen oder Tablets. Profile lassen sich Benutzern zuordnen oder per Kartenoption `profile` fest wählen.
 
@@ -108,6 +111,7 @@ Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erla
 |---|---|
 | Karte zeigt „Keine Harmony-Hubs gefunden" | Integration „Logitech Harmony Hub" einrichten, Home Assistant neu starten |
 | Karte veraltet nach Update | Strg+F5 bzw. App-Cache leeren |
+| Reparaturhinweis „Fire TV nicht erreichbar" bleibt | Er erscheint nach etwa 6 Minuten ohne ADB und verschwindet, sobald der Fire TV wieder antwortet |
 | Fire TV „nicht erreichbar" | Fire TV an und im Netz, ADB-Debugging an, Android-TV-Integration neu laden, dann „Verbindung testen" |
 | Aktivität startet, aber Bild/Ton fehlt | Rettungsring öffnen, Geräte einschalten oder Eingang wählen |
 | App bleibt in der Sperrliste gedimmt | „Installierte Apps lesen"; Paketnamen im Abschnitt Debug prüfen |

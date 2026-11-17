@@ -9,58 +9,62 @@ export const settingsEditorMixin = {
 
   _edModeHtml(t) {
     const m = this._editMode;
-    const icon = m === "favs" ? "mdi:star-outline" : m === "profiles" ? "mdi:account-circle-outline" : "mdi:cog-outline";
-    const label = m === "favs" ? t.editFavs : m === "profiles" ? t.editProfiles : t.editSettings;
+    const icon = { favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
+    const label = { favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
     return `<ha-icon icon="${icon}"></ha-icon><span>${label} · ${t.profLabel}: ${esc(this._prof().active)}</span>`;
   },
 
   // Edit view: only the tabs of the rooms and the edited area (no status line, tiles or info above it).
   _editBody(h, t, body) {
     if (this._editMode === "profiles") return `<div class="editbox">${this._profilesEdit(t)}</div>`;
+    if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
     if (this._editMode === "favs") {
-      const kind = this._favKind === "act" ? "act" : this._favKind === "actions" ? "actions" : "dev";
-      const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "actions" ? "sel" : ""}" data-favkind="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>`;
-      return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : kind === "actions" ? `<div class="editbox">${this._actionsEdit(h, t, true)}</div>` : body);
+      const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
+      const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
+      return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : body);
     }
     return body;
   },
 
+  // One row per option: label left, control right; the whole row is a <label>, so tapping anywhere switches or focuses.
+  _swRow(label, attrs, on) { return `<label class="erow swrow"><span>${label}</span><span class="sw"><input type="checkbox" ${attrs} ${on ? "checked" : ""}><i></i></span></label>`; },
+  _selRow(label, attrs, items, cur) { return `<label class="erow"><span>${label}</span><select ${attrs}>${Object.entries(items).map(([k, v]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`; },
+  _grp(title, rows) { return `<div class="egrp">${title ? `<div class="esub">${title}</div>` : ""}${rows}</div>`; },
+
   _editHtml(t, h) {
     const skin = this._skin();
-    const opts = Object.keys(SKINS).map((k) => `<option value="${k}" ${k === skin ? "selected" : ""}>${esc(t.skins[k] || k)}</option>`).join("");
     const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-    const style = this._tileStyle();
-    const styleOpts = Object.entries(t.tileStyles).map(([k, v]) => `<option value="${k}" ${k === style ? "selected" : ""}>${esc(v)}</option>`).join("");
-    const sw = (attrs, on) => `<span class="sw"><input type="checkbox" ${attrs} ${on ? "checked" : ""}><i></i></span>`;
+    const skins = Object.fromEntries(Object.keys(SKINS).map((k) => [k, t.skins[k] || k]));
     const etab = this._etabNow();
+    const g = t.groups || {};
     const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
     const tabHint = t.tabHints?.[etab] ? `<div class="ehint tabhint">${esc(t.tabHints[etab])}</div>` : "";
     return `<div class="editbox">${tabsBar}${tabHint}
-      <div class="esec" data-t="misc"><div class="etitle">${t.secHub}</div>
+      <div class="esec" data-t="misc"><div class="etitle">${t.secHub}</div>${this._grp("", `
         <label class="erow"><span>${t.hubName}</span><input type="text" data-hubname data-hub="${esc(h.id)}" value="${esc(h.name)}"></label>
-        <label class="erow"><span>${t.hubShown}</span>${sw(`data-hubvis data-hub="${esc(h.id)}"`, shown)}</label>
-        <label class="erow"><span>${t.offRelated}</span>${sw(`data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}</label>
-        <label class="erow"><span>${t.helpManualSet}</span>${sw('data-setting="helpManual"', !!this._settings().helpManual)}</label></div>
+        ${this._swRow(t.hubShown, `data-hubvis data-hub="${esc(h.id)}"`, shown)}
+        ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
+        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
-        <label class="erow"><span>${t.skin}</span><select data-skin>${opts}</select></label>
-        <label class="erow"><span>${t.tileStyle}</span><select data-tilestyle>${styleOpts}</select></label>
-        <label class="erow"><span>${t.colorIcons}</span>${sw('data-setting="colorIcons"', this._colorful())}</label>
-        <label class="erow"><span>${t.helpNames}</span>${sw('data-setting="helpNames"', this._helpNames())}</label>
-        <label class="erow"><span>${t.keyCtl}</span>${sw('data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}</label>
-        <label class="erow"><span>${t.vibrate}</span>${sw('data-setting="vibrate"', this._vibrateOn())}</label>
-        <label class="erow"><span>${t.collapseHeader}</span>${sw('data-setting="collapseHeader"', this._collapseOn())}</label>
-        <label class="erow"><span>${t.holdSwitch}</span>${sw('data-setting="holdSwitch"', this._holdSwitchOn())}</label>
-        <label class="erow"><span>${t.jumpRunning}</span>${sw('data-setting="jumpRunning"', this._jumpOn())}</label>
-        ${skin === "glass" ? `<label class="erow"><span>${t.noBlur}</span>${sw('data-setting="noBlur"', this._noBlur())}</label>` : ""}
-        <label class="erow"><span>${t.layout}</span><select data-layout>${Object.entries(t.layouts).map(([k, v]) => `<option value="${k}" ${k === this._layout() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.activeStyle}</span><select data-activestyle>${Object.entries(t.activeStyles).map(([k, v]) => `<option value="${k}" ${k === this._activeStyle() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.keyStyle}</span><select data-keystyle>${Object.entries(t.keyStyles).map(([k, v]) => `<option value="${k}" ${k === this._keyStyle() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.labels}</span><select data-labels>${Object.entries(t.labelOpts).map(([k, v]) => `<option value="${k}" ${k === this._labels() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.glow}</span><select data-glow>${Object.entries(t.glows).map(([k, v]) => `<option value="${k}" ${k === this._glow() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label></div>
+        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
+          ${skin === "glass" ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
+        ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
+          ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
+          ${this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle())}`)}
+        ${this._grp(g.keys, `${this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
+          ${this._selRow(t.labels, "data-labels", t.labelOpts, this._labels())}
+          ${this._selRow(t.glow, "data-glow", t.glows, this._glow())}`)}</div>
+      <div class="esec" data-t="behave"><div class="etitle">${t.tabs.behave}</div>
+        ${this._grp(g.touch, `${this._swRow(t.vibrate, 'data-setting="vibrate"', this._vibrateOn())}
+          ${this._swRow(t.holdSwitch, 'data-setting="holdSwitch"', this._holdSwitchOn())}
+          ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
+        ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
+          ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
-      ${this._actionsEdit(h, t)}
       ${this._directEdit(h, t)}
       ${this._legendHtml(t)}
       <details class="esec raw" data-t="info"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
@@ -151,16 +155,18 @@ export const settingsEditorMixin = {
       '[data-setting="keyboardControl"]': "keyboard_control", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapse_header", '[data-setting="holdSwitch"]': "hold_switch", "[data-layout]": "layout", "[data-activestyle]": "active_style",
       "[data-keystyle]": "key_style", "[data-labels]": "labels", "[data-glow]": "glow",
     };
-    const locked = [];
+    const locked = new Map();
     Object.entries(keys).forEach(([sel, key]) => {
       const el = root.querySelector(sel);
       if (!el || this._config[key] === undefined) return;
       el.disabled = true;
+      const sec = el.closest(".esec");
       const lab = el.closest(".erow")?.querySelector(":scope > span");
       if (lab) lab.insertAdjacentHTML("beforeend", `<ha-icon class="lockyaml" icon="mdi:lock-outline" title="${esc(fmtText(t.yamlLock, [key, this._config[key]]))}"></ha-icon>`);
-      locked.push(`${key}: ${this._config[key]}`);
+      if (sec) locked.set(sec, [...(locked.get(sec) || []), `${key}: ${this._config[key]}`]);
     });
-    if (locked.length) root.querySelector('.esec[data-t="look"] .etitle')?.insertAdjacentHTML("afterend", `<div class="ehint yamlhint"><ha-icon icon="mdi:lock-outline"></ha-icon><span>${esc(fmtText(t.yamlHint, [locked.join(", ")]))}</span></div>`);
+    // The hint goes only into the section (tab) that has locked options.
+    locked.forEach((list, sec) => sec.querySelector(":scope > .etitle")?.insertAdjacentHTML("afterend", `<div class="ehint yamlhint"><ha-icon icon="mdi:lock-outline"></ha-icon><span>${esc(fmtText(t.yamlHint, [list.join(", ")]))}</span></div>`));
   },
 
   // Info bubbles (i) next to settings; texts in translations/*.json under "tips".

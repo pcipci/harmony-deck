@@ -167,3 +167,22 @@ async def test_reload_and_legacy_cleanup(hass: HomeAssistant):
     assert registry.async_get(old.entity_id) is None            # entity of 0.2.0 is gone
     assert "lock" in _lock_entities(hass, entry)
     assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_fire_issue_after_short_wait_and_gone_when_back(hass: HomeAssistant):
+    from homeassistant.helpers import issue_registry as ir
+
+    entry, _, _ = await _setup(hass)
+    coordinator = entry.runtime_data
+    hass.data[DOMAIN]["settings"]["direct"] = {REMOTE: {"entity": FIRE}}
+    hass.states.async_set(FIRE, "unavailable")
+    issue_id = f"fire_unreachable_{FIRE}"
+    issues = ir.async_get(hass)
+    for _ in range(2):
+        await coordinator.async_refresh()
+    assert issues.async_get_issue(DOMAIN, issue_id) is None      # a sleeping Fire TV is not reported at once
+    await coordinator.async_refresh()
+    assert issues.async_get_issue(DOMAIN, issue_id) is not None  # third refresh in a row (about 6 minutes)
+    hass.states.async_set(FIRE, "idle")                          # back: the hint goes away without waiting for the next refresh
+    await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, issue_id) is None

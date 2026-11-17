@@ -25,9 +25,9 @@ type: custom:harmony-deck-card
 Every hub becomes a tab (room). At the top you see what is running, below the activities as tiles, below them the remote of the running activity.
 
 **ⓘ** opens the hub info and the three ways to edit:
-- **Settings**: look, symbols, hub, actions, Fire TV, info. Every tab starts with one sentence about what it is for.
-- **Favorites**: mark keys with a star, per device or per activity.
-- **Actions**: own buttons for Home Assistant entities.
+- **Settings**: look, behaviour, symbols, hub, Fire TV, info. Every tab starts with one sentence about what it is for. Each option is one row: tap anywhere on the row to switch it.
+- **Favorites**: mark keys with a star, per device or per activity. The third button, **Hide keys**, hides keys you never use (see section 6).
+- **Actions**: own buttons for Home Assistant entities, in an edit mode of their own.
 
 **Done** saves, **Cancel** drops every change of this session. Settings are stored in Home Assistant and apply on all devices.
 
@@ -35,7 +35,7 @@ Every hub becomes a tab (room). At the top you see what is running, below the ac
 
 - Tapping a tile starts the activity. The running one is highlighted.
 - **Switch off:** **hold** the power tile (or the power button of the collapsed header) until the ring is full, so it does not happen by accident.
-- **Hold to switch** (Settings › Look): while an activity runs, another one starts only after a long press.
+- **Hold to switch** (Settings › Behaviour): while an activity runs, another one starts only after a long press.
 - The remote sends volume, D‑pad, channel and transport to the device the hub uses for this in the activity.
 - **Collapse header** (on by default): when a remote is open, the header shrinks to one line. Tap it to expand.
 
@@ -51,19 +51,21 @@ When an activity does not start right (TV off, wrong input), open the **life rin
 
 ## 6. Favourites
 
-**ⓘ › Favorites** → choose a device → tap keys (star). Favourites appear as their own block above the remote. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
+**ⓘ › Favorites** → choose a device → tap keys (star). Favourites appear as their own block above the remote.
+
+**Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. This is not the lock: hidden keys are only not shown. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
 
 ## 7. Actions
 
-**ⓘ › Actions** (or Settings › Actions): name, entity (light, switch, scene, script, automation, button …), what to do (toggle, on, off, run), symbol and when it is shown (always or only in one activity). Actions appear below the remote and show their state (on = highlighted).
+**ⓘ › Actions** (an edit mode of its own, with Done and Cancel like Settings): name, entity (light, switch, scene, script, automation, button …), what to do (toggle, on, off, run), symbol and when it is shown (always or only in one activity). Actions appear below the remote and show their state (on = highlighted).
 
 ## 8. Fire TV
 
 Settings › **Fire TV**:
 1. Choose the entity (the `media_player` of the Android TV integration) and the Harmony device it belongs to.
 2. **Test connection**. If the Fire TV is not reachable, a hint below says what to check.
-3. **Read installed apps** fetches the apps from the device. Choose which apps appear as buttons, assign the colour keys, add own apps by package name.
-4. Optional: **Model** (for example Cube), **Volume without an activity via** the IR sender (Cube only), **Also show in activities**, **Lock activity when not reachable**.
+3. **Read installed apps** fetches the apps from the device. Choose which apps appear as buttons, assign the colour keys, add own apps by package name. Tap and hold (or hover over) an app name to see its package. A wrong package assignment is removed with the small chain button next to the app.
+4. Optional: **Model** (for example Cube), **Volume without an activity via** the IR sender (Cube only), **Also show in activities** and **Lock activity when not reachable** (both switches).
 
 The Fire TV has its own status line with play/pause and standby, even when Harmony knows nothing about it.
 
@@ -75,7 +77,8 @@ Settings › **Activities** › Link: connect an activity with another entity (f
 
 ## 10. Look and profiles
 
-- Settings › **Look**: skin (11), tile style, key style, labels, glow, coloured icons, vibration, keyboard control, layout.
+- Settings › **Look**: skin (11), tile style, layout, running-activity style, key shape, labels, glow, coloured icons.
+- Settings › **Behaviour**: vibration, hold to switch, keyboard control, collapse header, jump to the running activity, device names in the help.
 - **Symbols** for devices and activities in the tabs "Devices" and "Activities".
 - **Profiles** (profile button in the status line): different settings for different people or tablets. Profiles can be assigned to users or fixed with the card option `profile`.
 
@@ -108,6 +111,7 @@ Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allow
 |---|---|
 | Card says "No Harmony hubs found" | Set up the "Logitech Harmony Hub" integration, restart Home Assistant |
 | Card outdated after an update | Ctrl+F5 or clear the app cache |
+| Repair hint "Fire TV not reachable" stays | It appears after about 6 minutes without ADB and disappears as soon as the Fire TV answers again |
 | Fire TV "not reachable" | Fire TV on and on the network, ADB debugging on, reload the Android TV integration, then "Test connection" |
 | Activity starts but no picture or sound | Open the life ring, switch devices on or choose the input |
 | App stays dimmed in the lock list | "Read installed apps"; check the package name in the Debug section |

@@ -50,7 +50,7 @@ export const devicesMixin = {
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
     }).join("");
     const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
-    const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="mdi:star-outline"></ha-icon>${t.favEditHint}</div>` : "";
+    const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
     if (part === "list") return `<div class="devlist">${list}</div>`;
     if (part === "below") return `<div class="devremote">${remote}</div>`;
     return `${favHint}<div class="devlayout"><div class="devlist">${list}</div><div class="devremote">${remote}</div></div>`;
@@ -112,8 +112,8 @@ export const devicesMixin = {
     const favs = this._favs(h.id, dev);
     const overrides = { ...(this._settings().keyIcons || {}), ...(this._config.key_icons || {}) };
     const btn = (c, label, icon = null, extraCls = "") => {
-      const star = this._edit ? `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>` : "";
-      return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
+      const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+      return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
     };
     // Groups with only one or two keys would each get a lonely card: collect them into "other".
     let gs = this._groups(rest, t);

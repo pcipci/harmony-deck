@@ -61,7 +61,23 @@ export const favoritesMixin = {
     return `<div class="block favs"><span class="dname">${t.favorites}</span><div class="cells">${cells}</div></div>`;
   },
 
+  async _toggleHide(hubId, device, cmd) {
+    const all = JSON.parse(JSON.stringify(this._settings().hideKeys || {}));
+    const list = ((all[hubId] ||= {})[device] ||= []);
+    const i = list.indexOf(cmd);
+    if (i >= 0) list.splice(i, 1); else list.push(cmd);
+    if (!list.length) delete all[hubId][device];
+    await this._saveSettings({ hideKeys: all });
+  },
+
+  // Mark on a key in edit mode: star (favourites) or eye (hide keys).
+  _editMark(hubId, device, c, favs) {
+    if (this._hideMode()) return `<ha-icon class="star eye" icon="${this._hiddenKeys(hubId, device).includes(c) ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon>`;
+    return `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>`;
+  },
+
   async _toggleFav(hubId, device, cmd) {
+    if (this._hideMode()) return this._toggleHide(hubId, device, cmd);
     const all = JSON.parse(JSON.stringify(this._settings().favorites || {}));
     const list = (all[hubId] ||= {})[device] ||= [];
     const i = list.indexOf(cmd);

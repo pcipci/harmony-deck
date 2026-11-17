@@ -108,7 +108,7 @@ export const renderMixin = {
     }
   },
 
-  _mode() { return this._editMode === "settings" || this._editMode === "profiles" ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : (this._modeState || "activities"); },
+  _mode() { return ["settings", "profiles", "actions"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : (this._modeState || "activities"); },
 
   _hubHtml(h, t, index = 0, tabs = "") {
     const busy = !!h.starting;

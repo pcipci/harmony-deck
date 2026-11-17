@@ -192,7 +192,7 @@
 
   // src/deck/actions.js
   var actionsMixin = {
-    _actionsEdit(h, t, standalone = false) {
+    _actionsEdit(h, t) {
       const list = this._settings().actions?.[h.id] || [];
       const acts = h.list.filter((n) => n !== "PowerOff");
       const ents = Object.keys(this._hass.states).filter((id) => /^(light|switch|scene|script|button|input_boolean|input_button|cover|fan|automation|lock|media_player)\./.test(id)).sort().slice(0, 600);
@@ -203,14 +203,14 @@
       const cur = ACTION_ICONS.find(([i]) => i === icon);
       const open = !!this._actIconOpen;
       const grid = open ? `<div class="icongrid">${ACTION_ICONS.map(([i, n]) => `<button type="button" class="iconcell ${i === icon ? "sel" : ""}" data-acticonpick="${esc(i)}" title="${esc(t.iconNames?.[i] || n)}"><ha-icon icon="${esc(i)}"></ha-icon></button>`).join("")}</div>` : "";
-      return `<div class="esec actedit" ${standalone ? "" : 'data-t="actions"'} data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
+      return `<div class="esec actedit" data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
       <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.actionsHint}</div>${rows}
-      <label class="erow"><span>${t.actName}</span><input type="text" data-act="name" placeholder="${t.actNamePh}" value="${esc(d.name || "")}"></label>
+      <div class="esub">${t.actAdd}</div><div class="egrp"><label class="erow"><span>${t.actName}</span><input type="text" data-act="name" placeholder="${t.actNamePh}" value="${esc(d.name || "")}"></label>
       <label class="erow"><span>${t.actEntity}</span>${this._entSelect("data-act", ents, d.entity || "", t)}</label>
       <label class="erow"><span>${t.actOp}</span><select data-act="op">${Object.entries(ops).map(([k, v]) => `<option value="${k}" ${d.op === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
       <div class="iconrow"><span class="iname">${t.actIcon}</span>
         <button type="button" class="iconbtn" data-acticonopen aria-expanded="${open}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(cur ? t.iconNames?.[cur[0]] || cur[1] : "")}</span><ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>${grid}</div>
-      <label class="erow"><span>${t.actScope}</span><select data-act="scope"><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+      <label class="erow"><span>${t.actScope}</span><select data-act="scope"><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label></div>
       <button class="key addact" data-actadd><ha-icon icon="mdi:plus"></ha-icon><span>${t.actAdd}</span></button></div>`;
     },
     _actionsOf(hubId, cur) {
@@ -805,7 +805,20 @@
     _has(hubId, device, action) {
       return !!this._cmd(hubId, device, action) || !!this._adbCode(hubId, device, action);
     },
+    // Keys the user hid for a device (own list per hub, separate from the lock); the editor in hide mode still sees everything.
+    _hiddenKeys(hubId, dev) {
+      return this._settings().hideKeys?.[hubId]?.[dev] || [];
+    },
+    _hideMode() {
+      return this._editMode === "favs" && this._favKind === "hide";
+    },
     _devicesOf(hubId) {
+      const all = this._devicesRaw(hubId);
+      const hide = this._settings().hideKeys?.[hubId];
+      if (!hide || this._hideMode()) return all;
+      return Object.fromEntries(Object.entries(all).map(([d, c]) => [d, hide[d]?.length ? c.filter((x) => !hide[d].includes(x)) : c]));
+    },
+    _devicesRaw(hubId) {
       const fromHub = this._info?.hubs?.[hubId]?.devices;
       if (fromHub && Object.keys(fromHub).length) return fromHub;
       const cfg = this._config.devices?.[hubId];
@@ -824,7 +837,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.4.0";
+  var VERSION = "0.4.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -990,7 +1003,7 @@
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
       }).join("");
       const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
-      const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="mdi:star-outline"></ha-icon>${t.favEditHint}</div>` : "";
+      const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
       if (part === "list") return `<div class="devlist">${list}</div>`;
       if (part === "below") return `<div class="devremote">${remote}</div>`;
       return `${favHint}<div class="devlayout"><div class="devlist">${list}</div><div class="devremote">${remote}</div></div>`;
@@ -1059,8 +1072,8 @@
       const favs = this._favs(h.id, dev);
       const overrides = { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} };
       const btn = (c, label, icon = null, extraCls = "") => {
-        const star = this._edit ? `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>` : "";
-        return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
+        const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+        return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
       };
       let gs = this._groups(rest, t);
       const keepOwn = /* @__PURE__ */ new Set([t.symbols, t.shortcuts, t.windows, t.other]);
@@ -1182,7 +1195,22 @@
       }).join("");
       return `<div class="block favs"><span class="dname">${t.favorites}</span><div class="cells">${cells}</div></div>`;
     },
+    async _toggleHide(hubId, device, cmd) {
+      const all = JSON.parse(JSON.stringify(this._settings().hideKeys || {}));
+      const list = (all[hubId] ||= {})[device] ||= [];
+      const i = list.indexOf(cmd);
+      if (i >= 0) list.splice(i, 1);
+      else list.push(cmd);
+      if (!list.length) delete all[hubId][device];
+      await this._saveSettings({ hideKeys: all });
+    },
+    // Mark on a key in edit mode: star (favourites) or eye (hide keys).
+    _editMark(hubId, device, c, favs) {
+      if (this._hideMode()) return `<ha-icon class="star eye" icon="${this._hiddenKeys(hubId, device).includes(c) ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon>`;
+      return `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>`;
+    },
     async _toggleFav(hubId, device, cmd) {
+      if (this._hideMode()) return this._toggleHide(hubId, device, cmd);
       const all = JSON.parse(JSON.stringify(this._settings().favorites || {}));
       const list = (all[hubId] ||= {})[device] ||= [];
       const i = list.indexOf(cmd);
@@ -1373,22 +1401,23 @@
       const cur = this._settings().direct?.[h.id] || {};
       const allApps = this._appsOf(h.id);
       const devs = Object.keys(this._devicesOf(h.id));
+      const g = t.groups || {};
       const dopts = [`<option value="">${t.directAuto}</option>`, ...devs.map((d) => `<option value="${esc(d)}" ${cur.device === d ? "selected" : ""}>${esc(d)}</option>`)].join("");
       return `<div class="esec directedit" data-t="fire" data-hub="${esc(h.id)}"><div class="etitle">${t.direct}</div>
       <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.directReq}</div>
       <div class="adbstat">${this._adbStatus(cur, t)}</div>
-      <label class="erow"><span>${t.directEntity}</span>${this._entSelect("data-direct", this._fireCandidates(), cur.entity || "", t)}</label>
-      <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>
-      <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
-      ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}
-      <label class="erow"><span>${t.directAct}</span><input type="checkbox" data-direct="inact" ${cur.inActivities ? "checked" : ""}></label>
-      <label class="erow"><span>${t.offlineLock}</span><input type="checkbox" data-direct="offlock" ${cur.lockOffline ? "checked" : ""}></label>
-      ${["red", "green", "yellow", "blue"].map((c) => `<label class="erow"><span>${t.colorKey[c]}</span><select data-direct="km_${c}"><option value="">–</option>${allApps.map((a) => `<option ${cur.keymap?.[c] === a.name ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`).join("")}
-      <div class="dname">${t.directShow}</div><div class="ehint pkgleg"><b>${t.pkgLegendLabel}</b> <ha-icon class="abadge s-unv" icon="mdi:help-circle-outline"></ha-icon>${t.unvChip} <ha-icon class="abadge s-ok" icon="mdi:check-circle-outline"></ha-icon>${t.instChip} <ha-icon class="abadge s-bad" icon="mdi:alert-circle-outline"></ha-icon>${t.missChip}</div><div class="cells">${allApps.map((a) => `<label class="erow approw"><input type="checkbox" data-hide-app="${esc(a.name)}" ${(cur.hiddenApps || []).includes(a.name) ? "" : "checked"}><span class="appname">${esc(a.name)}${this._appBadge(a, t)}</span>${a.custom ? `<button class="mini" data-pkgdel="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(t.pkgRemove)}"><ha-icon icon="mdi:close"></ha-icon></button>` : ""}</label>`).join("")}</div>
+      ${this._grp(g.conn, `<label class="erow"><span>${t.directEntity}</span>${this._entSelect("data-direct", this._fireCandidates(), cur.entity || "", t)}</label>
+        <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>
+        <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
+        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
+        ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
+      ${this._grp(g.fireAct, `${this._swRow(t.directAct, 'data-direct="inact"', cur.inActivities)}
+        ${this._swRow(t.offlineLock, 'data-direct="offlock"', cur.lockOffline)}`)}
+      ${this._grp(g.colorKeys, ["red", "green", "yellow", "blue"].map((c) => `<label class="erow"><span>${t.colorKey[c]}</span><select data-direct="km_${c}"><option value="">–</option>${allApps.map((a) => `<option ${cur.keymap?.[c] === a.name ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`).join(""))}
+      <div class="dname">${t.directShow}</div><div class="ehint pkgleg"><b>${t.pkgLegendLabel}</b> <ha-icon class="abadge s-unv" icon="mdi:help-circle-outline"></ha-icon>${t.unvChip} <ha-icon class="abadge s-ok" icon="mdi:check-circle-outline"></ha-icon>${t.instChip} <ha-icon class="abadge s-bad" icon="mdi:alert-circle-outline"></ha-icon>${t.missChip}</div><div class="cells">${allApps.map((a) => `<label class="erow approw"><input type="checkbox" data-hide-app="${esc(a.name)}" ${(cur.hiddenApps || []).includes(a.name) ? "" : "checked"}><span class="appname" title="${esc(a.pkg || "")}">${esc(a.name)}${this._appBadge(a, t)}</span>${!a.custom && cur.pkgs?.[a.name] ? `<button class="mini" data-pkgunmap="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.pkgUnmap, [cur.pkgs[a.name]]))}"><ha-icon icon="mdi:link-variant-off"></ha-icon></button>` : ""}${a.custom ? `<button class="mini" data-pkgdel="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(t.pkgRemove)}"><ha-icon icon="mdi:close"></ha-icon></button>` : ""}</label>`).join("")}</div>
       ${this._appsEdit(h.id, cur, allApps, t)}
       <div class="dname">${t.lockApps}</div><div class="ehint">${t.lockAppsMoved}</div>
-      <div class="dname">${t.directShowKeys}</div><div class="cells">${FIRE_KEYS.filter(([, , c]) => !Object.values(ADB_KEYS).includes(c)).map(([l]) => `<label class="erow approw"><input type="checkbox" data-hide-key="${esc(l)}" ${(cur.hiddenKeys || []).includes(l) ? "" : "checked"}><span>${esc(t.fireKeys?.[l] || l)}</span></label>`).join("")}</div>
-      <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label></div>`;
+      <div class="dname">${t.directShowKeys}</div><div class="cells">${FIRE_KEYS.filter(([, , c]) => !Object.values(ADB_KEYS).includes(c)).map(([l]) => `<label class="erow approw"><input type="checkbox" data-hide-key="${esc(l)}" ${(cur.hiddenKeys || []).includes(l) ? "" : "checked"}><span>${esc(t.fireKeys?.[l] || l)}</span></label>`).join("")}</div></div>`;
     },
     // Events of the settings tab Fire TV.
     _bindFireEditor(root) {
@@ -1406,6 +1435,15 @@
         const pkg = box.querySelector("[data-pkgnew]").value;
         if (name && pkg) this._patchDirect(b.dataset.pkgadd, (c) => {
           c.customApps = [...(c.customApps || []).filter((x) => x.name !== name), { name, pkg }];
+        });
+      }));
+      root.querySelectorAll("[data-pkgunmap]").forEach((b) => b.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._patchDirect(b.dataset.hub, (c) => {
+          const m = { ...c.pkgs || {} };
+          delete m[b.dataset.pkgunmap];
+          if (Object.keys(m).length) c.pkgs = m;
+          else delete c.pkgs;
         });
       }));
       root.querySelectorAll("[data-pkgdel]").forEach((b) => b.addEventListener("click", (e) => {
@@ -1887,7 +1925,7 @@
         [t.infoEntity, h.id]
       ].filter(([, v]) => v);
       const canEdit = this._hass?.user?.is_admin !== false && !this._config.compact;
-      const edit = canEdit ? `<div class="infoedits"><button class="infoedit" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${t.editSettings}</span></button><button class="infoedit" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${t.editFavs}</span></button><button class="infoedit" data-edit="settings" data-goetab="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>` : "";
+      const edit = canEdit ? `<div class="infoedits"><button class="infoedit" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${t.editSettings}</span></button><button class="infoedit" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${t.editFavs}</span></button><button class="infoedit" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>` : "";
       const head = `<div class="infohead"><i class="sdot ${down ? "bad" : "ok"}"></i><b>${esc(h.name)}</b><span>${esc([meta.manufacturer, meta.model].filter(Boolean).join(" "))}</span></div>`;
       return `<div class="infopanel">${head}${rows.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}${edit}</div>`;
     },
@@ -1999,8 +2037,8 @@
       const K = (c, label, cls = "", icon = "", w = 1, pre = "") => {
         if (!c) return `<span class="kk ghost" style="flex: ${w} 1 0"></span>`;
         used.add(c);
-        const star = this._edit ? `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>` : "";
-        return `<button class="key cell kk ${icon ? "ic" : ""} ${cls} ${favs.includes(c) ? "isfav" : ""}" style="flex: ${w} 1 0" title="${esc(pre ? `${pre} + ${c}` : c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}" ${pre ? `data-pre="${esc(pre)}"` : ""}>${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(label)}</span>${star}</button>`;
+        const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+        return `<button class="key cell kk ${icon ? "ic" : ""} ${cls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" style="flex: ${w} 1 0" title="${esc(pre ? `${pre} + ${c}` : c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}" ${pre ? `data-pre="${esc(pre)}"` : ""}>${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(label)}</span>${star}</button>`;
       };
       const lay = this._config.keyboard_layout || ((this._config.language || this._hass?.locale?.language || "en").startsWith("de") ? "qwertz" : "qwerty");
       const rows = lay === "qwertz" ? ["QWERTZUIOP", "ASDFGHJKL", "YXCVBNM"] : ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
@@ -2981,7 +3019,7 @@
       }
     },
     _mode() {
-      return this._editMode === "settings" || this._editMode === "profiles" ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : this._modeState || "activities";
+      return ["settings", "profiles", "actions"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : this._modeState || "activities";
     },
     _hubHtml(h, t, index = 0, tabs = "") {
       const busy = !!h.starting;
@@ -3136,56 +3174,65 @@
     },
     _edModeHtml(t) {
       const m = this._editMode;
-      const icon = m === "favs" ? "mdi:star-outline" : m === "profiles" ? "mdi:account-circle-outline" : "mdi:cog-outline";
-      const label = m === "favs" ? t.editFavs : m === "profiles" ? t.editProfiles : t.editSettings;
+      const icon = { favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
+      const label = { favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
       return `<ha-icon icon="${icon}"></ha-icon><span>${label} · ${t.profLabel}: ${esc(this._prof().active)}</span>`;
     },
     // Edit view: only the tabs of the rooms and the edited area (no status line, tiles or info above it).
     _editBody(h, t, body) {
       if (this._editMode === "profiles") return `<div class="editbox">${this._profilesEdit(t)}</div>`;
+      if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
       if (this._editMode === "favs") {
-        const kind = this._favKind === "act" ? "act" : this._favKind === "actions" ? "actions" : "dev";
-        const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "actions" ? "sel" : ""}" data-favkind="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>`;
-        return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : kind === "actions" ? `<div class="editbox">${this._actionsEdit(h, t, true)}</div>` : body);
+        const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
+        const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
+        return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : body);
       }
       return body;
     },
+    // One row per option: label left, control right; the whole row is a <label>, so tapping anywhere switches or focuses.
+    _swRow(label, attrs, on) {
+      return `<label class="erow swrow"><span>${label}</span><span class="sw"><input type="checkbox" ${attrs} ${on ? "checked" : ""}><i></i></span></label>`;
+    },
+    _selRow(label, attrs, items, cur) {
+      return `<label class="erow"><span>${label}</span><select ${attrs}>${Object.entries(items).map(([k, v]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
+    },
+    _grp(title, rows) {
+      return `<div class="egrp">${title ? `<div class="esub">${title}</div>` : ""}${rows}</div>`;
+    },
     _editHtml(t, h) {
       const skin = this._skin();
-      const opts = Object.keys(SKINS).map((k) => `<option value="${k}" ${k === skin ? "selected" : ""}>${esc(t.skins[k] || k)}</option>`).join("");
       const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-      const style = this._tileStyle();
-      const styleOpts = Object.entries(t.tileStyles).map(([k, v]) => `<option value="${k}" ${k === style ? "selected" : ""}>${esc(v)}</option>`).join("");
-      const sw = (attrs, on) => `<span class="sw"><input type="checkbox" ${attrs} ${on ? "checked" : ""}><i></i></span>`;
+      const skins = Object.fromEntries(Object.keys(SKINS).map((k) => [k, t.skins[k] || k]));
       const etab = this._etabNow();
+      const g = t.groups || {};
       const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
       const tabHint = t.tabHints?.[etab] ? `<div class="ehint tabhint">${esc(t.tabHints[etab])}</div>` : "";
       return `<div class="editbox">${tabsBar}${tabHint}
-      <div class="esec" data-t="misc"><div class="etitle">${t.secHub}</div>
+      <div class="esec" data-t="misc"><div class="etitle">${t.secHub}</div>${this._grp("", `
         <label class="erow"><span>${t.hubName}</span><input type="text" data-hubname data-hub="${esc(h.id)}" value="${esc(h.name)}"></label>
-        <label class="erow"><span>${t.hubShown}</span>${sw(`data-hubvis data-hub="${esc(h.id)}"`, shown)}</label>
-        <label class="erow"><span>${t.offRelated}</span>${sw(`data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}</label>
-        <label class="erow"><span>${t.helpManualSet}</span>${sw('data-setting="helpManual"', !!this._settings().helpManual)}</label></div>
+        ${this._swRow(t.hubShown, `data-hubvis data-hub="${esc(h.id)}"`, shown)}
+        ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
+        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
-        <label class="erow"><span>${t.skin}</span><select data-skin>${opts}</select></label>
-        <label class="erow"><span>${t.tileStyle}</span><select data-tilestyle>${styleOpts}</select></label>
-        <label class="erow"><span>${t.colorIcons}</span>${sw('data-setting="colorIcons"', this._colorful())}</label>
-        <label class="erow"><span>${t.helpNames}</span>${sw('data-setting="helpNames"', this._helpNames())}</label>
-        <label class="erow"><span>${t.keyCtl}</span>${sw('data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}</label>
-        <label class="erow"><span>${t.vibrate}</span>${sw('data-setting="vibrate"', this._vibrateOn())}</label>
-        <label class="erow"><span>${t.collapseHeader}</span>${sw('data-setting="collapseHeader"', this._collapseOn())}</label>
-        <label class="erow"><span>${t.holdSwitch}</span>${sw('data-setting="holdSwitch"', this._holdSwitchOn())}</label>
-        <label class="erow"><span>${t.jumpRunning}</span>${sw('data-setting="jumpRunning"', this._jumpOn())}</label>
-        ${skin === "glass" ? `<label class="erow"><span>${t.noBlur}</span>${sw('data-setting="noBlur"', this._noBlur())}</label>` : ""}
-        <label class="erow"><span>${t.layout}</span><select data-layout>${Object.entries(t.layouts).map(([k, v]) => `<option value="${k}" ${k === this._layout() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.activeStyle}</span><select data-activestyle>${Object.entries(t.activeStyles).map(([k, v]) => `<option value="${k}" ${k === this._activeStyle() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.keyStyle}</span><select data-keystyle>${Object.entries(t.keyStyles).map(([k, v]) => `<option value="${k}" ${k === this._keyStyle() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.labels}</span><select data-labels>${Object.entries(t.labelOpts).map(([k, v]) => `<option value="${k}" ${k === this._labels() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.glow}</span><select data-glow>${Object.entries(t.glows).map(([k, v]) => `<option value="${k}" ${k === this._glow() ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label></div>
+        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
+          ${skin === "glass" ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
+        ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
+          ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
+          ${this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle())}`)}
+        ${this._grp(g.keys, `${this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
+          ${this._selRow(t.labels, "data-labels", t.labelOpts, this._labels())}
+          ${this._selRow(t.glow, "data-glow", t.glows, this._glow())}`)}</div>
+      <div class="esec" data-t="behave"><div class="etitle">${t.tabs.behave}</div>
+        ${this._grp(g.touch, `${this._swRow(t.vibrate, 'data-setting="vibrate"', this._vibrateOn())}
+          ${this._swRow(t.holdSwitch, 'data-setting="holdSwitch"', this._holdSwitchOn())}
+          ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
+        ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
+          ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
-      ${this._actionsEdit(h, t)}
       ${this._directEdit(h, t)}
       ${this._legendHtml(t)}
       <details class="esec raw" data-t="info"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
@@ -3304,16 +3351,17 @@
         "[data-labels]": "labels",
         "[data-glow]": "glow"
       };
-      const locked = [];
+      const locked = /* @__PURE__ */ new Map();
       Object.entries(keys).forEach(([sel, key]) => {
         const el = root.querySelector(sel);
         if (!el || this._config[key] === void 0) return;
         el.disabled = true;
+        const sec = el.closest(".esec");
         const lab = el.closest(".erow")?.querySelector(":scope > span");
         if (lab) lab.insertAdjacentHTML("beforeend", `<ha-icon class="lockyaml" icon="mdi:lock-outline" title="${esc(fmtText(t.yamlLock, [key, this._config[key]]))}"></ha-icon>`);
-        locked.push(`${key}: ${this._config[key]}`);
+        if (sec) locked.set(sec, [...locked.get(sec) || [], `${key}: ${this._config[key]}`]);
       });
-      if (locked.length) root.querySelector('.esec[data-t="look"] .etitle')?.insertAdjacentHTML("afterend", `<div class="ehint yamlhint"><ha-icon icon="mdi:lock-outline"></ha-icon><span>${esc(fmtText(t.yamlHint, [locked.join(", ")]))}</span></div>`);
+      locked.forEach((list, sec) => sec.querySelector(":scope > .etitle")?.insertAdjacentHTML("afterend", `<div class="ehint yamlhint"><ha-icon icon="mdi:lock-outline"></ha-icon><span>${esc(fmtText(t.yamlHint, [list.join(", ")]))}</span></div>`));
     },
     // Info bubbles (i) next to settings; texts in translations/*.json under "tips".
     _applyTips(root) {
@@ -3686,7 +3734,7 @@
       .firechip .ib { padding: 2px; min-width: 0; width: 28px; height: 28px; background: none; --mdc-icon-size: 18px; color: inherit; }
       .tip { margin-left: 6px; cursor: help; color: var(--hr-muted); font-size: 0.9em; position: relative; text-transform: none; letter-spacing: 0; font-weight: 400; outline: none; }
       .tip:hover::after, .tip:focus::after { content: attr(data-tip); position: absolute; left: 0; top: 1.7em; z-index: 20; width: max-content; max-width: min(260px, 70vw); white-space: normal; padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.35; color: var(--primary-text-color); background: var(--card-background-color, #fff); box-shadow: 0 4px 16px rgba(0,0,0,.35); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); }
-      label.erow.approw { display: flex; align-items: center; gap: 8px; flex: 1 1 45%; }
+      label.erow.approw { display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex: 1 1 45%; min-height: 0; }
       .appname { display: inline-flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
       .abadge { flex: none; --mdc-icon-size: 18px; width: 18px; height: 18px; vertical-align: middle; cursor: help; }
       .abadge.s-unv { color: #e0a100; } .abadge.s-ok { color: #3fa968; } .abadge.s-bad { color: #d6483f; }
@@ -3712,7 +3760,7 @@
       .adbrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; } .adbrow small { color: var(--hr-muted); } .adbdot { width: 9px; height: 9px; border-radius: 50%; background: #43a047; flex: none; } .adbdot.bad { background: #e53935; }
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
-      .et-look [data-t]:not([data-t="look"]), .et-actions [data-t]:not([data-t="actions"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
+      .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
       .krow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -3732,16 +3780,21 @@
       .egroup { display: flex; flex-direction: column; gap: 6px; }
       .erow > span { min-width: 0; overflow-wrap: anywhere; }
       .sbtn > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-      .erow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: center; gap: 12px; font-size: 0.9em; color: var(--hr-text); }
-      .erow > span:first-child { color: var(--hr-muted); }
+      .erow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; font-size: 0.9em; color: var(--hr-text); }
+      .erow > span:first-child { flex: 1 1 auto; color: var(--hr-text); }
+      .erow > select, .erow > input[type=text], .erow > .entpick, .erow > .picker { flex: 0 0 min(55%, 240px); }
+      label.erow { cursor: pointer; } label.erow.swrow { -webkit-tap-highlight-color: transparent; }
+      .egrp { display: flex; flex-direction: column; }
+      .egrp > .erow { padding: 6px 0; } .egrp > .erow + .erow { border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 55%, transparent); }
+      .esub { font-size: 0.8em; font-weight: 600; color: var(--hr-muted); margin: 6px 0 2px; } .egrp:first-child > .esub, .etitle + .egrp > .esub { margin-top: 0; }
       select option, select optgroup { background-color: var(--hr-select-bg, var(--card-background-color, #1f2227)); color: var(--hr-text); }
       .erow input[type=text], .erow select { font: inherit; padding: 8px 10px; border-radius: 10px; background: var(--hr-select-bg, var(--hr-tile-bg)); color: var(--hr-text); border: 1px solid var(--divider-color, #444); min-width: 0; width: 100%; box-sizing: border-box; }
       .picker { display: block; min-width: 0; } .picker ha-entity-picker { display: block; width: 100%; }
-      .sw { justify-self: end; position: relative; width: 42px; height: 24px; }
+      .sw { flex: none; position: relative; width: 48px; height: 28px; }
       .sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
       .sw i { position: absolute; inset: 0; border-radius: 999px; background: var(--divider-color, #555); transition: background .2s; }
-      .sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
-      .sw input:checked + i { background: var(--hr-accent); } .sw input:checked + i::after { transform: translateX(18px); }
+      .sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+      .sw input:checked + i { background: var(--hr-accent); } .sw input:checked + i::after { transform: translateX(20px); }
       .chks { display: flex; flex-wrap: wrap; gap: 6px; }
       .chk { position: relative; font-size: 0.82em; padding: 5px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; }
       .chk input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -3899,7 +3952,8 @@
       .cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; } .cells > .cell { min-width: 0; text-align: center; }
       .cell { min-height: 42px; padding: 0 8px; font-size: 0.82em; gap: 6px; border-radius: var(--hr-radius); white-space: normal; overflow-wrap: anywhere; line-height: 1.15; text-align: center; display: flex; justify-content: center; align-items: center; }
       .cell ha-icon { --mdc-icon-size: 18px; flex: none; }
-      .cell { position: relative; } .cell .star { position: absolute; top: 3px; right: 3px; --mdc-icon-size: 15px; color: var(--hr-accent); }
+      .cell { position: relative; } .cell.hid { opacity: .45; } .cell .star.eye { color: var(--hr-muted); } .cell.hid .star.eye { color: var(--hr-danger, #e55); }
+      .cell .star { position: absolute; top: 3px; right: 3px; --mdc-icon-size: 15px; color: var(--hr-accent); }
       .cell.isfav { box-shadow: inset 0 0 0 1.5px var(--hr-accent); }
       .block.favs { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .power .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); }

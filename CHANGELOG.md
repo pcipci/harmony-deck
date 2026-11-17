@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.1
+
+### Changed
+- Settings rebuilt: the new tab "Behaviour" holds everything about how the card is operated (vibration, hold to switch, keyboard control, collapse header, jump to the running activity, device names in the help); "Look" only has the appearance, in groups (style, tiles, keys). All rows look the same (label left, control right, a thin divider), the whole row can be tapped, and every on/off option is a switch, also in the Fire TV tab.
+- Actions are an edit mode of their own (next to Settings and Favorites) with its own Done / Cancel. The tab in the settings and the detour through Favorites are gone.
+- The hint about options fixed in the card YAML now appears only in the tab where such an option is.
+- The repair hint "Fire TV not reachable" appears after three refreshes in a row (about 6 minutes, before 30) and disappears the moment the Fire TV answers again.
+
+### Added
+- Favorites editor: "Hide keys" hides single keys of a device (per profile). They disappear in the device view and in the remotes of the activities. This is not the lock.
+- Fire TV tab: a wrong package assignment can be removed (chain button), and the package name of every app is shown as a tooltip.
+
 ## 0.4.0
 
 First public version.

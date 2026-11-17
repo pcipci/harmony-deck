@@ -82,22 +82,23 @@ export const fireEditorMixin = {
     const cur = this._settings().direct?.[h.id] || {};
     const allApps = this._appsOf(h.id);
     const devs = Object.keys(this._devicesOf(h.id));
+    const g = t.groups || {};
     const dopts = [`<option value="">${t.directAuto}</option>`, ...devs.map((d) => `<option value="${esc(d)}" ${cur.device === d ? "selected" : ""}>${esc(d)}</option>`)].join("");
     return `<div class="esec directedit" data-t="fire" data-hub="${esc(h.id)}"><div class="etitle">${t.direct}</div>
       <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.directReq}</div>
       <div class="adbstat">${this._adbStatus(cur, t)}</div>
-      <label class="erow"><span>${t.directEntity}</span>${this._entSelect('data-direct', this._fireCandidates(), cur.entity || "", t)}</label>
-      <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>
-      <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
-      ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}
-      <label class="erow"><span>${t.directAct}</span><input type="checkbox" data-direct="inact" ${cur.inActivities ? "checked" : ""}></label>
-      <label class="erow"><span>${t.offlineLock}</span><input type="checkbox" data-direct="offlock" ${cur.lockOffline ? "checked" : ""}></label>
-      ${["red", "green", "yellow", "blue"].map((c) => `<label class="erow"><span>${t.colorKey[c]}</span><select data-direct="km_${c}"><option value="">–</option>${allApps.map((a) => `<option ${cur.keymap?.[c] === a.name ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`).join("")}
-      <div class="dname">${t.directShow}</div><div class="ehint pkgleg"><b>${t.pkgLegendLabel}</b> <ha-icon class="abadge s-unv" icon="mdi:help-circle-outline"></ha-icon>${t.unvChip} <ha-icon class="abadge s-ok" icon="mdi:check-circle-outline"></ha-icon>${t.instChip} <ha-icon class="abadge s-bad" icon="mdi:alert-circle-outline"></ha-icon>${t.missChip}</div><div class="cells">${allApps.map((a) => `<label class="erow approw"><input type="checkbox" data-hide-app="${esc(a.name)}" ${(cur.hiddenApps || []).includes(a.name) ? "" : "checked"}><span class="appname">${esc(a.name)}${this._appBadge(a, t)}</span>${a.custom ? `<button class="mini" data-pkgdel="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(t.pkgRemove)}"><ha-icon icon="mdi:close"></ha-icon></button>` : ""}</label>`).join("")}</div>
+      ${this._grp(g.conn, `<label class="erow"><span>${t.directEntity}</span>${this._entSelect('data-direct', this._fireCandidates(), cur.entity || "", t)}</label>
+        <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>
+        <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
+        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
+        ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
+      ${this._grp(g.fireAct, `${this._swRow(t.directAct, 'data-direct="inact"', cur.inActivities)}
+        ${this._swRow(t.offlineLock, 'data-direct="offlock"', cur.lockOffline)}`)}
+      ${this._grp(g.colorKeys, ["red", "green", "yellow", "blue"].map((c) => `<label class="erow"><span>${t.colorKey[c]}</span><select data-direct="km_${c}"><option value="">–</option>${allApps.map((a) => `<option ${cur.keymap?.[c] === a.name ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`).join(""))}
+      <div class="dname">${t.directShow}</div><div class="ehint pkgleg"><b>${t.pkgLegendLabel}</b> <ha-icon class="abadge s-unv" icon="mdi:help-circle-outline"></ha-icon>${t.unvChip} <ha-icon class="abadge s-ok" icon="mdi:check-circle-outline"></ha-icon>${t.instChip} <ha-icon class="abadge s-bad" icon="mdi:alert-circle-outline"></ha-icon>${t.missChip}</div><div class="cells">${allApps.map((a) => `<label class="erow approw"><input type="checkbox" data-hide-app="${esc(a.name)}" ${(cur.hiddenApps || []).includes(a.name) ? "" : "checked"}><span class="appname" title="${esc(a.pkg || "")}">${esc(a.name)}${this._appBadge(a, t)}</span>${!a.custom && cur.pkgs?.[a.name] ? `<button class="mini" data-pkgunmap="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.pkgUnmap, [cur.pkgs[a.name]]))}"><ha-icon icon="mdi:link-variant-off"></ha-icon></button>` : ""}${a.custom ? `<button class="mini" data-pkgdel="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(t.pkgRemove)}"><ha-icon icon="mdi:close"></ha-icon></button>` : ""}</label>`).join("")}</div>
       ${this._appsEdit(h.id, cur, allApps, t)}
       <div class="dname">${t.lockApps}</div><div class="ehint">${t.lockAppsMoved}</div>
-      <div class="dname">${t.directShowKeys}</div><div class="cells">${FIRE_KEYS.filter(([, , c]) => !Object.values(ADB_KEYS).includes(c)).map(([l]) => `<label class="erow approw"><input type="checkbox" data-hide-key="${esc(l)}" ${(cur.hiddenKeys || []).includes(l) ? "" : "checked"}><span>${esc(t.fireKeys?.[l] || l)}</span></label>`).join("")}</div>
-      <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label></div>`;
+      <div class="dname">${t.directShowKeys}</div><div class="cells">${FIRE_KEYS.filter(([, , c]) => !Object.values(ADB_KEYS).includes(c)).map(([l]) => `<label class="erow approw"><input type="checkbox" data-hide-key="${esc(l)}" ${(cur.hiddenKeys || []).includes(l) ? "" : "checked"}><span>${esc(t.fireKeys?.[l] || l)}</span></label>`).join("")}</div></div>`;
   },
 
   // Events of the settings tab Fire TV.
@@ -113,6 +114,10 @@ export const fireEditorMixin = {
       const name = box.querySelector("[data-pkgname]").value.trim();
       const pkg = box.querySelector("[data-pkgnew]").value;
       if (name && pkg) this._patchDirect(b.dataset.pkgadd, (c) => { c.customApps = [...(c.customApps || []).filter((x) => x.name !== name), { name, pkg }]; });
+    }));
+    root.querySelectorAll("[data-pkgunmap]").forEach((b) => b.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._patchDirect(b.dataset.hub, (c) => { const m = { ...(c.pkgs || {}) }; delete m[b.dataset.pkgunmap]; if (Object.keys(m).length) c.pkgs = m; else delete c.pkgs; });
     }));
     root.querySelectorAll("[data-pkgdel]").forEach((b) => b.addEventListener("click", (e) => {
       e.preventDefault();

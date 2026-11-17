@@ -1,0 +1,3 @@
+# Tests run inside a real Home Assistant core (see tests/test_integration_ha.py).
+pytest-homeassistant-custom-component==0.13.316
+home-assistant-frontend==20260128.6

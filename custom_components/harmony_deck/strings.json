@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Harmony Deck",
+        "description": "Adds the Harmony Deck card to your dashboards. Nothing needs to be configured."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Harmony Deck is already set up."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "ready": {
+        "name": "Card ready"
+      },
+      "hub_readable": {
+        "name": "Hub configuration readable"
+      },
+      "adb_reachable": {
+        "name": "ADB reachable"
+      },
+      "lock_active": {
+        "name": "Lock active"
+      }
+    },
+    "sensor": {
+      "hubs_found": {
+        "name": "Readable hubs"
+      },
+      "hub_activities": {
+        "name": "Activities"
+      },
+      "hub_devices": {
+        "name": "Devices"
+      },
+      "adb_found": {
+        "name": "Fire TV connections"
+      },
+      "released_until": {
+        "name": "Released until"
+      },
+      "last_action": {
+        "name": "Last intervention"
+      }
+    },
+    "switch": {
+      "lock": {
+        "name": "Lock"
+      }
+    },
+    "number": {
+      "release_minutes": {
+        "name": "Release duration"
+      }
+    },
+    "button": {
+      "release": {
+        "name": "Release"
+      }
+    },
+    "select": {
+      "lock_mode": {
+        "name": "Lock mode",
+        "state": {
+          "off": "Off",
+          "always": "Always",
+          "schedule": "Schedule"
+        }
+      }
+    }
+  },
+  "issues": {
+    "harmony_missing": {
+      "title": "No Harmony integration found",
+      "description": "Harmony Deck needs the Home Assistant “Logitech Harmony Hub” integration. Set it up and the hubs will show up in the card."
+    },
+    "hub_unreadable": {
+      "title": "Harmony hub “{hub}” is not readable",
+      "description": "Harmony Deck cannot read the configuration of the hub “{hub}” from the Harmony integration. The card then only shows basic functions. Reload the Harmony integration or restart Home Assistant. Details: Harmony Deck › Download diagnostics."
+    },
+    "fire_unreachable": {
+      "title": "Fire TV “{name}” is not reachable",
+      "description": "Harmony Deck cannot reach “{name}” for several minutes. Its keys and apps then only work through Harmony, and its status in the card is unknown. Check that the device is on and ADB debugging is enabled (a sleeping Fire TV is often unreachable)."
+    }
+  }
+}

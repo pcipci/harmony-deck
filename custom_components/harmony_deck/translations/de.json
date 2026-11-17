@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Harmony Deck",
+        "description": "Fügt die Karte „Harmony Deck“ zu deinen Dashboards hinzu. Es muss nichts eingestellt werden."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Harmony Deck ist bereits eingerichtet."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "ready": {
+        "name": "Karte bereit"
+      },
+      "hub_readable": {
+        "name": "Hub-Konfiguration lesbar"
+      },
+      "adb_reachable": {
+        "name": "ADB erreichbar"
+      },
+      "lock_active": {
+        "name": "Sperre wirksam"
+      }
+    },
+    "sensor": {
+      "hubs_found": {
+        "name": "Lesbare Hubs"
+      },
+      "hub_activities": {
+        "name": "Aktivitäten"
+      },
+      "hub_devices": {
+        "name": "Geräte"
+      },
+      "adb_found": {
+        "name": "Fire-TV-Verbindungen"
+      },
+      "released_until": {
+        "name": "Freigegeben bis"
+      },
+      "last_action": {
+        "name": "Letzter Eingriff"
+      }
+    },
+    "switch": {
+      "lock": {
+        "name": "Sperre"
+      }
+    },
+    "number": {
+      "release_minutes": {
+        "name": "Freigabe-Dauer"
+      }
+    },
+    "button": {
+      "release": {
+        "name": "Freigeben"
+      }
+    },
+    "select": {
+      "lock_mode": {
+        "name": "Sperr-Modus",
+        "state": {
+          "off": "Aus",
+          "always": "Immer",
+          "schedule": "Zeitplan"
+        }
+      }
+    }
+  },
+  "issues": {
+    "harmony_missing": {
+      "title": "Keine Harmony-Integration gefunden",
+      "description": "Harmony Deck braucht die Home-Assistant-Integration „Logitech Harmony Hub“. Richte sie ein, dann erscheinen die Hubs in der Karte."
+    },
+    "hub_unreadable": {
+      "title": "Harmony-Hub „{hub}“ ist nicht lesbar",
+      "description": "Harmony Deck kann die Konfiguration des Hubs „{hub}“ nicht aus der Harmony-Integration lesen. Die Karte zeigt dann nur die Grundfunktionen. Starte die Harmony-Integration neu oder lade Home Assistant neu. Details: Harmony Deck › Diagnose herunterladen."
+    },
+    "fire_unreachable": {
+      "title": "Fire TV „{name}“ ist nicht erreichbar",
+      "description": "Harmony Deck erreicht „{name}“ seit mehreren Minuten nicht. Tasten und Apps funktionieren dann nur über Harmony, und der Status in der Karte ist unbekannt. Prüfe, ob das Gerät an ist und ADB-Debugging aktiviert ist (ein schlafendes Fire TV ist oft nicht erreichbar)."
+    }
+  }
+}

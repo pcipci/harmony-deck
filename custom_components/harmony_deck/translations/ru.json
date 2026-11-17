@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Harmony Deck",
+        "description": "Добавляет карточку «Harmony Deck» на ваши панели. Ничего настраивать не нужно."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Harmony Deck уже настроен."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "ready": {
+        "name": "Карточка готова"
+      },
+      "hub_readable": {
+        "name": "Конфигурация хаба читается"
+      },
+      "adb_reachable": {
+        "name": "ADB доступен"
+      },
+      "lock_active": {
+        "name": "Блокировка действует"
+      }
+    },
+    "sensor": {
+      "hubs_found": {
+        "name": "Читаемые хабы"
+      },
+      "hub_activities": {
+        "name": "Действия"
+      },
+      "hub_devices": {
+        "name": "Устройства"
+      },
+      "adb_found": {
+        "name": "Подключения Fire TV"
+      },
+      "released_until": {
+        "name": "Разблокировано до"
+      },
+      "last_action": {
+        "name": "Последнее вмешательство"
+      }
+    },
+    "switch": {
+      "lock": {
+        "name": "Блокировка"
+      }
+    },
+    "number": {
+      "release_minutes": {
+        "name": "Длительность разблокировки"
+      }
+    },
+    "button": {
+      "release": {
+        "name": "Разблокировать"
+      }
+    },
+    "select": {
+      "lock_mode": {
+        "name": "Режим блокировки",
+        "state": {
+          "off": "Выкл.",
+          "always": "Всегда",
+          "schedule": "Расписание"
+        }
+      }
+    }
+  },
+  "issues": {
+    "harmony_missing": {
+      "title": "Интеграция Harmony не найдена",
+      "description": "Harmony Deck требует интеграцию Home Assistant «Logitech Harmony Hub». Настройте её, и хабы появятся в карточке."
+    },
+    "hub_unreadable": {
+      "title": "Хаб Harmony «{hub}» не читается",
+      "description": "Harmony Deck не может прочитать конфигурацию хаба «{hub}» из интеграции Harmony. Тогда карточка показывает только базовые функции. Перезагрузите интеграцию Harmony или Home Assistant. Подробности: Harmony Deck › Скачать диагностику."
+    },
+    "fire_unreachable": {
+      "title": "Fire TV «{name}» недоступен",
+      "description": "Harmony Deck не может связаться с «{name}» уже несколько минут. Кнопки и приложения тогда работают только через Harmony, а статус в карточке неизвестен. Проверьте, включено ли устройство и включена ли отладка ADB (спящий Fire TV часто недоступен)."
+    }
+  }
+}

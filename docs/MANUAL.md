@@ -1,0 +1,127 @@
+# Harmony Deck – Manual
+
+[Deutsch](HANDBUCH.md)
+
+This manual explains Harmony Deck by task. The version history is in the [CHANGELOG](../CHANGELOG.md).
+
+## 1. Installation
+
+1. HACS → ⋮ → **Custom repositories** → `https://github.com/pcipci/harmony-deck`, type **Integration**. Or copy `custom_components/harmony_deck/` to `/config/custom_components/`.
+2. Restart Home Assistant.
+3. Settings → Devices & services → **Add integration** → **Harmony Deck**. There is nothing to configure.
+
+You need the **Logitech Harmony Hub** integration. For the Fire TV also the **Android TV** integration (ADB) and "ADB debugging" on the Fire TV (Settings › My Fire TV › Developer options).
+
+After an update: restart Home Assistant and reload the page (Ctrl+F5; in the app pull down the page).
+
+## 2. First steps
+
+Add the card to a dashboard:
+
+```yaml
+type: custom:harmony-deck-card
+```
+
+Every hub becomes a tab (room). At the top you see what is running, below the activities as tiles, below them the remote of the running activity.
+
+**ⓘ** opens the hub info and the three ways to edit:
+- **Settings**: look, symbols, hub, actions, Fire TV, info. Every tab starts with one sentence about what it is for.
+- **Favorites**: mark keys with a star, per device or per activity.
+- **Actions**: own buttons for Home Assistant entities.
+
+**Done** saves, **Cancel** drops every change of this session. Settings are stored in Home Assistant and apply on all devices.
+
+## 3. Activities and remote
+
+- Tapping a tile starts the activity. The running one is highlighted.
+- **Switch off:** **hold** the power tile (or the power button of the collapsed header) until the ring is full, so it does not happen by accident.
+- **Hold to switch** (Settings › Look): while an activity runs, another one starts only after a long press.
+- The remote sends volume, D‑pad, channel and transport to the device the hub uses for this in the activity.
+- **Collapse header** (on by default): when a remote is open, the header shrinks to one line. Tap it to expand.
+
+## 4. Devices
+
+The slider **Activities / Devices** switches to the device view. Tap a device to open its own remote with all its commands in groups (inputs, sound, menus, numbers …). Devices are never locked, not even by the lock.
+
+If the device belongs to the running activity, its header says "Active in …". Tap it to go back to the remote of the activity.
+
+## 5. Life ring (help)
+
+When an activity does not start right (TV off, wrong input), open the **life ring** at the top. It lists the devices of the activity with their power and input keys. **Switch everything on** sends them one after another. Tap a device name to open the remote of that device. **Adjust list** hides devices you do not need here.
+
+## 6. Favourites
+
+**ⓘ › Favorites** → choose a device → tap keys (star). Favourites appear as their own block above the remote. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
+
+## 7. Actions
+
+**ⓘ › Actions** (or Settings › Actions): name, entity (light, switch, scene, script, automation, button …), what to do (toggle, on, off, run), symbol and when it is shown (always or only in one activity). Actions appear below the remote and show their state (on = highlighted).
+
+## 8. Fire TV
+
+Settings › **Fire TV**:
+1. Choose the entity (the `media_player` of the Android TV integration) and the Harmony device it belongs to.
+2. **Test connection**. If the Fire TV is not reachable, a hint below says what to check.
+3. **Read installed apps** fetches the apps from the device. Choose which apps appear as buttons, assign the colour keys, add own apps by package name.
+4. Optional: **Model** (for example Cube), **Volume without an activity via** the IR sender (Cube only), **Also show in activities**, **Lock activity when not reachable**.
+
+The Fire TV has its own status line with play/pause and standby, even when Harmony knows nothing about it.
+
+Tested with a Fire TV Cube (3rd generation). Other models may differ.
+
+## 9. Links
+
+Settings › **Activities** › Link: connect an activity with another entity (for example the Fire TV with the Fire TV activity). The card then shows a hint when both disagree ("Fire TV is running, Harmony is on Blu‑ray") with a button to match them. While the activity runs, other activities or key groups can be locked.
+
+## 10. Look and profiles
+
+- Settings › **Look**: skin (11), tile style, key style, labels, glow, coloured icons, vibration, keyboard control, layout.
+- **Symbols** for devices and activities in the tabs "Devices" and "Activities".
+- **Profiles** (profile button in the status line): different settings for different people or tablets. Profiles can be assigned to users or fixed with the card option `profile`.
+
+## 11. Lock (security card)
+
+```yaml
+type: custom:harmony-deck-security
+```
+
+Best on a dashboard page only adults see. Only administrators can change it.
+
+1. **Mode:** Off, Always or Schedule. In a schedule the windows are **lock times** (for example every day 20:00 to 07:00).
+2. **Check the lock now:** shows what the lock would switch off right now, without doing it.
+3. **Release:** pauses the lock for the chosen time.
+4. **Allowed activities:** ticked = may run. Activities that are not allowed show a lock in the main card and cannot be started there. If they are started another way (original remote), the integration switches them off after 3 seconds.
+5. **Allowed apps (Fire TV):** the home screen is allowed by default; without it no other app can be allowed. Newly installed apps are blocked. Apps that ran once appear in the list by themselves.
+6. **Switch off as well:** devices that also go off when the lock acts on the Fire TV (for example TV and amplifier).
+7. **Interventions:** the last 100, with **Allow** right in the list.
+8. **Debug: package names** (administrators): the real package name of the running app and of all packages, to copy.
+
+The lock is a household aid, not a security product.
+
+## 12. Entities
+
+Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Released until, Last intervention, Hub configuration readable, Activities, Devices. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
+
+## 13. Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| Card says "No Harmony hubs found" | Set up the "Logitech Harmony Hub" integration, restart Home Assistant |
+| Card outdated after an update | Ctrl+F5 or clear the app cache |
+| Fire TV "not reachable" | Fire TV on and on the network, ADB debugging on, reload the Android TV integration, then "Test connection" |
+| Activity starts but no picture or sound | Open the life ring, switch devices on or choose the input |
+| App stays dimmed in the lock list | "Read installed apps"; check the package name in the Debug section |
+| Diagnostics for a bug report | Settings › Devices & services › Harmony Deck › ⋮ › Download diagnostics |
+
+## 14. Symbols
+
+| Symbol | Meaning |
+|---|---|
+| Room icon glows | A Harmony activity runs in this room |
+| Pulsing dot | Activity is starting |
+| Small TV at the room icon | Fire TV is on (with play: playing) |
+| Crossed-out TV | Fire TV not reachable |
+| Chain link | A linked entity disagrees with Harmony |
+| Lock on a tile or key | locked (by the lock or a link) |
+| Red lock in the status line | Lock active |
+| Open lock with a time | released until that time |

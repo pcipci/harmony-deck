@@ -1,0 +1,16 @@
+{
+  "name": "harmony-deck-card",
+  "private": true,
+  "description": "Sources of the Harmony Deck dashboard cards (bundled into custom_components/harmony_deck/frontend/harmony-deck-card.js)",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "lint": "eslint src",
+    "check": "npm run lint && npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0"
+  }
+}

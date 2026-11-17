@@ -1,0 +1,166 @@
+# Harmony Deck
+
+[Deutsch](README.de.md) · [Русский](README.ru.md)
+
+**A complete remote for Logitech Harmony hubs in Home Assistant, with Fire TV direct control and a parental lock. No YAML needed.**
+
+Harmony Deck is a custom integration plus two dashboard cards. It reads the configuration of your Harmony hubs (activities, devices, every command) and turns it into a touch remote that works like a real one: activities as tiles, the right keys for the running activity, a remote per device, and a lock that keeps children out of activities and apps you do not allow.
+
+<p align="center">
+  <img src="docs/images/activities.png" width="32%" alt="Activities and remote">
+  <img src="docs/images/devices.png" width="32%" alt="Device remote">
+  <img src="docs/images/security.png" width="32%" alt="Security card">
+</p>
+
+> Not affiliated with or endorsed by Logitech or Amazon. "Harmony" and "Fire TV" are trademarks of their owners.
+
+## Why Harmony Deck
+
+- **No configuration.** Activities, devices and all their commands come from the hub. Which device handles volume, the D‑pad or channels in each activity is read from the hub too. Other Harmony cards ask you to write this in YAML.
+- **Everything in the card.** Looks, icons, favourites, links, Fire TV and actions are set in a visual editor inside the card and stored in Home Assistant, so every phone and tablet shows the same remote.
+- **Harmony and Fire TV in one remote.** With the Android TV (ADB) integration the Fire TV gets apps, text input and the keys the hub does not know, right inside the Harmony activity.
+- **A real parental lock.** Per hub: allowed activities and Fire TV apps, schedules, timed release and a list of interventions. The integration enforces it in the background, also when no dashboard is open.
+- **Help when an activity does not start right.** The life ring shows the devices the activity needs and their inputs, with one tap per device to fix it, and leads to the remote of each device.
+- **Several rooms.** Every hub is a tab with its state at a glance.
+
+## Features
+
+| | |
+|---|---|
+| **Activities** | Tiles with icons, the running one highlighted, hold to switch off, optional hold to switch between activities |
+| **Remote** | Volume, D‑pad, channel, transport, colour keys, number pad, each sent to the right device of the activity |
+| **Devices** | One remote per device, keys grouped (inputs, sound, menus …), keyboard for PC/Mac devices |
+| **Favourites** | Per device and per activity |
+| **Actions** | Own buttons for lights, scenes, scripts and any Home Assistant entity, for all activities or only one |
+| **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
+| **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
+| **Looks** | 11 skins, tile and key styles, coloured icons, light and dark |
+| **Profiles** | Different settings for different people or tablets |
+| **Entities** | Status, repair hints, diagnostics and lock entities for automations |
+| **Languages** | English, German, Russian; more as one JSON file |
+
+## Compared with other cards
+
+| | Harmony Deck | Other Harmony cards | Universal Remote Card | HA‑Firemote |
+|---|---|---|---|---|
+| Activities and commands read from the hub | yes | mostly YAML | no | no |
+| Visual editor | yes | mostly no | yes | partly |
+| Harmony and Fire TV in one remote | yes | no | no | Fire TV only |
+| Parental lock enforced by the integration | yes | no | no | no |
+| Several hubs as tabs | yes | rarely | no | no |
+
+The Universal Remote Card supports many more platforms and is very flexible; HA‑Firemote has more Fire TV looks. Harmony Deck focuses on Harmony households and does the setup for you.
+
+## Requirements and compatibility
+
+- Home Assistant **2025.1** or newer with the core **Logitech Harmony Hub** integration set up.
+- Optional for Fire TV: the core **Android TV** integration (ADB), with ADB debugging switched on at the Fire TV.
+
+**Tested so far:** a household with two Harmony Hubs and a **Fire TV Cube (3rd generation)**. Other Fire TV models (sticks, TVs with Fire OS) should work for apps and keys, but details such as the infrared volume or package names may differ. Without a Fire TV everything Harmony related works and the Fire TV parts simply stay off. Reports from other setups are very welcome (Issues).
+
+## Installation
+
+### HACS
+
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/pcipci/harmony-deck`, type **Integration**.
+2. Install **Harmony Deck** and restart Home Assistant.
+3. Settings → Devices & services → **Add integration** → **Harmony Deck**.
+
+### Manual
+
+1. Copy `custom_components/harmony_deck/` to `/config/custom_components/`.
+2. Restart Home Assistant and add the integration as above.
+
+The cards are served by the integration. You do not need to copy files to `www` or add a dashboard resource.
+
+## Quick start
+
+1. Add a card to a dashboard:
+   ```yaml
+   type: custom:harmony-deck-card
+   ```
+   All hubs appear as tabs. Tap an activity to start it.
+2. Tap **ⓘ** in the card and then **Settings**, **Favorites** or **Actions**. Every settings tab starts with a short explanation.
+3. Fire TV (optional): Settings → **Fire TV** → choose the `media_player` of the Android TV integration and the Harmony device it belongs to, then **Test connection**.
+4. Lock (optional): add the security card on a page only adults use:
+   ```yaml
+   type: custom:harmony-deck-security
+   ```
+   Choose the mode, tick the allowed activities and apps, optionally add a schedule.
+
+The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH.md)).
+
+<p align="center">
+  <img src="docs/images/settings.png" width="32%" alt="Settings">
+  <img src="docs/images/firetv.png" width="32%" alt="Fire TV">
+  <img src="docs/images/skins.png" width="32%" alt="Looks">
+</p>
+
+## The lock
+
+Per hub the integration creates **Lock** (switch), **Lock mode** (off, always, schedule), **Release duration**, **Release** (button), **Lock active** (binary sensor, allowed activities as attribute), **Released until** and **Last intervention**. You can use them in automations.
+
+While the lock is active:
+
+- An activity that is not allowed shows a lock in the card and is switched off after 3 seconds if it is started some other way.
+- A Fire TV app that is not allowed gets a standby command over ADB. Devices you chose (for example the TV) are switched off with it.
+- The Fire TV home screen is allowed by default. Without it no other app can be allowed.
+
+In the mode *schedule* the time windows are lock times (a window may run over midnight). Only administrators can change the lock.
+
+The lock is a household aid, not a security product: an administrator can switch it off, and devices still react to their own remotes for the few seconds until the integration steps in.
+
+## Card options (YAML)
+
+Everything can also be set in the visual editors. YAML options win over the settings stored in Home Assistant.
+
+<details><summary>Main card</summary>
+
+| Option | Meaning |
+|---|---|
+| `entity` | one hub (`remote.…`), empty = all hubs as tabs |
+| `skin` | `homebase`, `remote`, `device`, `light`, `pebble`, `paper`, `clay`, `glass`, `nord`, `catppuccin`, `synthwave` |
+| `language` | `de`, `en`, `ru` (default: language of Home Assistant) |
+| `columns` | tiles per row (default 3) |
+| `tile_style` | `icon_text`, `icon`, `text` |
+| `compact`, `compact_dpad` | compact variant |
+| `hide` | activities to hide |
+| `colored_icons`, `vibrate`, `help_names` | look and feel |
+| `hold_switch` | switching from a running activity needs a long press |
+| `security_path` | dashboard path; a tap on the lock symbol opens it |
+| `keyboard_control`, `physical_keyboard`, `keyboard_layout`, `keyboard_os`, `hold_secs` | keyboard |
+| `direct` | Fire TV: `{remote.xyz: {entity, device}}` |
+| `links` | `{remote.xyz: [{activity, entity, lockActivities, lockKeys}]}` |
+| `key_icons` | `{"Command": "mdi:…", "Device/Command": "mdi:…"}` |
+| `profile` | fix a profile for this card |
+| `skin_vars`, `title` | advanced |
+</details>
+
+<details><summary>Security card</summary>
+
+| Option | Meaning |
+|---|---|
+| `entity` | one hub, empty = all hubs |
+| `title`, `skin`, `skin_vars`, `language` | as in the main card |
+| `log_rows` | rows of the intervention list before "show all" (default 12) |
+</details>
+
+## Privacy
+
+Everything runs locally in Home Assistant. Harmony Deck talks to the hubs only through the Harmony integration and to the Fire TV only through the Android TV integration. It sends nothing to the internet.
+
+## Languages
+
+The texts are JSON files in `custom_components/harmony_deck/frontend/translations/`. Missing keys fall back to English. To add a language, copy `en.json`, translate the values and open a pull request (details in the README of that folder).
+
+## Development
+
+- Integration: `custom_components/harmony_deck/` (Python).
+- Cards: sources in `card/src`, bundled with esbuild into `custom_components/harmony_deck/frontend/harmony-deck-card.js` (see [card/README.md](card/README.md)).
+- Tests: `pip install -r requirements_test.txt`, then `python -m pytest tests` (they run inside a real Home Assistant core); cards: `cd card && npm ci && npm run check`.
+
+Changes: [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+MIT, see [LICENSE](LICENSE).

@@ -61,16 +61,18 @@ When an activity does not start right (TV off, wrong input), open the **life rin
 
 Step types:
 - **Harmony key:** choose a device (the devices of the activity first), then a key. The keys are in the usual groups, with a search field and a row "recently used". "Repeat" sends the key several times.
-- **Pause:** 1, 2, 5 or 10 seconds, or your own value.
+- **Pause:** a slider (fine steps up to 10 seconds, coarser up to 5 minutes) with the value shown large; −0.1 / +0.1 for fine tuning, tap the value to type an exact number.
 - **Home Assistant:** a light, switch, script, scene, automation or button, with a search field, filter chips (Light, Switch, Script …) and recently used entities on top.
 
-In the editor, the arrows move a step, the play button tests only this step and "Test the sequence" runs the whole draft. Every step can have an own label. An action with one step, such as "toggle the candles", works like the buttons of 0.4.
+In the editor, every step is one row: tap it to open it, the arrows at its right move it. At the bottom of an opened step are "Test this step" and "Delete step"; "Test the sequence" runs the whole draft. Every step can have an own label. **Favorites of the action** (keys of any devices) are picked at the end of the form. An action with one step, such as "toggle the candles", works like the buttons of 0.4.
 
 **Where an action appears** (set per action):
 - Under the remote in the block "Actions", in all activities or only in one ("Visible in").
 - With "Show as a tile in the activity list" also as a tile next to the activities of the hub.
 
 **While it runs:** the button shows "3/7" and a progress bar, the tile also the step ("3/7 · Pause 3 s"). A tap while something runs does not start anything and only explains. **Hold** the running button to stop it; the sequence ends between two steps, a key that was already sent cannot be taken back. Only one action runs per hub at a time. If a step fails, the button turns red and its tooltip says why.
+
+**Step list:** the small arrow on a sequence (or a tap while it runs; a failed one opens by itself) shows its steps below the buttons: done ✓, current ●, open ○, with **Stop** while it runs. When nothing runs, every step can be sent alone, the sequence continued from there, a failed step repeated or skipped. Below the list are the devices the keys belong to, with their power and input keys; the device name leads to its remote. The favorites of the action appear under it, grouped by device.
 
 The integration carries out the steps, so a sequence also finishes when the page is closed. For automations there are the services `harmony_deck.run_action` (hub, action name or id) and `harmony_deck.stop_action`, and per hub the sensor **Sequence** (idle, running, done, stopped, error, with step and progress as attributes). Anyone who is logged in can start a stored action; testing an unsaved draft is for administrators.
 

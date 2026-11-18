@@ -3,7 +3,7 @@
 An action is something Harmony Deck itself starts: a name, a symbol and a list of steps. An action with more
 than one step is called a sequence. Stored per hub (remote entity id) in the global settings::
 
-    {"remote.living_room": [{"id": "k3f9", "name": "Unlock DVD", "icon": "mdi:disc", "scope": "", "tile": false,
+    {"remote.living_room": [{"id": "k3f9", "name": "Unlock DVD", "icon": "mdi:disc", "scope": "", "tile": false, "favs": [{"d": "Panasonic", "c": "Play"}],
                              "steps": [{"type": "key", "device": "Panasonic", "command": "Input", "repeat": 1},
                                        {"type": "pause", "secs": 2},
                                        {"type": "ha", "entity": "script.candles", "op": "run"}]}]}
@@ -23,6 +23,7 @@ MAX_PAUSE = 300.0         # seconds, one pause
 MAX_RUNTIME = 600.0       # seconds, a whole run
 MAX_REPEAT = 10
 MAX_TEXT = 60
+MAX_FAVS = 40            # favourite keys per action
 HA_OPS = ("toggle", "on", "off", "run")
 _ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
@@ -82,6 +83,20 @@ def clean_steps(steps: Any) -> list[dict[str, Any]]:
     return out[:MAX_STEPS]
 
 
+def clean_favs(raw: Any) -> list[dict[str, str]]:
+    """Favourite keys of an action: [{"d": device, "c": command}], unique, at most MAX_FAVS."""
+    out: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for fav in raw if isinstance(raw, list) else []:
+        if not isinstance(fav, dict):
+            continue
+        key = (_text(fav.get("d"), 120), _text(fav.get("c"), 120))
+        if key[0] and key[1] and key not in seen:
+            seen.add(key)
+            out.append({"d": key[0], "c": key[1]})
+    return out[:MAX_FAVS]
+
+
 def clean_action(action: Any, index: int = 0) -> dict[str, Any] | None:
     """One action in the current form; an action of 0.4 ({entity, op}) becomes a single "ha" step."""
     if not isinstance(action, dict):
@@ -100,6 +115,7 @@ def clean_action(action: Any, index: int = 0) -> dict[str, Any] | None:
         "icon": _text(action.get("icon"), 80) or "mdi:flash",
         "scope": _text(action.get("scope"), 120),
         "tile": bool(action.get("tile")),
+        "favs": clean_favs(action.get("favs")),
         "steps": steps,
     }
 

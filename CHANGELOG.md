@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1
+
+### Added
+- **Step list of a sequence.** The small arrow on a sequence (a tap while it runs, or a failed run) opens its steps below the buttons: done / current / open, Stop while it runs. When idle: send a single step, continue from a step, retry or skip a failed step. Below: the devices the keys belong to (power and input keys, the name leads to the remote).
+- **Favorites of an action:** keys of any devices, picked in the action and shown under the opened action, grouped by device.
+
+### Changed
+- Step editor: every step is one row (tap to open), move arrows at the right of the row, "Test this step" and "Delete step" as two text buttons at the bottom of the open step.
+- Pause is a slider (fine up to 10 s, coarse up to 5 min) with a large value, ±0.1 s buttons and a tap-to-type value.
+
 ## 0.5.0
 
 ### Added

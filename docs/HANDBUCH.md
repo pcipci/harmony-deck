@@ -61,16 +61,18 @@ Startet eine Aktivität nicht richtig (Fernseher aus, falscher Eingang), öffnes
 
 Schritt-Arten:
 - **Harmony-Taste:** Gerät wählen (die Geräte der Aktivität zuerst), dann eine Taste. Die Tasten stehen in den bekannten Gruppen, mit Suchfeld und einer Zeile „Zuletzt benutzt". „Wiederholen" sendet die Taste mehrfach.
-- **Pause:** 1, 2, 5 oder 10 Sekunden oder ein eigener Wert.
+- **Pause:** ein Schieberegler (fein bis 10 Sekunden, grober bis 5 Minuten) mit groß angezeigtem Wert; −0,1 / +0,1 zum Feinjustieren, auf den Wert tippen für eine genaue Eingabe.
 - **Home Assistant:** Licht, Schalter, Skript, Szene, Automation oder Taste, mit Suchfeld, Filter-Chips (Licht, Schalter, Skript …) und den zuletzt benutzten Entitäten oben.
 
-Im Editor verschieben die Pfeile einen Schritt, die Play-Taste testet nur diesen Schritt, und „Ablauf testen" führt den ganzen Entwurf aus. Jeder Schritt kann eine eigene Beschriftung bekommen. Eine Aktion mit einem Schritt, etwa „Kerzen umschalten", funktioniert wie die Tasten aus 0.4.
+Im Editor ist jeder Schritt eine Zeile: antippen öffnet ihn, die Pfeile rechts verschieben ihn. Unten im geöffneten Schritt stehen „Diesen Schritt testen" und „Schritt löschen"; „Ablauf testen" führt den ganzen Entwurf aus. Jeder Schritt kann eine eigene Beschriftung bekommen. Die **Favoriten der Aktion** (Tasten beliebiger Geräte) wählt man am Ende des Formulars. Eine Aktion mit einem Schritt, etwa „Kerzen umschalten", funktioniert wie die Tasten aus 0.4.
 
 **Wo eine Aktion erscheint** (pro Aktion einstellbar):
 - Unter der Fernbedienung im Block „Aktionen", in allen Aktivitäten oder nur in einer („Sichtbar bei").
 - Mit „Als Kachel in der Aktivitätenliste zeigen" zusätzlich als Kachel neben den Aktivitäten des Hubs.
 
 **Während sie läuft:** Die Taste zeigt „3/7" und einen Fortschrittsbalken, die Kachel zusätzlich den Schritt („3/7 · Pause 3 s"). Ein Tipp, solange etwas läuft, startet nichts und erklärt nur. Die laufende Taste **halten** bricht ab. Die Sequenz endet zwischen zwei Schritten, eine schon gesendete Taste lässt sich nicht zurücknehmen. Pro Hub läuft immer nur eine Aktion. Scheitert ein Schritt, wird die Taste rot, und der Tooltip nennt den Grund.
+
+**Schrittliste:** Der kleine Pfeil an einer Sequenz (oder ein Tipp, während sie läuft; eine gescheiterte öffnet sich von selbst) zeigt ihre Schritte unter den Tasten: erledigt ✓, aktuell ●, offen ○, mit **Stoppen**, solange sie läuft. Wenn nichts läuft, lässt sich jeder Schritt einzeln senden, die Sequenz ab dort fortsetzen, ein gescheiterter Schritt wiederholen oder überspringen. Darunter stehen die Geräte, zu denen die Tasten gehören, mit Ein- und Eingangstasten; der Gerätename führt zu seiner Fernbedienung. Die Favoriten der Aktion erscheinen darunter, nach Gerät gruppiert.
 
 Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei geschlossener Seite zu Ende. Für Automationen gibt es die Dienste `harmony_deck.run_action` (Hub, Name oder Id der Aktion) und `harmony_deck.stop_action`, dazu pro Hub den Sensor **Sequenz** (bereit, läuft, fertig, abgebrochen, Fehler, mit Schritt und Fortschritt als Attribute). Jeder angemeldete Benutzer darf eine gespeicherte Aktion starten, einen ungespeicherten Entwurf testen nur Administratoren.
 

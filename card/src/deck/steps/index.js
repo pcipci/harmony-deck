@@ -11,5 +11,5 @@ export const stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t,
 export function normalizeAction(a) {
   if (!a || typeof a !== "object") return null;
   const steps = Array.isArray(a.steps) ? a.steps : a.entity ? [{ type: "ha", entity: a.entity, op: a.op === "activate" ? "run" : a.op || "toggle" }] : [];
-  return { id: a.id, name: a.name || "", icon: a.icon || "mdi:flash", scope: a.scope || "", tile: !!a.tile, steps: steps.filter((s) => STEP_UI[s?.type]) };
+  return { id: a.id, name: a.name || "", icon: a.icon || "mdi:flash", scope: a.scope || "", tile: !!a.tile, favs: Array.isArray(a.favs) ? a.favs.filter((f) => f && f.d && f.c) : [], steps: steps.filter((s) => STEP_UI[s?.type]) };
 }

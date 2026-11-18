@@ -787,5 +787,21 @@
   "stepMore": "Weitere Treffer: bitte genauer suchen.",
   "actHoldStop": "Halten zum Abbrechen",
   "actBusyNow": "Läuft noch: {0} ({1}/{2}). Halten zum Abbrechen.",
-  "actFailed": "Fehler"
+  "actFailed": "Fehler",
+  "stepDelete": "Schritt löschen",
+  "stepPauseType": "Tippen, um einen genauen Wert einzugeben",
+  "seqStep": "Schritt {0} von {1}",
+  "seqDone": "Fertig",
+  "seqStopped": "Gestoppt bei Schritt {0}",
+  "seqFailed": "Fehler in Schritt {0}",
+  "seqOnly": "Nur diesen Schritt senden",
+  "seqFrom": "Ab hier fortsetzen",
+  "seqRetry": "Wiederholen und fortsetzen",
+  "seqSkip": "Überspringen und fortsetzen",
+  "seqDevices": "Beteiligte Geräte",
+  "seqOpen": "Ablauf anzeigen",
+  "seqStart": "Starten",
+  "seqClose": "Schließen",
+  "actFavTitle": "Favoriten der Aktion",
+  "actFavHint": "Tasten beliebiger Geräte, die unter der geöffneten Aktion erscheinen."
 }

@@ -31,7 +31,7 @@ export const actionsMixin = {
     const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
     const pct = running ? Math.round(((step - 1) / total) * 100) : 0;
     const icon = state === "error" ? "mdi:alert-circle-outline" : running ? "mdi:progress-clock" : done ? "mdi:check" : a.icon;
-    return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
+    return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${a.steps.length > 1 ? `<i class="actmore" role="button" data-actmore="${esc(a.id)}" data-hub="${esc(h.id)}" title="${esc(t.seqOpen)}"><ha-icon icon="mdi:chevron-down"></ha-icon></i>` : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
   },
 
   _actionsBlock(h, cur, t) {
@@ -44,9 +44,10 @@ export const actionsMixin = {
   _actionTiles(h, cur, t) { return this._actionsOf(h.id, cur).filter((a) => a.tile).map((a) => this._actionBtn(h, a, t, true)); },
 
   // The integration carries out the steps (also when the page is closed).
-  async _runAction(hubId, id) {
+  async _runAction(hubId, id, extra = {}) {
     this._buzz();
-    try { await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, action_id: id }); } catch (e) { /* busy or gone: the sensor shows the state */ }
+    if (this._actionList(hubId).find((a) => a.id === id)?.steps.length > 1) { this._actPanel = { ...(this._actPanel || {}), [hubId]: id }; this._rerender(); }
+    try { await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, action_id: id, ...extra }); } catch (e) { /* busy or gone: the sensor shows the state */ }
   },
 
   // Events of the action buttons: a tap starts, a tap while something runs only explains, holding a running one stops it.
@@ -56,7 +57,7 @@ export const actionsMixin = {
       const hint = () => { if (!b.dataset.hinttext) return; b.dataset.hint = "1"; setTimeout(() => b.removeAttribute("data-hint"), 2200); };
       const release = () => { clearTimeout(tm); b.classList.remove("holding"); tm = null; if (this._holdingAct) { this._holdingAct = false; this._key = ""; setTimeout(() => { this.hass = this._hass; }, 0); } };
       b.addEventListener("pointerdown", (e) => {
-        if (e.button > 0 || !b.hasAttribute("data-holdstop")) return;
+        if (e.button > 0 || !b.hasAttribute("data-holdstop") || e.target.closest?.("[data-actmore]")) return;
         done = false; b.classList.add("holding"); this._buzz(8); this._holdingAct = true;
         tm = setTimeout(() => { done = true; release(); this._buzz(40); this._hass.callWS({ type: "harmony_deck/action/stop", hub: b.dataset.hub }).catch(() => {}); }, 700);
       });

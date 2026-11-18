@@ -69,16 +69,8 @@ export const helpMixin = {
     setTimeout(() => this._rerender(), 350); // let the red flash be seen first
   },
 
-  _helpHtml(h, act, t) {
-    const open = !!this._helpOpen?.[h.id];
-    if (!open) return "";
-    const { usable, hid, visible, manual } = this._helpItems(h, act);
-    const edit = !!this._helpEdit?.[h.id];
-    const shown = edit ? usable : visible;
-    const names = this._helpNames();
-    const overrides = { ...(this._settings().keyIcons || {}), ...(this._config.key_icons || {}) };
-    const devs = this._config.compact ? {} : this._devicesOf(h.id);
-    const cards = shown.map((it) => {
+  // One device row of the help box (also used by the action panel): switch keys and the way to that device's remote.
+  _helpRow(h, it, act, t, { hid, edit, names, overrides, devs }) {
       const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
       const ap = !it.power && it.adb ? `<button class="key helpkey pon" data-adb="${esc(it.adb)}" data-adbcmd="input keyevent 224" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
       const ic = it.input ? keyIcon(it.input, overrides, it.device) || "mdi:import" : "";
@@ -91,7 +83,18 @@ export const helpMixin = {
       const dev = `<ha-icon icon="${this._deviceIcon(it.device, h.id)}"></ha-icon>${names ? `<span>${esc(it.device)}<small>${esc(state + note)}</small></span>` : ""}${go ? `<ha-icon class="golink" icon="mdi:chevron-right"></ha-icon>` : ""}`;
       return `<div class="hrow ${hid.has(it.device) ? "dim" : ""}" title="${esc(it.device)}">${sw}${go ? `<button class="hdev go" data-gotodev="${esc(it.device)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.helpGoDev, [it.device]))}">${dev}</button>` : `<div class="hdev">${dev}</div>`}
         <div class="hkeys">${edit ? "" : pw + ap + inp}${!pw && !ap && !inp && !names ? `<small class="nocmd">${esc(state + note)}</small>` : ""}</div></div>`;
-    }).join("");
+  },
+
+  _helpHtml(h, act, t) {
+    const open = !!this._helpOpen?.[h.id];
+    if (!open) return "";
+    const { usable, hid, visible, manual } = this._helpItems(h, act);
+    const edit = !!this._helpEdit?.[h.id];
+    const shown = edit ? usable : visible;
+    const names = this._helpNames();
+    const overrides = { ...(this._settings().keyIcons || {}), ...(this._config.key_icons || {}) };
+    const devs = this._config.compact ? {} : this._devicesOf(h.id);
+    const cards = shown.map((it) => this._helpRow(h, it, act, t, { hid, edit, names, overrides, devs })).join("");
     const all = visible.length && !edit ? `<button class="helpall" title="${t.helpAll}" data-helpall="${esc(h.id)}" data-act="${esc(act)}"><ha-icon icon="mdi:power"></ha-icon><span>${t.helpAll}</span></button>` : "";
     const lm = this._layoutMode(h.id, act);
     const foot = this._config.compact ? "" : `<div class="hfoot"><button class="hlink ${edit ? "on" : ""}" data-helpedit="${esc(h.id)}"><ha-icon icon="mdi:tune-variant"></ha-icon><span>${edit ? t.helpDone : t.helpAdjust}</span></button>

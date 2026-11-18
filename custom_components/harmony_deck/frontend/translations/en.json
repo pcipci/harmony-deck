@@ -787,5 +787,21 @@
   "stepMore": "More matches: please search more precisely.",
   "actHoldStop": "Hold to stop",
   "actBusyNow": "Still running: {0} ({1}/{2}). Hold to stop.",
-  "actFailed": "Error"
+  "actFailed": "Error",
+  "stepDelete": "Delete step",
+  "stepPauseType": "Tap to type an exact value",
+  "seqStep": "Step {0} of {1}",
+  "seqDone": "Done",
+  "seqStopped": "Stopped at step {0}",
+  "seqFailed": "Error in step {0}",
+  "seqOnly": "Send only this step",
+  "seqFrom": "Continue from here",
+  "seqRetry": "Retry and continue",
+  "seqSkip": "Skip and continue",
+  "seqDevices": "Devices involved",
+  "seqOpen": "Show steps",
+  "seqStart": "Start",
+  "seqClose": "Close",
+  "actFavTitle": "Favorites of the action",
+  "actFavHint": "Keys of any devices; they appear under the opened action."
 }

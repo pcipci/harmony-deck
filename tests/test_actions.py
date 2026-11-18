@@ -79,3 +79,12 @@ def test_key_check_and_service_mapping():
     assert ha_service("automation.x", "run") == ("automation", "trigger")
     assert ha_service("light.x", "off") == ("homeassistant", "turn_off")
     assert ha_service("light.x", "toggle") == ("homeassistant", "toggle")
+
+
+def test_favs_are_cleaned():
+    a = clean_action({"id": "f", "name": "DVD", "steps": [{"type": "pause", "secs": 1}], "favs": [
+        {"d": "Panasonic", "c": "Play"}, {"d": "Panasonic", "c": "Play"}, {"d": "", "c": "x"}, "junk", {"d": "TV", "c": "Mute"}]})
+    assert a["favs"] == [{"d": "Panasonic", "c": "Play"}, {"d": "TV", "c": "Mute"}]
+    assert clean_action({"name": "x", "steps": [{"type": "pause", "secs": 1}], "favs": "no"})["favs"] == []
+    many = [{"d": "D", "c": f"c{i}"} for i in range(100)]
+    assert len(clean_action({"name": "x", "steps": [{"type": "pause", "secs": 1}], "favs": many})["favs"]) == 40

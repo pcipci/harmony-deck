@@ -510,7 +510,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.5.0";
+  var VERSION = "0.5.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -543,22 +543,76 @@
   }
 
   // src/deck/steps/pause.js
-  var QUICK = [1, 2, 5, 10];
+  var MAX2 = 300;
+  var STOPS = [
+    ...Array.from({ length: 20 }, (_, i) => (i + 1) / 2),
+    12,
+    15,
+    20,
+    25,
+    30,
+    40,
+    50,
+    60,
+    90,
+    120,
+    180,
+    240,
+    300
+  ];
+  var round = (v) => Math.round(v * 10) / 10;
+  var nearest = (secs) => STOPS.reduce((best, v, i) => Math.abs(v - secs) < Math.abs(STOPS[best] - secs) ? i : best, 0);
+  function fmtSecs(secs) {
+    if (secs < 60) return `${String(round(secs)).replace(/\.0$/, "")} s`;
+    const m = Math.floor(secs / 60);
+    const r = round(secs - m * 60);
+    return r ? `${m} min ${r} s` : `${m} min`;
+  }
   var pauseStep = {
     type: "pause",
     icon: "mdi:timer-sand",
     create: () => ({ type: "pause", secs: 2 }),
-    valid: (s) => s.secs > 0 && s.secs <= 300,
-    label: (s, t) => fmtText(t.stepPauseLabel, [String(s.secs)]),
+    valid: (s) => s.secs > 0 && s.secs <= MAX2,
+    label: (s, t) => fmtText(t.stepPauseLabel, [fmtSecs(s.secs).replace(/ s$/, "")]),
     editor(s, { t }) {
-      return `<div class="pchips">${QUICK.map((n) => `<button type="button" class="pchip ${s.secs === n ? "sel" : ""}" data-psecs="${n}">${n} s</button>`).join("")}</div>
-      <label class="erow"><span>${t.stepSecs}</span><input type="number" min="0.1" max="300" step="0.1" data-psecsin value="${s.secs}"></label>`;
+      return `<div class="pslide">
+      <button type="button" class="pval" data-pval title="${t.stepPauseType}">${fmtSecs(s.secs)}</button>
+      <div class="pbar"><button type="button" class="pnudge" data-pnudge="-0.1">−0.1</button><div class="ptrack"><input type="range" min="0" max="${STOPS.length - 1}" step="1" value="${nearest(s.secs)}" data-pslide aria-label="${t.stepSecs}"><div class="pends">${[0.5, 10, 300].map((v) => `<span style="left:${nearest(v) / (STOPS.length - 1) * 100}%">${fmtSecs(v)}</span>`).join("")}</div></div><button type="button" class="pnudge" data-pnudge="0.1">+0.1</button></div>
+    </div>`;
     },
     bind(box, s, update) {
-      box.querySelectorAll("[data-psecs]").forEach((b) => b.addEventListener("click", () => update({ secs: Number(b.dataset.psecs) })));
-      box.querySelector("[data-psecsin]")?.addEventListener("change", (e) => {
-        const v = Math.round(Number(e.target.value) * 10) / 10;
-        if (v > 0) update({ secs: Math.min(300, v) });
+      const val = box.querySelector("[data-pval]");
+      const slide = box.querySelector("[data-pslide]");
+      slide?.addEventListener("input", () => {
+        val.textContent = fmtSecs(STOPS[Number(slide.value)]);
+      });
+      slide?.addEventListener("change", () => update({ secs: STOPS[Number(slide.value)] }));
+      box.querySelectorAll("[data-pnudge]").forEach((b) => b.addEventListener("click", () => {
+        const v = round(Math.min(MAX2, Math.max(0.1, s.secs + Number(b.dataset.pnudge))));
+        update({ secs: v });
+      }));
+      val?.addEventListener("click", () => {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0.1";
+        input.max = String(MAX2);
+        input.step = "0.1";
+        input.value = String(s.secs);
+        input.className = "pval pvalin";
+        input.setAttribute("data-psecsin", "");
+        val.replaceWith(input);
+        input.focus();
+        input.select();
+        const done = () => {
+          const v = round(Number(input.value));
+          if (v > 0) update({ secs: Math.min(MAX2, v) });
+          else update({});
+        };
+        input.addEventListener("change", done);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") input.blur();
+        });
+        input.addEventListener("blur", done);
       });
     }
   };
@@ -569,7 +623,7 @@
   function normalizeAction(a) {
     if (!a || typeof a !== "object") return null;
     const steps = Array.isArray(a.steps) ? a.steps : a.entity ? [{ type: "ha", entity: a.entity, op: a.op === "activate" ? "run" : a.op || "toggle" }] : [];
-    return { id: a.id, name: a.name || "", icon: a.icon || "mdi:flash", scope: a.scope || "", tile: !!a.tile, steps: steps.filter((s) => STEP_UI[s?.type]) };
+    return { id: a.id, name: a.name || "", icon: a.icon || "mdi:flash", scope: a.scope || "", tile: !!a.tile, favs: Array.isArray(a.favs) ? a.favs.filter((f) => f && f.d && f.c) : [], steps: steps.filter((s) => STEP_UI[s?.type]) };
   }
 
   // src/deck/action-editor.js
@@ -617,8 +671,29 @@
       </div>
       <div class="esub">${t.stepsTitle}</div>
       <div class="steplist">${steps || `<div class="ehint">${t.stepsNone}</div>`}</div>
-      ${add}${msg}
+      ${add}
+      ${this._actFavsEdit(h, t)}${msg}
       <div class="actbtns"><button type="button" class="key" data-acttest ${d.steps.length ? "" : "disabled"}><ha-icon icon="${live?.state === "running" ? "mdi:stop" : "mdi:play"}"></ha-icon><span>${live?.state === "running" ? t.actStop : t.actTest}</span></button><button type="button" class="key editdone" data-actsave><ha-icon icon="mdi:content-save-outline"></ha-icon><span>${t.actSave}</span></button></div></div>`;
+    },
+    // Favourite keys of an action (from any devices of the hub): shown under the action when it is open.
+    _actFavsEdit(h, t) {
+      const d = this._actDraft;
+      const favs = d.favs || [];
+      const has = new Set(favs.map((f) => `${f.d}\0${f.c}`));
+      const devs = this._devicesOf(h.id);
+      const used = new Set(d.steps.filter((s) => s.type === "key").map((s) => s.device));
+      const names = Object.keys(devs).sort((a, b) => (used.has(b) ? 1 : 0) - (used.has(a) ? 1 : 0) || a.localeCompare(b));
+      const ov = { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} };
+      const open = this._actFavOpen || {};
+      const groups = names.map((dev) => {
+        const chips = devs[dev].map((c) => {
+          const ic = keyIcon(c, ov, dev) || chipIcon(c);
+          return `<label class="fchip"><input type="checkbox" data-actfav data-dev="${esc(dev)}" data-cmd="${esc(c)}" ${has.has(`${dev}\0${c}`) ? "checked" : ""}><span>${ic ? `<ha-icon icon="${ic}"></ha-icon>` : ""}${esc(prettyCommand(c))}</span></label>`;
+        }).join("");
+        const n = favs.filter((f) => f.d === dev).length;
+        return `<details class="fdev" data-actfavdev="${esc(dev)}" ${open[dev] ? "open" : ""}><summary>${esc(dev)}${n ? ` · ${n}` : ""}</summary><div class="chipbox">${chips}</div></details>`;
+      }).join("");
+      return `<div class="esub">${t.actFavTitle}${favs.length ? ` · ${favs.length}` : ""}</div><div class="ehint">${t.actFavHint}</div>${groups}`;
     },
     _stepRow(h, t, s, i, live) {
       const ui = STEP_UI[s.type];
@@ -626,11 +701,12 @@
       const n = this._actDraft.steps.length;
       const runCls = live && live.step === i + 1 ? live.state === "error" ? "err" : "run" : "";
       const bad = !ui.valid(s);
-      const head = `<div class="stephead ${runCls} ${bad ? "todo" : ""}"><span class="stepno">${i + 1}</span><button type="button" class="steplab" data-stepopen="${i}"><ha-icon icon="${ui.icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span><ha-icon class="chev" icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>
-</div>`;
+      const arrow = (dir, ok, title, icon) => `<button type="button" class="ib" data-stepmove="${i}:${dir}" ${ok ? "" : "disabled"} title="${esc(title)}"><ha-icon icon="${icon}"></ha-icon></button>`;
+      const head = `<div class="stephead ${runCls} ${bad ? "todo" : ""} ${open ? "open" : ""}"><span class="stepno">${i + 1}</span><button type="button" class="steplab" data-stepopen="${i}" aria-expanded="${open}"><ha-icon icon="${ui.icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span></button><span class="stepmoves">${arrow(-1, i > 0, t.stepUp, "mdi:arrow-up")}${arrow(1, i < n - 1, t.stepDown, "mdi:arrow-down")}</span></div>`;
       const err = live?.state === "error" && live.step === i + 1 && live.error ? `<div class="ehint err">${esc(live.error)}</div>` : "";
-      const body = open ? `<div class="stepbody" data-stepbox="${i}">      <span class="stepctl"><button type="button" class="ib" data-stepmove="${i}:-1" ${i ? "" : "disabled"} title="${esc(t.stepUp)}"><ha-icon icon="mdi:arrow-up"></ha-icon></button><button type="button" class="ib" data-stepmove="${i}:1" ${i < n - 1 ? "" : "disabled"} title="${esc(t.stepDown)}"><ha-icon icon="mdi:arrow-down"></ha-icon></button><button type="button" class="ib" data-steptest="${i}" ${bad ? "disabled" : ""} title="${esc(t.stepTest)}"><ha-icon icon="mdi:play-outline"></ha-icon></button><button type="button" class="ib" data-stepdel="${i}" title="${esc(t.remove)}"><ha-icon icon="mdi:close"></ha-icon></button></span>${ui.editor(s, { card: this, h, t, scope: this._actDraft.scope })}
-      <label class="erow"><span>${t.stepLabel}</span><input type="text" data-steplabel placeholder="${esc(ui.label(s, t, this))}" value="${esc(s.label || "")}"></label></div>` : "";
+      const body = open ? `<div class="stepbody" data-stepbox="${i}">${ui.editor(s, { card: this, h, t, scope: this._actDraft.scope })}
+      <label class="erow"><span>${t.stepLabel}</span><input type="text" data-steplabel placeholder="${esc(ui.label(s, t, this))}" value="${esc(s.label || "")}"></label>
+      <div class="stepacts"><button type="button" class="key" data-steptest="${i}" ${bad ? "disabled" : ""}><ha-icon icon="mdi:play-outline"></ha-icon><span>${t.stepTest}</span></button><button type="button" class="key del" data-stepdel="${i}"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.stepDelete}</span></button></div></div>` : "";
       return `<div class="step">${head}${err}${body}</div>`;
     },
     _actOpen(a) {
@@ -795,6 +871,17 @@
         });
       }));
       box.querySelectorAll("[data-steptest]").forEach((b) => b.addEventListener("click", () => this._actTest(hub, Number(b.dataset.steptest))));
+      box.querySelectorAll("input[data-actfav]").forEach((i) => i.addEventListener("change", () => {
+        this._actFavOpen = { ...this._actFavOpen || {}, [i.dataset.dev]: true };
+        patch((d) => {
+          const list = (d.favs || []).filter((f) => !(f.d === i.dataset.dev && f.c === i.dataset.cmd));
+          if (i.checked) list.push({ d: i.dataset.dev, c: i.dataset.cmd });
+          d.favs = list;
+        });
+      }));
+      box.querySelectorAll("details[data-actfavdev]").forEach((d) => d.addEventListener("toggle", () => {
+        this._actFavOpen = { ...this._actFavOpen || {}, [d.dataset.actfavdev]: d.open };
+      }));
       const open = box.querySelector("[data-stepbox]");
       if (open) {
         const i = Number(open.dataset.stepbox);
@@ -854,7 +941,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
       const pct = running ? Math.round((step - 1) / total * 100) : 0;
       const icon = state === "error" ? "mdi:alert-circle-outline" : running ? "mdi:progress-clock" : done ? "mdi:check" : a.icon;
-      return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
+      return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${a.steps.length > 1 ? `<i class="actmore" role="button" data-actmore="${esc(a.id)}" data-hub="${esc(h.id)}" title="${esc(t.seqOpen)}"><ha-icon icon="mdi:chevron-down"></ha-icon></i>` : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
     },
     _actionsBlock(h, cur, t) {
       const list = this._actionsOf(h.id, cur);
@@ -866,10 +953,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return this._actionsOf(h.id, cur).filter((a) => a.tile).map((a) => this._actionBtn(h, a, t, true));
     },
     // The integration carries out the steps (also when the page is closed).
-    async _runAction(hubId, id) {
+    async _runAction(hubId, id, extra = {}) {
       this._buzz();
+      if (this._actionList(hubId).find((a) => a.id === id)?.steps.length > 1) {
+        this._actPanel = { ...this._actPanel || {}, [hubId]: id };
+        this._rerender();
+      }
       try {
-        await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, action_id: id });
+        await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, action_id: id, ...extra });
       } catch (e) {
       }
     },
@@ -895,7 +986,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           }
         };
         b.addEventListener("pointerdown", (e) => {
-          if (e.button > 0 || !b.hasAttribute("data-holdstop")) return;
+          if (e.button > 0 || !b.hasAttribute("data-holdstop") || e.target.closest?.("[data-actmore]")) return;
           done = false;
           b.classList.add("holding");
           this._buzz(8);
@@ -1088,6 +1179,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindFavorites(root);
       this._bindProfiles(root);
       this._bindActions(root);
+      this._bindSeq(root);
       this._bindActionEditor(root);
       this._bindKeys(root);
       this._bindLockMark(root);
@@ -2167,6 +2259,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       setTimeout(() => this._rerender(), 8200);
       setTimeout(() => this._rerender(), 350);
     },
+    // One device row of the help box (also used by the action panel): switch keys and the way to that device's remote.
+    _helpRow(h, it, act, t, { hid, edit, names, overrides, devs }) {
+      const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
+      const ap = !it.power && it.adb ? `<button class="key helpkey pon" data-adb="${esc(it.adb)}" data-adbcmd="input keyevent 224" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
+      const ic = it.input ? keyIcon(it.input, overrides, it.device) || "mdi:import" : "";
+      const inp = it.input ? `<button class="key helpkey inp" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.input)}"><ha-icon icon="${ic}"></ha-icon><b>${esc(prettyCommand(it.input).replace(/^Input\s*/i, ""))}</b></button>` : "";
+      const state = `${t.on}${it.inputRaw ? ` · ${it.input ? prettyCommand(it.input).replace(/^Input\s*/i, "") : it.inputRaw}` : ""}`;
+      const sw = edit ? `<label class="hsw" title="${esc(t.helpShowDev)}"><input type="checkbox" data-helphide data-hub="${esc(h.id)}" data-act="${esc(act)}" data-device="${esc(it.device)}" ${hid.has(it.device) ? "" : "checked"}><i></i></label>` : "";
+      const note = !it.power && !it.input && !it.adb ? ` · ${t.helpNoCmd}` : "";
+      const go = !edit && devs[it.device];
+      const dev = `<ha-icon icon="${this._deviceIcon(it.device, h.id)}"></ha-icon>${names ? `<span>${esc(it.device)}<small>${esc(state + note)}</small></span>` : ""}${go ? `<ha-icon class="golink" icon="mdi:chevron-right"></ha-icon>` : ""}`;
+      return `<div class="hrow ${hid.has(it.device) ? "dim" : ""}" title="${esc(it.device)}">${sw}${go ? `<button class="hdev go" data-gotodev="${esc(it.device)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.helpGoDev, [it.device]))}">${dev}</button>` : `<div class="hdev">${dev}</div>`}
+        <div class="hkeys">${edit ? "" : pw + ap + inp}${!pw && !ap && !inp && !names ? `<small class="nocmd">${esc(state + note)}</small>` : ""}</div></div>`;
+    },
     _helpHtml(h, act, t) {
       const open = !!this._helpOpen?.[h.id];
       if (!open) return "";
@@ -2176,19 +2282,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const names = this._helpNames();
       const overrides = { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} };
       const devs = this._config.compact ? {} : this._devicesOf(h.id);
-      const cards = shown.map((it) => {
-        const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
-        const ap = !it.power && it.adb ? `<button class="key helpkey pon" data-adb="${esc(it.adb)}" data-adbcmd="input keyevent 224" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
-        const ic = it.input ? keyIcon(it.input, overrides, it.device) || "mdi:import" : "";
-        const inp = it.input ? `<button class="key helpkey inp" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.input)}"><ha-icon icon="${ic}"></ha-icon><b>${esc(prettyCommand(it.input).replace(/^Input\s*/i, ""))}</b></button>` : "";
-        const state = `${t.on}${it.inputRaw ? ` · ${it.input ? prettyCommand(it.input).replace(/^Input\s*/i, "") : it.inputRaw}` : ""}`;
-        const sw = edit ? `<label class="hsw" title="${esc(t.helpShowDev)}"><input type="checkbox" data-helphide data-hub="${esc(h.id)}" data-act="${esc(act)}" data-device="${esc(it.device)}" ${hid.has(it.device) ? "" : "checked"}><i></i></label>` : "";
-        const note = !it.power && !it.input && !it.adb ? ` · ${t.helpNoCmd}` : "";
-        const go = !edit && devs[it.device];
-        const dev = `<ha-icon icon="${this._deviceIcon(it.device, h.id)}"></ha-icon>${names ? `<span>${esc(it.device)}<small>${esc(state + note)}</small></span>` : ""}${go ? `<ha-icon class="golink" icon="mdi:chevron-right"></ha-icon>` : ""}`;
-        return `<div class="hrow ${hid.has(it.device) ? "dim" : ""}" title="${esc(it.device)}">${sw}${go ? `<button class="hdev go" data-gotodev="${esc(it.device)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.helpGoDev, [it.device]))}">${dev}</button>` : `<div class="hdev">${dev}</div>`}
-        <div class="hkeys">${edit ? "" : pw + ap + inp}${!pw && !ap && !inp && !names ? `<small class="nocmd">${esc(state + note)}</small>` : ""}</div></div>`;
-      }).join("");
+      const cards = shown.map((it) => this._helpRow(h, it, act, t, { hid, edit, names, overrides, devs })).join("");
       const all = visible.length && !edit ? `<button class="helpall" title="${t.helpAll}" data-helpall="${esc(h.id)}" data-act="${esc(act)}"><ha-icon icon="mdi:power"></ha-icon><span>${t.helpAll}</span></button>` : "";
       const lm = this._layoutMode(h.id, act);
       const foot = this._config.compact ? "" : `<div class="hfoot"><button class="hlink ${edit ? "on" : ""}" data-helpedit="${esc(h.id)}"><ha-icon icon="mdi:tune-variant"></ha-icon><span>${edit ? t.helpDone : t.helpAdjust}</span></button>
@@ -3471,7 +3565,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         body = `<div class="pager" data-pager data-p="${p}"><div class="track" style="transform: translateX(${-p * 100}%)">
           <div class="pane" data-pane="0">${this._activitiesView(h, cur, busy, t, index, "grid")}</div>
           <div class="pane" data-pane="1">${this._devicesView(h, cur, t, "list")}</div></div></div>
-        <div class="below">${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
+        <div class="below">${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
       }
       if (this._edit) return `<section class="editview"><div class="hdr">${tabs}</div>${this._editBody(h, t, body)}</section>`;
       const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";
@@ -3583,6 +3677,105 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._dragging = false;
         apply(startP, true);
       });
+    }
+  };
+
+  // src/deck/sequence-panel.js
+  var sequencePanelMixin = {
+    // Action whose panel is shown for a hub: the one opened by hand, else the one that just failed.
+    _panelAction(h) {
+      const seq = this._seqState(h.id);
+      const open = this._actPanel?.[h.id];
+      const id = open || (seq.state === "error" && !seq.draft && this._actPanelOff?.[h.id] !== seq.started ? seq.action : null);
+      return id ? this._actionList(h.id).find((a) => a.id === id) || null : null;
+    },
+    // Marker of one step: done / current / error / stopped / open.
+    _stepMark(seq, a, i) {
+      const mine = seq.action === a.id && !seq.draft;
+      if (!mine) return "open";
+      const n = i + 1, first = seq.first || 1;
+      if (seq.state === "done") return n >= first ? "done" : "open";
+      if (n < first) return "open";
+      if (n < seq.step) return "done";
+      if (n > seq.step) return "open";
+      return { running: "current", error: "error", stopped: "stopped" }[seq.state] || "open";
+    },
+    // Devices that key steps of an action use, as rows like those of the help box.
+    _actionDevices(h, a) {
+      const info = this._info?.hubs?.[h.id];
+      const by = /* @__PURE__ */ new Map();
+      a.steps.filter((s) => s.type === "key").forEach((s) => {
+        const it = by.get(s.device) || { device: s.device, input: null, inputRaw: null, manual: false };
+        if (!it.input && /^input/i.test(s.command)) it.input = s.command;
+        by.set(s.device, it);
+      });
+      return [...by.values()].map((it) => {
+        const cmds = info?.devices?.[it.device] || [];
+        const power = ["PowerOn", "PowerToggle"].find((c) => cmds.includes(c)) || null;
+        return { ...it, power, adb: this._linkedFire(h.id, it.device)?.entity || "" };
+      });
+    },
+    _seqPanel(h, t) {
+      const a = this._panelAction(h);
+      if (!a) return "";
+      const seq = this._seqState(h.id);
+      const mine = seq.action === a.id && !seq.draft;
+      const running = mine && seq.state === "running";
+      const busy = seq.state === "running";
+      const n = a.steps.length;
+      const status = !mine ? "" : seq.state === "running" ? fmtText(t.seqStep, [seq.step, n]) : seq.state === "done" ? t.seqDone : seq.state === "stopped" ? fmtText(t.seqStopped, [seq.step]) : seq.state === "error" ? fmtText(t.seqFailed, [seq.step]) : "";
+      const marks = { done: "mdi:check-circle", current: "mdi:progress-clock", error: "mdi:alert-circle", stopped: "mdi:stop-circle-outline", open: "mdi:circle-outline" };
+      const rows = a.steps.map((s, i) => {
+        const m = this._stepMark(seq, a, i);
+        const err = m === "error" && seq.error ? `<small class="seqerr">${esc(seq.error)}</small>` : "";
+        const btn = (attr, icon, title) => `<button type="button" class="ib" ${attr}="${i}" data-hub="${esc(h.id)}" data-actid="${esc(a.id)}" title="${esc(title)}" ${busy ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon></button>`;
+        const failed = m === "error" || m === "stopped";
+        const tools = running ? "" : failed ? `${btn("data-seqfrom", "mdi:reload", t.seqRetry)}${i < n - 1 ? btn("data-seqfrom", "mdi:skip-next-outline", t.seqSkip).replace(`data-seqfrom="${i}"`, `data-seqfrom="${i + 1}"`) : ""}` : `${btn("data-seqonly", "mdi:play-outline", t.seqOnly)}${i < n - 1 ? btn("data-seqfrom", "mdi:skip-forward-outline", t.seqFrom) : ""}`;
+        return `<div class="seqrow ${m}"><ha-icon class="seqmark" icon="${marks[m]}"></ha-icon><span class="seqlab"><ha-icon icon="${STEP_UI[s.type].icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span>${err}</span><span class="seqtools">${tools}</span></div>`;
+      }).join("");
+      const names = this._helpNames();
+      const ctx = { hid: /* @__PURE__ */ new Set(), edit: false, names, overrides: { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} }, devs: this._config.compact ? {} : this._devicesOf(h.id) };
+      const devs = this._actionDevices(h, a).map((it) => this._helpRow(h, it, "", t, ctx)).join("");
+      const head = `<div class="seqhead ${mine ? seq.state : ""}"><ha-icon icon="${esc(a.icon)}"></ha-icon><span class="seqname"><b>${esc(a.name)}</b>${status ? `<small>${esc(status)}</small>` : ""}</span>
+      ${running ? `<button type="button" class="key seqstop" data-seqstop="${esc(h.id)}"><ha-icon icon="mdi:stop"></ha-icon><span>${t.actStop}</span></button>` : `<button type="button" class="key" data-seqrun data-hub="${esc(h.id)}" data-actid="${esc(a.id)}" ${busy ? "disabled" : ""}><ha-icon icon="mdi:play"></ha-icon><span>${t.seqStart}</span></button>`}
+      <button type="button" class="ib" data-seqclose="${esc(h.id)}" title="${esc(t.seqClose)}"><ha-icon icon="mdi:close"></ha-icon></button></div>`;
+      return `<div class="block seqpanel" data-seqpanel>${head}<div class="seqlist">${rows}</div>${devs ? `<div class="esub">${t.seqDevices}</div><div class="hlist">${devs}</div>` : ""}</div>${this._seqFavs(h, a, t)}`;
+    },
+    // Favourite keys picked in the action, grouped by device (same cells as every other favourites block).
+    _seqFavs(h, a, t) {
+      const devs = this._devicesOf(h.id);
+      const ov = { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} };
+      const by = /* @__PURE__ */ new Map();
+      (a.favs || []).filter((f) => devs[f.d]?.includes(f.c)).forEach((f) => by.set(f.d, [...by.get(f.d) || [], f.c]));
+      return [...by].map(([dev, cmds]) => `<div class="block favs"><span class="dname">${t.favorites} · ${esc(dev)}</span><div class="cells">${cmds.map((c) => {
+        const icon = keyIcon(c, ov, dev);
+        return `<button class="key cell isfav" title="${esc(dev)}: ${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${esc(prettyCommand(c))}</span></button>`;
+      }).join("")}</div></div>`).join("");
+    },
+    _bindSeq(root) {
+      const go = (b, extra) => this._runAction(b.dataset.hub, b.dataset.actid, extra);
+      root.querySelectorAll("[data-actmore]").forEach((b) => b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._buzz();
+        const hub = b.dataset.hub, open = this._actPanel?.[hub] === b.dataset.actmore;
+        this._actPanel = { ...this._actPanel || {}, [hub]: open ? null : b.dataset.actmore };
+        if (open) this._actPanelOff = { ...this._actPanelOff || {}, [hub]: this._seqState(hub).started };
+        this._rerender();
+      }));
+      root.querySelectorAll("[data-seqclose]").forEach((b) => b.addEventListener("click", () => {
+        const hub = b.dataset.seqclose;
+        this._actPanel = { ...this._actPanel || {}, [hub]: null };
+        this._actPanelOff = { ...this._actPanelOff || {}, [hub]: this._seqState(hub).started };
+        this._rerender();
+      }));
+      root.querySelectorAll("[data-seqstop]").forEach((b) => b.addEventListener("click", () => {
+        this._buzz(30);
+        this._hass.callWS({ type: "harmony_deck/action/stop", hub: b.dataset.seqstop }).catch(() => {
+        });
+      }));
+      root.querySelectorAll("[data-seqrun]").forEach((b) => b.addEventListener("click", () => go(b)));
+      root.querySelectorAll("[data-seqonly]").forEach((b) => b.addEventListener("click", () => go(b, { only_step: Number(b.dataset.seqonly) })));
+      root.querySelectorAll("[data-seqfrom]").forEach((b) => b.addEventListener("click", () => go(b, { from_step: Number(b.dataset.seqfrom) })));
     }
   };
 
@@ -4204,7 +4397,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .stepno { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 700; background: var(--hr-card-bg, var(--card-background-color)); color: var(--hr-muted); }
       .steplab { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: none; background: none; color: var(--hr-text); font: inherit; font-size: 0.9em; text-align: left; padding: 6px 2px; cursor: pointer; --mdc-icon-size: 18px; }
       .steplab span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .steplab .chev { color: var(--hr-muted); }
-      .stepctl { display: flex; gap: 6px; justify-content: flex-end; } .stepctl .ib { width: 40px; height: 36px; border-radius: 10px; background: var(--hr-card-bg, var(--card-background-color)) !important; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepctl .ib:disabled { opacity: .3; }
+      .actmore { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; --mdc-icon-size: 16px; color: var(--hr-muted); cursor: pointer; background: color-mix(in srgb, var(--hr-text) 8%, transparent); z-index: 1; }
+      .seqpanel { display: flex; flex-direction: column; gap: 8px; }
+      .seqhead { display: flex; align-items: center; gap: 8px; } .seqname { flex: 1; min-width: 0; display: flex; flex-direction: column; } .seqname b, .seqname small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .seqname small { color: var(--hr-muted); } .seqhead.error .seqname small { color: var(--hr-danger, #e55); }
+      .seqstop { color: var(--hr-danger, #e55); }
+      .seqlist { display: flex; flex-direction: column; } .seqrow { display: flex; align-items: center; gap: 8px; padding: 4px 2px; min-height: 40px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 30%, transparent); } .seqrow:first-child { border-top: none; }
+      .seqmark { flex: none; --mdc-icon-size: 20px; color: var(--hr-muted); } .seqrow.done .seqmark { color: var(--hr-accent); } .seqrow.current .seqmark { color: var(--hr-accent); animation: seqpulse 1.4s ease-in-out infinite; } .seqrow.error .seqmark { color: var(--hr-danger, #e55); } .seqrow.current { background: color-mix(in srgb, var(--hr-accent) 12%, transparent); border-radius: 10px; } @keyframes seqpulse { 50% { opacity: .35; } }
+      .seqlab { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.9em; --mdc-icon-size: 18px; } .seqlab > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .seqerr { flex-basis: 100%; color: var(--hr-danger, #e55); }
+      .seqtools { flex: none; display: flex; gap: 2px; } .seqtools .ib { width: 34px; height: 34px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .seqtools .ib:disabled { opacity: .3; }
+      .stepmoves { flex: none; display: flex; gap: 4px; } .stepmoves .ib { width: 34px; height: 34px; border-radius: 10px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepmoves .ib:disabled { opacity: .3; }
+      .stephead.open { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
+      .stepacts { display: flex; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); } .stepacts .key { flex: 1; min-width: 0; } .stepacts .del { color: var(--hr-danger, #e55); }
+      .pslide { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 0; } .pval { border: none; background: none; color: var(--hr-text); font: inherit; font-size: 2em; font-weight: 700; cursor: pointer; text-align: center; padding: 2px 10px; border-radius: 10px; } .pvalin { width: 6em; background: var(--hr-card-bg, var(--card-background-color)); }
+      .pbar { display: flex; align-items: center; gap: 8px; width: 100%; } .pbar input[type=range] { flex: 1; min-width: 0; accent-color: var(--hr-accent); } .pnudge { flex: none; border: none; border-radius: 10px; padding: 8px 10px; background: var(--hr-card-bg, var(--card-background-color)); color: var(--hr-text); font: inherit; font-size: 0.85em; cursor: pointer; }
+      .ptrack { flex: 1; min-width: 0; position: relative; padding-bottom: 1.3em; } .ptrack input { width: 100%; margin: 0; } .pends { position: absolute; left: 0; right: 0; bottom: 0; height: 1.2em; font-size: 0.7em; color: var(--hr-muted); } .pends span { position: absolute; transform: translateX(-50%); white-space: nowrap; } .pends span:last-child { transform: translateX(-100%); } .pends span:first-child { transform: none; }
       .stepbody { display: flex; flex-direction: column; gap: 8px; padding: 6px 10px 12px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); }
       .stepbody > .ehint.err, .step > .ehint.err { padding: 0 10px 8px; }
       .ehint.err { color: var(--hr-danger, #e55); }
@@ -4471,6 +4677,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._device,
         this._hubSel,
         this._infoOpen,
+        this._actPanel,
+        this._actPanelOff,
         hubs.map((h) => this._links(h).map((l) => this._hass.states?.[l.entity]?.state)),
         hubs.map((h) => {
           const f = this._fireInfo(h.id);
@@ -4497,7 +4705,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

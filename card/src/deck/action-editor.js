@@ -4,6 +4,7 @@ import { ACTION_ICONS } from "../shared/icons.js";
 import { STEP_UI, stepLabel, normalizeAction } from "./steps/index.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
+import { keyIcon, chipIcon, prettyCommand } from "../shared/commands.js";
 
 const MAX_STEPS = 50;
 
@@ -56,8 +57,27 @@ export const actionEditorMixin = {
       </div>
       <div class="esub">${t.stepsTitle}</div>
       <div class="steplist">${steps || `<div class="ehint">${t.stepsNone}</div>`}</div>
-      ${add}${msg}
+      ${add}
+      ${this._actFavsEdit(h, t)}${msg}
       <div class="actbtns"><button type="button" class="key" data-acttest ${d.steps.length ? "" : "disabled"}><ha-icon icon="${live?.state === "running" ? "mdi:stop" : "mdi:play"}"></ha-icon><span>${live?.state === "running" ? t.actStop : t.actTest}</span></button><button type="button" class="key editdone" data-actsave><ha-icon icon="mdi:content-save-outline"></ha-icon><span>${t.actSave}</span></button></div></div>`;
+  },
+
+  // Favourite keys of an action (from any devices of the hub): shown under the action when it is open.
+  _actFavsEdit(h, t) {
+    const d = this._actDraft;
+    const favs = d.favs || [];
+    const has = new Set(favs.map((f) => `${f.d}\u0000${f.c}`));
+    const devs = this._devicesOf(h.id);
+    const used = new Set(d.steps.filter((s) => s.type === "key").map((s) => s.device));
+    const names = Object.keys(devs).sort((a, b) => (used.has(b) ? 1 : 0) - (used.has(a) ? 1 : 0) || a.localeCompare(b));
+    const ov = { ...(this._settings().keyIcons || {}), ...(this._config.key_icons || {}) };
+    const open = this._actFavOpen || {};
+    const groups = names.map((dev) => {
+      const chips = devs[dev].map((c) => { const ic = keyIcon(c, ov, dev) || chipIcon(c); return `<label class="fchip"><input type="checkbox" data-actfav data-dev="${esc(dev)}" data-cmd="${esc(c)}" ${has.has(`${dev}\u0000${c}`) ? "checked" : ""}><span>${ic ? `<ha-icon icon="${ic}"></ha-icon>` : ""}${esc(prettyCommand(c))}</span></label>`; }).join("");
+      const n = favs.filter((f) => f.d === dev).length;
+      return `<details class="fdev" data-actfavdev="${esc(dev)}" ${open[dev] ? "open" : ""}><summary>${esc(dev)}${n ? ` · ${n}` : ""}</summary><div class="chipbox">${chips}</div></details>`;
+    }).join("");
+    return `<div class="esub">${t.actFavTitle}${favs.length ? ` · ${favs.length}` : ""}</div><div class="ehint">${t.actFavHint}</div>${groups}`;
   },
 
   _stepRow(h, t, s, i, live) {
@@ -66,11 +86,12 @@ export const actionEditorMixin = {
     const n = this._actDraft.steps.length;
     const runCls = live && live.step === i + 1 ? (live.state === "error" ? "err" : "run") : "";
     const bad = !ui.valid(s);
-    const head = `<div class="stephead ${runCls} ${bad ? "todo" : ""}"><span class="stepno">${i + 1}</span><button type="button" class="steplab" data-stepopen="${i}"><ha-icon icon="${ui.icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span><ha-icon class="chev" icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>
-</div>`;
+    const arrow = (dir, ok, title, icon) => `<button type="button" class="ib" data-stepmove="${i}:${dir}" ${ok ? "" : "disabled"} title="${esc(title)}"><ha-icon icon="${icon}"></ha-icon></button>`;
+    const head = `<div class="stephead ${runCls} ${bad ? "todo" : ""} ${open ? "open" : ""}"><span class="stepno">${i + 1}</span><button type="button" class="steplab" data-stepopen="${i}" aria-expanded="${open}"><ha-icon icon="${ui.icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span></button><span class="stepmoves">${arrow(-1, i > 0, t.stepUp, "mdi:arrow-up")}${arrow(1, i < n - 1, t.stepDown, "mdi:arrow-down")}</span></div>`;
     const err = live?.state === "error" && live.step === i + 1 && live.error ? `<div class="ehint err">${esc(live.error)}</div>` : "";
-    const body = open ? `<div class="stepbody" data-stepbox="${i}">      <span class="stepctl"><button type="button" class="ib" data-stepmove="${i}:-1" ${i ? "" : "disabled"} title="${esc(t.stepUp)}"><ha-icon icon="mdi:arrow-up"></ha-icon></button><button type="button" class="ib" data-stepmove="${i}:1" ${i < n - 1 ? "" : "disabled"} title="${esc(t.stepDown)}"><ha-icon icon="mdi:arrow-down"></ha-icon></button><button type="button" class="ib" data-steptest="${i}" ${bad ? "disabled" : ""} title="${esc(t.stepTest)}"><ha-icon icon="mdi:play-outline"></ha-icon></button><button type="button" class="ib" data-stepdel="${i}" title="${esc(t.remove)}"><ha-icon icon="mdi:close"></ha-icon></button></span>${ui.editor(s, { card: this, h, t, scope: this._actDraft.scope })}
-      <label class="erow"><span>${t.stepLabel}</span><input type="text" data-steplabel placeholder="${esc(ui.label(s, t, this))}" value="${esc(s.label || "")}"></label></div>` : "";
+    const body = open ? `<div class="stepbody" data-stepbox="${i}">${ui.editor(s, { card: this, h, t, scope: this._actDraft.scope })}
+      <label class="erow"><span>${t.stepLabel}</span><input type="text" data-steplabel placeholder="${esc(ui.label(s, t, this))}" value="${esc(s.label || "")}"></label>
+      <div class="stepacts"><button type="button" class="key" data-steptest="${i}" ${bad ? "disabled" : ""}><ha-icon icon="mdi:play-outline"></ha-icon><span>${t.stepTest}</span></button><button type="button" class="key del" data-stepdel="${i}"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.stepDelete}</span></button></div></div>` : "";
     return `<div class="step">${head}${err}${body}</div>`;
   },
 
@@ -170,6 +191,15 @@ export const actionEditorMixin = {
       patch((d) => { d.steps.splice(i, 1); if (this._stepOpen === i) this._stepOpen = null; else if (this._stepOpen > i) this._stepOpen -= 1; });
     }));
     box.querySelectorAll("[data-steptest]").forEach((b) => b.addEventListener("click", () => this._actTest(hub, Number(b.dataset.steptest))));
+    box.querySelectorAll("input[data-actfav]").forEach((i) => i.addEventListener("change", () => {
+      this._actFavOpen = { ...(this._actFavOpen || {}), [i.dataset.dev]: true };
+      patch((d) => {
+        const list = (d.favs || []).filter((f) => !(f.d === i.dataset.dev && f.c === i.dataset.cmd));
+        if (i.checked) list.push({ d: i.dataset.dev, c: i.dataset.cmd });
+        d.favs = list;
+      });
+    }));
+    box.querySelectorAll("details[data-actfavdev]").forEach((d) => d.addEventListener("toggle", () => { this._actFavOpen = { ...(this._actFavOpen || {}), [d.dataset.actfavdev]: d.open }; }));
     const open = box.querySelector("[data-stepbox]");
     if (open) {
       const i = Number(open.dataset.stepbox);

@@ -12,6 +12,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
+from .actionsmodel import clean_actions
 from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS
 from . import profiles as prof
 from .hub import conf_commands, hub_info, match_conf, merge_conf_commands
@@ -190,6 +191,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
     data = _data(hass)
     name = prof.resolve(data, connection.user.id if connection.user else None, msg.get("profile"))
     settings = {k: v for k, v in msg["settings"].items() if k in SETTING_KEYS}
+    if "actions" in settings:
+        settings["actions"] = clean_actions(settings["actions"])
     prof.save(data, name, settings, SETTING_KEYS)
     await _commit(hass, data)
     connection.send_result(msg["id"], {"settings": prof.merged(data, name), "profile": name})

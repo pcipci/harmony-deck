@@ -1,0 +1,21 @@
+run_action:
+  fields:
+    hub:
+      required: true
+      selector:
+        entity:
+          domain: remote
+          integration: harmony
+    action:
+      required: true
+      example: "Unlock DVD"
+      selector:
+        text:
+stop_action:
+  fields:
+    hub:
+      required: true
+      selector:
+        entity:
+          domain: remote
+          integration: harmony

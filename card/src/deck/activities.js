@@ -33,13 +33,14 @@ export const activitiesMixin = {
       return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
         ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
     }).join("");
+    const aTiles = this._edit ? [] : this._actionTiles(h, cur, t);
     const cols = Number(this._config.columns) || 3;
-    const rest = shown.length % cols;
+    const rest = (shown.length + aTiles.length) % cols;
     const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
     const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
-    if (part === "grid") return `<div class="grid">${tiles}${offBtn}</div>`;
+    if (part === "grid") return `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>`;
     if (part === "below") return body;
-    return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${offBtn}</div>${body}`;
+    return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>${body}`;
   },
 
   // The Fire TV activity while its direct (ADB) link is not reachable and the option "lock when not reachable" is on, else null.

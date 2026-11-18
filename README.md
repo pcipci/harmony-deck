@@ -31,7 +31,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Remote** | Volume, D‑pad, channel, transport, colour keys, number pad, each sent to the right device of the activity |
 | **Devices** | One remote per device, keys grouped (inputs, sound, menus …), keyboard for PC/Mac devices |
 | **Favourites** | Per device and per activity; keys you never use can be hidden per device |
-| **Actions** | Own buttons for lights, scenes, scripts and any Home Assistant entity, for all activities or only one |
+| **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with progress and stop, as a button or a tile; also for automations |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
 | **Looks** | 11 skins, tile and key styles, coloured icons, light and dark |
@@ -98,7 +98,7 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
 
 ## The lock
 
-Per hub the integration creates **Lock** (switch), **Lock mode** (off, always, schedule), **Release duration**, **Release** (button), **Lock active** (binary sensor, allowed activities as attribute), **Released until** and **Last intervention**. You can use them in automations.
+Per hub the integration creates **Lock** (switch), **Lock mode** (off, always, schedule), **Release duration**, **Release** (button), **Lock active** (binary sensor, allowed activities as attribute), **Released until**, **Last intervention**, **Interventions today** and an **Intervention** event (fires with the name of what was switched off, for notifications). You can use them in automations.
 
 While the lock is active:
 

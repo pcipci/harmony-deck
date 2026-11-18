@@ -9,13 +9,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .actionent import SequenceSensor
 from .entity import DeckEntity, HubEntity
-from .lockent import LastAction, ReleasedUntil, setup_platform as _lock_platform
+from .lockent import InterventionsToday, LastAction, ReleasedUntil, setup_platform as _lock_platform
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     await _lock_platform(ReleasedUntil, "released_until")(hass, entry, async_add_entities)
     await _lock_platform(LastAction, "last_action")(hass, entry, async_add_entities)
+    await _lock_platform(InterventionsToday, "interventions_today")(hass, entry, async_add_entities)
+    await _lock_platform(SequenceSensor, "sequence")(hass, entry, async_add_entities)
     coordinator = entry.runtime_data
     async_add_entities([HubsFound(coordinator, entry, "hubs_found"), AdbFound(coordinator, entry, "adb_found")])
     known: set[str] = set()

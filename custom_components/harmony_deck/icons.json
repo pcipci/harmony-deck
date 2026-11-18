@@ -1,22 +1,89 @@
 {
   "entity": {
     "binary_sensor": {
-      "ready": { "default": "mdi:check-circle-outline" },
-      "hub_readable": { "default": "mdi:file-document-check-outline" },
-      "adb_reachable": { "default": "mdi:lan-connect", "state": { "off": "mdi:lan-disconnect" } },
-      "lock_active": { "default": "mdi:lock-open-variant-outline", "state": { "on": "mdi:lock" } }
+      "ready": {
+        "default": "mdi:check-circle-outline"
+      },
+      "hub_readable": {
+        "default": "mdi:file-document-check-outline"
+      },
+      "adb_reachable": {
+        "default": "mdi:lan-connect",
+        "state": {
+          "off": "mdi:lan-disconnect"
+        }
+      },
+      "lock_active": {
+        "default": "mdi:lock-open-variant-outline",
+        "state": {
+          "on": "mdi:lock"
+        }
+      }
     },
     "sensor": {
-      "hubs_found": { "default": "mdi:remote" },
-      "hub_activities": { "default": "mdi:play-box-multiple-outline" },
-      "hub_devices": { "default": "mdi:devices" },
-      "adb_found": { "default": "mdi:television-box" },
-      "released_until": { "default": "mdi:lock-clock" },
-      "last_action": { "default": "mdi:shield-alert-outline" }
+      "hubs_found": {
+        "default": "mdi:remote"
+      },
+      "hub_activities": {
+        "default": "mdi:play-box-multiple-outline"
+      },
+      "hub_devices": {
+        "default": "mdi:devices"
+      },
+      "adb_found": {
+        "default": "mdi:television-box"
+      },
+      "released_until": {
+        "default": "mdi:lock-clock"
+      },
+      "last_action": {
+        "default": "mdi:shield-alert-outline"
+      },
+      "interventions_today": {
+        "default": "mdi:shield-alert-outline"
+      },
+      "sequence": {
+        "default": "mdi:playlist-play",
+        "state": {
+          "running": "mdi:play-circle-outline",
+          "error": "mdi:alert-circle-outline",
+          "stopped": "mdi:stop-circle-outline",
+          "done": "mdi:check-circle-outline"
+        }
+      }
     },
-    "switch": { "lock": { "default": "mdi:shield-lock-outline" } },
-    "number": { "release_minutes": { "default": "mdi:timer-outline" } },
-    "button": { "release": { "default": "mdi:lock-open-variant" } },
-    "select": { "lock_mode": { "default": "mdi:calendar-lock" } }
+    "switch": {
+      "lock": {
+        "default": "mdi:shield-lock-outline"
+      }
+    },
+    "number": {
+      "release_minutes": {
+        "default": "mdi:timer-outline"
+      }
+    },
+    "button": {
+      "release": {
+        "default": "mdi:lock-open-variant"
+      }
+    },
+    "select": {
+      "lock_mode": {
+        "default": "mdi:calendar-lock"
+      }
+    },
+    "event": {
+      "intervention": {
+        "default": "mdi:shield-alert"
+      }
+    }
+  },
+  "services": {
+    "run_action": {
+      "service": "mdi:playlist-play"
+    },
+    "stop_action": {
+      "service": "mdi:stop-circle-outline"
+    }
   }
 }

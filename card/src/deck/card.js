@@ -24,6 +24,7 @@
  *       default: { volume: Amplifier, nav: Player }
  *       TV: { volume: Amplifier, nav: Receiver, channel: Receiver }
  */
+import { actionEditorMixin } from "./action-editor.js";
 import { actionsMixin } from "./actions.js";
 import { activitiesMixin } from "./activities.js";
 import { bindMixin } from "./bind.js";
@@ -72,8 +73,9 @@ export class HarmonyDeckCard extends HTMLElement {
     if (!this._text) return;
     const hubs = this._hubs();
     const key = JSON.stringify([hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]), this._info, this._editMode, this._modeState, this._device, this._hubSel, this._infoOpen, hubs.map((h) => this._links(h).map((l) => this._hass.states?.[l.entity]?.state)), hubs.map((h) => { const f = this._fireInfo(h.id); return f && [f.mode, f.app]; }),
-      hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], (this._settings().actions?.[h.id] || []).map((a) => this._hass.states?.[a.entity]?.state)])]);
-    if (key === this._key) return;
+      hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])]);
+    // While a running action is held to stop it, a new step must not redraw the button under the finger.
+    if (key === this._key || this._holdingAct) return;
     this._key = key;
     this._render(hubs);
   }
@@ -94,6 +96,6 @@ export class HarmonyDeckCard extends HTMLElement {
 }
 
 // The functions of the card live in one module per area; here they are attached to the class.
-for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
   Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
 }

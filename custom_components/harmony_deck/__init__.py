@@ -19,11 +19,12 @@ from .lockent import remove_legacy_entities
 from .lockws import async_register_lock_websocket
 from .const import CARD_FILE, CARD_URL, DOMAIN, SETTING_KEYS, STORAGE_KEY, STORAGE_VERSION, TRANSLATIONS_URL
 from .profiles import migrate
+from .actionws import async_register_action_api
 from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 _VERSION_KEY = "card_url"
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SELECT, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.EVENT, Platform.NUMBER, Platform.SELECT, Platform.SENSOR, Platform.SWITCH]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -52,6 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     domain_data["entry_id"] = entry.entry_id
     async_register_websocket(hass)
+    async_register_action_api(hass)
     if not domain_data.get("lock_ws_registered"):
         async_register_lock_websocket(hass)
         domain_data["lock_ws_registered"] = True
@@ -85,6 +87,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Remove the card module from the frontend (the static path stays until restart)."""
     domain_data = hass.data.get(DOMAIN, {})
     unloaded = True
+    if run := domain_data.get("runner"):
+        run.async_stop_all()
     if lock := domain_data.pop("lock", None):
         lock.async_stop()
     if getattr(entry, "runtime_data", None):

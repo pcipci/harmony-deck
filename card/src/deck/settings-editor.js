@@ -179,7 +179,7 @@ export const settingsEditorMixin = {
       '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel", '[data-direct="km_red"]': "colorKey",
       "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", '[data-setting="noBlur"]': "noBlur", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual",
       '[data-link="entity"]': "linkEntity", '[data-link="activity"]': "linkActivity",
-      '[data-act="name"]': "actName", '[data-act="entity"]': "actEntity", '[data-act="op"]': "actOp", '[data-act="scope"]': "actScope",
+      '[data-actname]': "actName", '[data-hent="entity"]': "actEntity", "[data-hop]": "actOp", "[data-actscope]": "actScope", "[data-acttile]": "actTile",
     };
     const tip = (el, key) => {
       if (!tips[key] || !el || el.querySelector(":scope > .tip")) return;
@@ -200,7 +200,7 @@ export const settingsEditorMixin = {
     tip(root.querySelector(".linkbox > .etitle"), "linkTitle");
     const lg = root.querySelectorAll(".linkbox .egroup > .ehint");
     tip(lg[0], "linkLockActs"); tip(lg[1], "linkLockKeys");
-    tip(root.querySelector(".actedit .iconrow .iname"), "actIcon");
+    tip(root.querySelector(".actform [data-acticonopen]")?.closest(".erow")?.querySelector(":scope > span"), "actIcon");
     tip(root.querySelector(".actedit > .etitle"), "actions");
     tip(root.querySelector(".etitle[data-actfavs]"), "actFavs");
     tip(heading("data-hide-app"), "apps");
@@ -218,13 +218,14 @@ export const settingsEditorMixin = {
     else if (act === "cancelno") this._cancelAsk = false;
     else if (act === "cancelyes") {
       this._cancelAsk = false;
+      this._actClose();
       const snap = this._snap;
       this._editMode = null; this._snap = null;
       if (snap) {
         this._info = { ...(this._info || { hubs: {} }), settings: snap };
         try { await this._hass.callWS({ type: "harmony_deck/save_settings", settings: snap, profile: this._prof().active }); } catch (e) { /* kept for this session only */ }
       }
-    } else if (act === "off") { this._editMode = null; this._snap = null; this._cancelAsk = false; }
+    } else if (act === "off") { if (this._editMode === "actions") await this._actFlush(); this._editMode = null; this._snap = null; this._cancelAsk = false; }
     else { if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings())); this._editMode = act; this._infoOpen = {}; }
     this._key = "";
     this.hass = this._hass;

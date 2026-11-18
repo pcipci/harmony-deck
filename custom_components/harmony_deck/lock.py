@@ -65,6 +65,7 @@ class LockManager:
         self._store: Store[dict] = Store(hass, 1, STORAGE_KEY)
         self.data: dict[str, dict[str, Any]] = {}
         self._listeners: list[Callable[[], None]] = []
+        self._intervention_listeners: list[Callable[[str, str, str], None]] = []
         self._pending: dict[str, datetime] = {}
         self._cooldown: dict[str, datetime] = {}
         self._was: dict[str, bool] = {}
@@ -255,6 +256,22 @@ class LockManager:
         return remove
 
     @callback
+    def async_add_intervention_listener(self, listener: Callable[[str, str, str], None]) -> Callable[[], None]:
+        """Called as listener(hub_id, kind, what) for every intervention of the lock ("fire" or "hub")."""
+        self._intervention_listeners.append(listener)
+
+        def remove() -> None:
+            if listener in self._intervention_listeners:
+                self._intervention_listeners.remove(listener)
+
+        return remove
+
+    @callback
+    def _fire_intervention(self, hub_id: str, kind: str, what: str) -> None:
+        for listener in list(self._intervention_listeners):
+            listener(hub_id, kind, what)
+
+    @callback
     def _notify(self) -> None:
         for listener in list(self._listeners):
             listener()
@@ -362,6 +379,7 @@ class LockManager:
             )
             what.append(f"Fire TV: {info['app'] or 'playing'}")
             entry["log"] = add_log(entry["log"], now, "fire", str(info["app"] or ""))
+            self._fire_intervention(hub_id, "fire", str(info["app"] or ""))
             if entry["off_devices"] and info["remote"]:
                 self.hass.async_create_task(self._power_off_devices(hub_id, info["remote"]))
                 what.append("+ " + ", ".join(entry["off_devices"]))
@@ -369,6 +387,7 @@ class LockManager:
             await self.hass.services.async_call("remote", "turn_off", {"entity_id": info["remote"]}, blocking=False)
             what.append(f"Harmony: {info['activity']}")
             entry["log"] = add_log(entry["log"], now, "hub", str(info["activity"] or ""))
+            self._fire_intervention(hub_id, "hub", str(info["activity"] or ""))
         if not what:
             return
         today = dt_util.as_local(now).date().isoformat()

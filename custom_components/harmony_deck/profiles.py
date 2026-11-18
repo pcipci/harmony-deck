@@ -17,7 +17,8 @@ DEFAULT_PROFILE = "Standard"
 MAX_NAME = 40
 
 # Not part of a profile: describe the installation, not a person's taste.
-GLOBAL_KEYS = ("names", "devices", "links", "direct")
+# Actions belong here too: they send keys to the devices of a room, whoever looks at the card.
+GLOBAL_KEYS = ("names", "devices", "links", "direct", "actions")
 
 
 def _clean(settings: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
@@ -44,6 +45,10 @@ def migrate(raw: dict[str, Any] | None, all_keys: tuple[str, ...]) -> dict[str, 
         glob, prof = split(raw, all_keys)
         data = {"global": glob, "profiles": {DEFAULT_PROFILE: prof}, "assign": {}}
     data["profiles"].setdefault(DEFAULT_PROFILE, {})
+    # Up to 0.4 actions belonged to a profile: keep those of the default profile (else the first that has some).
+    found = [p.pop("actions") for p in (data["profiles"][n] for n in names(data)) if "actions" in p]
+    if found and "actions" not in data["global"]:
+        data["global"]["actions"] = found[0]
     data["assign"] = {u: n for u, n in data["assign"].items() if n in data["profiles"]}
     return data
 

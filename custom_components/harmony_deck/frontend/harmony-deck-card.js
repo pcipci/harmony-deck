@@ -58,8 +58,8 @@
     mac: "mdi:desktop-tower-monitor",
     computer: "mdi:desktop-tower-monitor"
   };
-  var activityIcon = (name, deviceGuess = null) => {
-    const k = String(name).trim().toLowerCase();
+  var activityIcon = (name2, deviceGuess = null) => {
+    const k = String(name2).trim().toLowerCase();
     if (ACTIVITY_ICONS[k]) return ACTIVITY_ICONS[k];
     const words = k.split(/[^a-zäöüß0-9]+/).filter(Boolean);
     const short = ["tv", "pc", "sat", "bd", "cast", "hue", "wii", "mac", "ps4", "ps5"];
@@ -67,7 +67,7 @@
     if (wordHit) return ACTIVITY_ICONS[wordHit];
     const hit = Object.keys(ACTIVITY_ICONS).find((x) => !short.includes(x) && k.includes(x));
     if (hit) return ACTIVITY_ICONS[hit];
-    const dev = deviceGuess && deviceGuess(name);
+    const dev = deviceGuess && deviceGuess(name2);
     return dev && dev !== "mdi:remote" ? dev : "mdi:remote";
   };
   var ACTION_ICONS = [
@@ -164,8 +164,8 @@
     ["mdi:popcorn", "Popcorn / Kino-Szene"],
     ["mdi:remote", "Fernbedienung"]
   ];
-  function roomIcon(name) {
-    const k = (name || "").toLowerCase();
+  function roomIcon(name2) {
+    const k = (name2 || "").toLowerCase();
     const m = [
       ["wohn", "mdi:sofa"],
       ["living", "mdi:sofa"],
@@ -190,257 +190,91 @@
   var RING_TILE = '<svg class="hring big" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27"/></svg>';
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-  // src/deck/actions.js
-  var actionsMixin = {
-    _actionsEdit(h, t) {
-      const list = this._settings().actions?.[h.id] || [];
-      const acts = h.list.filter((n) => n !== "PowerOff");
-      const ents = Object.keys(this._hass.states).filter((id) => /^(light|switch|scene|script|button|input_boolean|input_button|cover|fan|automation|lock|media_player)\./.test(id)).sort().slice(0, 600);
-      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, activate: t.opActivate };
-      const rows = list.map((a) => `<div class="actrow"><ha-icon icon="${esc(a.icon || "mdi:flash")}"></ha-icon><span><b>${esc(a.name)}</b><small>${esc(a.entity)} · ${esc(ops[a.op] || a.op)} · ${esc(a.scope || t.actGlobal)}</small></span><button class="key" data-actdel="${esc(a.id)}" data-hub="${esc(h.id)}" title="${t.remove}"><ha-icon icon="mdi:delete-outline"></ha-icon></button></div>`).join("");
-      const d = this._actDraft || {};
-      const icon = d.icon || ACTION_ICONS[0][0];
-      const cur = ACTION_ICONS.find(([i]) => i === icon);
-      const open = !!this._actIconOpen;
-      const grid = open ? `<div class="icongrid">${ACTION_ICONS.map(([i, n]) => `<button type="button" class="iconcell ${i === icon ? "sel" : ""}" data-acticonpick="${esc(i)}" title="${esc(t.iconNames?.[i] || n)}"><ha-icon icon="${esc(i)}"></ha-icon></button>`).join("")}</div>` : "";
-      return `<div class="esec actedit" data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
-      <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.actionsHint}</div>${rows}
-      <div class="esub">${t.actAdd}</div><div class="egrp"><label class="erow"><span>${t.actName}</span><input type="text" data-act="name" placeholder="${t.actNamePh}" value="${esc(d.name || "")}"></label>
-      <label class="erow"><span>${t.actEntity}</span>${this._entSelect("data-act", ents, d.entity || "", t)}</label>
-      <label class="erow"><span>${t.actOp}</span><select data-act="op">${Object.entries(ops).map(([k, v]) => `<option value="${k}" ${d.op === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-      <div class="iconrow"><span class="iname">${t.actIcon}</span>
-        <button type="button" class="iconbtn" data-acticonopen aria-expanded="${open}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(cur ? t.iconNames?.[cur[0]] || cur[1] : "")}</span><ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>${grid}</div>
-      <label class="erow"><span>${t.actScope}</span><select data-act="scope"><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label></div>
-      <button class="key addact" data-actadd><ha-icon icon="mdi:plus"></ha-icon><span>${t.actAdd}</span></button></div>`;
-    },
-    _actionsOf(hubId, cur) {
-      return (this._settings().actions?.[hubId] || []).filter((a) => !a.scope || a.scope === cur);
-    },
-    _actionsBlock(h, cur, t) {
-      const list = this._actionsOf(h.id, cur);
-      if (!list.length) return "";
-      const cells = list.map((a) => {
-        const on = this._hass.states[a.entity]?.state === "on";
-        const miss = !this._hass.states[a.entity];
-        return `<button class="key cell actbtn ${on ? "acton" : ""} ${miss ? "miss" : ""}" title="${esc(a.entity)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}"><ha-icon icon="${esc(a.icon || "mdi:flash")}"></ha-icon><span>${esc(a.name)}</span></button>`;
-      }).join("");
-      return `<div class="block actions"><span class="dname">${t.actions}</span><div class="cells">${cells}</div></div>`;
-    },
-    _runAction(hubId, id) {
-      const a = (this._settings().actions?.[hubId] || []).find((x) => x.id === id);
-      if (!a) return;
-      this._buzz();
-      const domain = a.entity.split(".")[0];
-      const press = ["button", "input_button"].includes(domain);
-      const activate = ["scene", "script", "automation"].includes(domain) || press;
-      const svc = (d, s) => this._hass.callService(d, s, { entity_id: a.entity });
-      if (press) return svc(domain, "press");
-      if (a.op === "off") return svc("homeassistant", "turn_off");
-      if (a.op === "on") return svc("homeassistant", "turn_on");
-      if (a.op === "activate" || activate) return domain === "automation" ? svc("automation", "trigger") : svc(["scene", "script"].includes(domain) ? domain : "homeassistant", "turn_on");
-      return svc("homeassistant", "toggle");
-    },
-    // Events of the action buttons and their editor.
-    _bindActions(root) {
-      root.querySelectorAll("[data-actid]").forEach((b) => b.addEventListener("click", () => this._runAction(b.dataset.hub, b.dataset.actid)));
-      root.querySelectorAll("[data-actdel]").forEach((b) => b.addEventListener("click", () => {
-        const all = JSON.parse(JSON.stringify(this._settings().actions || {}));
-        all[b.dataset.hub] = (all[b.dataset.hub] || []).filter((a) => a.id !== b.dataset.actdel);
-        this._saveSettings({ actions: all });
-      }));
-      root.querySelectorAll(".actedit [data-act]").forEach((el) => {
-        const upd = () => {
-          this._actDraft = { ...this._actDraft || {}, [el.dataset.act]: el.value };
-        };
-        el.addEventListener("input", upd);
-        el.addEventListener("change", upd);
-      });
-      root.querySelector("[data-acticonopen]")?.addEventListener("click", () => {
-        this._actIconOpen = !this._actIconOpen;
-        this._rerender();
-      });
-      root.querySelectorAll("[data-acticonpick]").forEach((b) => b.addEventListener("click", () => {
-        this._actDraft = { ...this._actDraft || {}, icon: b.dataset.acticonpick };
-        this._actIconOpen = false;
-        this._rerender();
-      }));
-      root.querySelectorAll("[data-actadd]").forEach((b) => b.addEventListener("click", () => {
-        const box = b.closest(".actedit");
-        const val = (n) => box.querySelector(`[data-act="${n}"]`)?.value?.trim() || "";
-        const entity = val("entity");
-        if (!entity || !val("name")) return;
-        const all = JSON.parse(JSON.stringify(this._settings().actions || {}));
-        (all[box.dataset.hub] ||= []).push({ id: Date.now().toString(36), name: val("name"), entity, op: val("op") || "toggle", icon: this._actDraft?.icon || ACTION_ICONS[0][0], scope: val("scope") });
-        this._actDraft = null;
-        this._actIconOpen = false;
-        this._saveSettings({ actions: all });
-      }));
+  // src/deck/steps/recent.js
+  var KEY = "harmony-deck-recent";
+  var MAX = 12;
+  var memory = {};
+  var load = () => {
+    try {
+      return JSON.parse(localStorage.getItem(KEY) || "{}") || {};
+    } catch (e) {
+      return memory;
     }
   };
+  function recent(kind) {
+    return (load()[kind] || []).filter(Boolean);
+  }
+  function remember(kind, item) {
+    const all = load();
+    const same = (x) => JSON.stringify(x) === JSON.stringify(item);
+    all[kind] = [item, ...(all[kind] || []).filter((x) => !same(x))].slice(0, MAX);
+    memory = all;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(all));
+    } catch (e) {
+    }
+  }
 
-  // src/deck/activities.js
-  var activitiesMixin = {
-    // Symbol of an activity: card option `icons`, own choice in the settings, else a guess (same keywords as the devices, so "Mac mini starten" looks like "Mac mini").
-    _actIcon(hubId, name) {
-      return this._config.icons?.[name] || this._settings().activityIcons?.[hubId]?.[name] || activityIcon(name, (n) => this._deviceIcon(n));
+  // src/deck/steps/ha.js
+  var HA_DOMAINS = ["light", "switch", "scene", "script", "automation", "button", "input_button", "input_boolean", "cover", "fan", "lock", "media_player"];
+  var KINDS = { light: ["light"], switch: ["switch", "input_boolean"], script: ["script"], scene: ["scene"], automation: ["automation"], button: ["button", "input_button"] };
+  var SHOWN = 60;
+  var name = (card, id) => card?._hass?.states?.[id]?.attributes?.friendly_name || id;
+  var haStep = {
+    type: "ha",
+    icon: "mdi:home-assistant",
+    create: () => ({ type: "ha", entity: "", op: "toggle" }),
+    valid: (s) => /^[a-z_]+\.[a-z0-9_]+$/.test(s.entity || ""),
+    label(s, t, card) {
+      if (!s.entity) return t.stepPickEntity;
+      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate };
+      return `${name(card, s.entity)} · ${ops[s.op] || s.op}`;
     },
-    _activitiesView(h, cur, busy, t, index, part = "") {
-      const hidden = this._hidden(h.id);
-      const shown = h.list.filter((n) => n !== "PowerOff" && (this._edit || !hidden.has(n)));
-      const locks = this._locks(h);
-      const secOff = this._secLocked(h.id);
-      const offAct = this._fireOfflineAct(h);
-      const tiles = shown.map((n) => {
-        const on = !busy && cur === n, going = busy && h.starting === n, hid = hidden.has(n);
-        if (this._edit) {
-          return `<label class="tile edit-tile ${hid ? "hid" : ""}"><input type="checkbox" data-vis data-hub="${esc(h.id)}" data-act="${esc(n)}" ${hid ? "" : "checked"}>
-          <ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon><span>${esc(n)}</span></label>`;
-        }
-        if (!this._edit && secOff.has(n)) {
-          const st2 = this._tileStyle();
-          return `<button class="tile locked seclocked ts-${st2}" title="${esc(`${n} – ${t.secLockTile}`)}" data-seclocked data-hinttext="${esc(t.secLockTile)}">${st2 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st2 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:lock"></ha-icon></button>`;
-        }
-        if (n === offAct && !on && !going) {
-          const st3 = this._tileStyle();
-          return `<button class="tile locked offline ts-${st3}" title="${esc(`${n} – ${t.fireOfflineTile}`)}" data-seclocked data-hinttext="${esc(t.fireOfflineTile)}">${st3 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st3 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:television-off"></ha-icon></button>`;
-        }
-        const lk = locks.acts.has(n), st = this._tileStyle();
-        const hs = !lk && this._holdSwitchOn() && !on && !going && !!(cur || h.starting);
-        return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
-        ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
-      }).join("");
-      const cols = Number(this._config.columns) || 3;
-      const rest = shown.length % cols;
-      const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
-      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
-      if (part === "grid") return `<div class="grid">${tiles}${offBtn}</div>`;
-      if (part === "below") return body;
-      return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${offBtn}</div>${body}`;
-    },
-    // The Fire TV activity while its direct (ADB) link is not reachable and the option "lock when not reachable" is on, else null.
-    _fireOfflineAct(h) {
-      const f = this._fireInfo(h.id);
-      if (!f || !f.cfg.lockOffline || f.mode !== "unknown") return null;
-      return this._fireActivity(h);
-    },
-    // Links: {activity, entity, lockActivities, lockKeys} per hub (card option `links` wins over the shared settings).
-    _links(h) {
-      const list = this._config.links?.[h.id] ?? this._settings().links?.[h.id] ?? [];
-      return list.filter((l) => l && l.activity);
-    },
-    _entityOn(entity) {
-      const st = entity && this._hass?.states?.[entity]?.state;
-      return !!st && !["off", "standby", "unavailable", "unknown", "none"].includes(st);
-    },
-    // Activities and key groups locked right now (link whose activity is running).
-    _locks(h) {
-      const acts = /* @__PURE__ */ new Set(), keys = /* @__PURE__ */ new Set();
-      for (const l of this._links(h)) {
-        if (h.current !== l.activity || h.starting) continue;
-        (l.lockActivities || []).forEach((a) => a !== l.activity && acts.add(a));
-        (l.lockKeys || []).forEach((k) => keys.add(k));
+    editor(s, { card, t }) {
+      const st = card._hass.states || {};
+      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate };
+      const opRow = `<label class="erow"><span>${t.actOp}</span><select data-hop>${Object.entries(ops).map(([k, v]) => `<option value="${k}" ${s.op === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
+      if (s.entity) {
+        return `<div class="erow"><span><b>${esc(name(card, s.entity))}</b><small class="pid">${esc(s.entity)} · ${esc(st[s.entity]?.state ?? t.unavailable)}</small></span><button type="button" class="mini txt" data-hpick="">${t.stepChange}</button></div>${opRow}`;
       }
-      return { acts, keys };
+      const ids = Object.keys(st).filter((id) => HA_DOMAINS.includes(id.split(".")[0])).sort((a, b) => name(card, a).localeCompare(name(card, b), void 0, { sensitivity: "base" }));
+      const item = (id) => `<button type="button" class="pent" data-hpick="${esc(id)}" data-dom="${esc(id.split(".")[0])}" data-q="${esc(`${name(card, id)} ${id}`.toLowerCase())}"><span>${esc(name(card, id))}</span><small>${esc(id)} · ${esc(st[id]?.state ?? "")}</small></button>`;
+      const rec = recent("ha").filter((id) => st[id]).slice(0, 6);
+      return `<input type="search" class="psearch" data-hsearch placeholder="${esc(t.stepSearchEntity)}" autocomplete="off">
+      <div class="pchips" data-hkinds><button type="button" class="pchip sel" data-hkind="">${t.kindAll}</button>${Object.keys(KINDS).map((k) => `<button type="button" class="pchip" data-hkind="${k}">${esc(t.kinds[k])}</button>`).join("")}</div>
+      ${rec.length ? `<div class="pgroup prec"><div class="esub">${t.stepRecent}</div><div class="plist">${rec.map(item).join("")}</div></div>` : ""}
+      <div class="plist" data-hlist>${ids.map(item).join("")}</div><div class="ehint" data-hmore hidden>${t.stepMore}</div>`;
     },
-    _linkBars(h, t) {
-      if (this._edit || h.starting) return "";
-      return this._links(h).filter((l) => l.entity && this._entityOn(l.entity) && h.current !== l.activity).map((l) => {
-        const name = this._hass.states[l.entity]?.attributes?.friendly_name || l.entity;
-        return `<div class="linkbar"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name, h.current || t.none))}</span>
-        <button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>`;
-      }).join("");
-    },
-    // Events of the activity tiles.
-    _bindActivities(root) {
-      root.querySelectorAll("[data-sync]").forEach((b) => b.addEventListener("click", () => {
-        this._buzz(25);
-        this._hass.callService("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act });
+    bind(box, s, update) {
+      box.querySelectorAll("[data-hpick]").forEach((b) => b.addEventListener("click", () => {
+        if (b.dataset.hpick) remember("ha", b.dataset.hpick);
+        update({ entity: b.dataset.hpick });
       }));
-      root.querySelectorAll(".tile[data-locked]").forEach((b) => {
-        let tm = null;
-        b.addEventListener("pointerdown", () => {
-          b.classList.add("holding");
-          tm = setTimeout(() => {
-            this._buzz(40);
-            this._hass.callService("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act });
-          }, 700);
+      box.querySelector("[data-hop]")?.addEventListener("change", (e) => update({ op: e.target.value }));
+      const search = box.querySelector("[data-hsearch]");
+      const list = box.querySelector("[data-hlist]");
+      if (!search || !list) return;
+      let kind = "";
+      const filter = () => {
+        const q = search.value.trim().toLowerCase();
+        const doms = KINDS[kind];
+        let n = 0, hits = 0;
+        list.querySelectorAll("[data-hpick]").forEach((b) => {
+          const ok = (!q || b.dataset.q.includes(q)) && (!doms || doms.includes(b.dataset.dom));
+          if (ok) hits++;
+          b.hidden = !ok || n >= SHOWN;
+          if (ok && n < SHOWN) n++;
         });
-        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => {
-          clearTimeout(tm);
-          b.classList.remove("holding");
-        }));
-      });
-      root.querySelectorAll(".tile[data-seclocked]").forEach((b) => b.addEventListener("click", () => {
-        this._buzz(20);
-        b.dataset.hint = "1";
-        setTimeout(() => b.removeAttribute("data-hint"), 1600);
-      }));
-      root.querySelectorAll(".tile[data-holdsw]").forEach((b) => {
-        let tm = null, done = false;
-        const stop = () => {
-          clearTimeout(tm);
-          b.classList.remove("holding");
-          if (!done && tm) {
-            b.dataset.hint = "1";
-            setTimeout(() => b.removeAttribute("data-hint"), 1600);
-          }
-          tm = null;
-        };
-        b.addEventListener("pointerdown", (e) => {
-          if (e.button > 0) return;
-          done = false;
-          b.classList.add("holding");
-          this._buzz(8);
-          tm = setTimeout(() => {
-            done = true;
-            tm = null;
-            b.classList.remove("holding");
-            this._buzz(40);
-            this._startActivity(b.dataset.hub, b.dataset.act);
-          }, 700);
-        });
-        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
-        b.addEventListener("contextmenu", (e) => e.preventDefault());
-      });
-      root.querySelectorAll(".tile[data-act]:not([data-locked]):not([data-holdsw])").forEach((b) => b.addEventListener("click", () => {
-        this._buzz(25);
-        this._startActivity(b.dataset.hub, b.dataset.act);
-      }));
-    },
-    // Starts an activity and folds the header away (option collapse_header).
-    _startActivity(hub, activity) {
-      this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
-      const apply = () => {
-        if (this._collapseOn()) {
-          this._hdrCollapsed = { ...this._hdrCollapsed || {}, [hub]: true };
-          this._scrollRemote = true;
-          this._scrollAt = Date.now();
-        }
-        this._rerender();
+        box.querySelector("[data-hmore]").hidden = hits <= SHOWN;
+        box.querySelector(".prec")?.toggleAttribute("hidden", !!q || !!kind);
       };
-      if (this._collapseOn()) this._animSection(hub, "collapse", apply);
-      else apply();
-    }
-  };
-
-  // src/deck/bind.js
-  var bindMixin = {
-    _bind() {
-      const root = this.shadowRoot;
-      this._bindSettings(root);
-      this._bindInfo(root);
-      this._bindFrame(root);
-      this._bindActivities(root);
-      this._bindHelp(root);
-      this._bindFire(root);
-      this._bindFireEditor(root);
-      this._bindKeyboard(root);
-      this._bindDevices(root);
-      this._bindFavorites(root);
-      this._bindProfiles(root);
-      this._bindActions(root);
-      this._bindKeys(root);
-      this._bindLockMark(root);
+      search.addEventListener("input", filter);
+      box.querySelectorAll("[data-hkind]").forEach((b) => b.addEventListener("click", () => {
+        kind = b.dataset.hkind;
+        box.querySelectorAll("[data-hkind]").forEach((x) => x.classList.toggle("sel", x === b));
+        filter();
+      }));
+      filter();
     }
   };
 
@@ -641,6 +475,625 @@
   };
   var powerCls = (c) => /^Power(On)$|^(On|DiscoPowerOn)$/i.test(c) ? "pon" : /^Power(Off)$|^(Off|DiscoPowerOff)$/i.test(c) ? "poff" : "";
 
+  // src/deck/steps/key.js
+  var keyStep = {
+    type: "key",
+    icon: "mdi:remote",
+    create: () => ({ type: "key", device: "", command: "", repeat: 1 }),
+    valid: (s) => !!(s.device && s.command),
+    label: (s, t) => s.device && s.command ? `${s.device} · ${prettyCommand(s.command)}${s.repeat > 1 ? ` ×${s.repeat}` : ""}` : t.stepPickDevice,
+    editor(s, { card, h, t, scope }) {
+      const devs = card._devicesOf(h.id);
+      if (!s.device || !devs[s.device]) {
+        const first = scope ? card._actInvolved(h.id, scope) : [];
+        const order = [...first, ...Object.keys(devs).filter((d) => !first.includes(d))];
+        return `<div class="esub">${t.stepPickDevice}</div><div class="pchips">${order.map((d) => `<button type="button" class="pchip ${first.includes(d) ? "hot" : ""}" data-kdev="${esc(d)}"><ha-icon icon="${card._deviceIcon(d, h.id)}"></ha-icon><span>${esc(d)}</span></button>`).join("")}</div>`;
+      }
+      const cmds = devs[s.device];
+      const chip = (c) => `<button type="button" class="pchip ${c === s.command ? "sel" : ""}" data-kcmd="${esc(c)}" data-q="${esc(`${prettyCommand(c)} ${c}`.toLowerCase())}">${esc(prettyCommand(c))}</button>`;
+      const rec = recent("key").filter((r) => r.d === s.device && cmds.includes(r.c)).slice(0, 8);
+      const groups = card._groups(cmds, t).map(([label, list]) => `<div class="pgroup"><div class="esub">${esc(label)}</div><div class="pchips">${list.map(chip).join("")}</div></div>`).join("");
+      return `<div class="erow"><span><ha-icon icon="${card._deviceIcon(s.device, h.id)}"></ha-icon>${esc(s.device)}</span><button type="button" class="mini txt" data-kdev="">${t.stepChange}</button></div>
+      <input type="search" class="psearch" data-psearch placeholder="${esc(t.stepSearch)}" autocomplete="off">
+      ${rec.length ? `<div class="pgroup prec"><div class="esub">${t.stepRecent}</div><div class="pchips">${rec.map((r) => chip(r.c)).join("")}</div></div>` : ""}
+      <div class="pgroups">${groups}</div>
+      <div class="erow"><span>${t.stepRepeat}</span><span class="stepper"><button type="button" data-krep="-1">−</button><b>${s.repeat || 1}</b><button type="button" data-krep="1">+</button></span></div>`;
+    },
+    bind(box, s, update) {
+      box.querySelectorAll("[data-kdev]").forEach((b) => b.addEventListener("click", () => update({ device: b.dataset.kdev, command: "" })));
+      box.querySelectorAll("[data-kcmd]").forEach((b) => b.addEventListener("click", () => {
+        remember("key", { d: s.device, c: b.dataset.kcmd });
+        update({ command: b.dataset.kcmd });
+      }));
+      box.querySelectorAll("[data-krep]").forEach((b) => b.addEventListener("click", () => update({ repeat: Math.min(10, Math.max(1, (s.repeat || 1) + Number(b.dataset.krep))) })));
+    }
+  };
+
+  // src/shared/version.js
+  var VERSION = "0.5.0";
+
+  // src/shared/i18n.js
+  var TEXT_URL = "/harmony_deck/translations";
+  var TEXT_FUNCS = ["running", "starting", "linkMismatch"];
+  var TEXT_CACHE = {};
+  function fmtText(tpl, args) {
+    return String(tpl).replace(/\{(\d+)\}/g, (_, n) => args[+n] ?? "");
+  }
+  function mergeText(base, over) {
+    const out = { ...base };
+    for (const k of Object.keys(over || {})) {
+      out[k] = over[k] && typeof over[k] === "object" && !Array.isArray(over[k]) ? mergeText(base[k] || {}, over[k]) : over[k];
+    }
+    return out;
+  }
+  function loadText(lang) {
+    if (!TEXT_CACHE[lang]) {
+      const get = (code) => fetch(`${TEXT_URL}/${code}.json?v=${VERSION}`).then((r) => r.ok ? r.json() : null).catch(() => null);
+      TEXT_CACHE[lang] = Promise.all([get("en"), lang === "en" ? null : get(lang)]).then(([en, own]) => {
+        const t = mergeText(en || {}, own || {});
+        TEXT_FUNCS.forEach((k) => {
+          const tpl = t[k];
+          t[k] = (...a) => fmtText(tpl, a);
+        });
+        t.__ok = !!en;
+        return t;
+      });
+    }
+    return TEXT_CACHE[lang];
+  }
+
+  // src/deck/steps/pause.js
+  var QUICK = [1, 2, 5, 10];
+  var pauseStep = {
+    type: "pause",
+    icon: "mdi:timer-sand",
+    create: () => ({ type: "pause", secs: 2 }),
+    valid: (s) => s.secs > 0 && s.secs <= 300,
+    label: (s, t) => fmtText(t.stepPauseLabel, [String(s.secs)]),
+    editor(s, { t }) {
+      return `<div class="pchips">${QUICK.map((n) => `<button type="button" class="pchip ${s.secs === n ? "sel" : ""}" data-psecs="${n}">${n} s</button>`).join("")}</div>
+      <label class="erow"><span>${t.stepSecs}</span><input type="number" min="0.1" max="300" step="0.1" data-psecsin value="${s.secs}"></label>`;
+    },
+    bind(box, s, update) {
+      box.querySelectorAll("[data-psecs]").forEach((b) => b.addEventListener("click", () => update({ secs: Number(b.dataset.psecs) })));
+      box.querySelector("[data-psecsin]")?.addEventListener("change", (e) => {
+        const v = Math.round(Number(e.target.value) * 10) / 10;
+        if (v > 0) update({ secs: Math.min(300, v) });
+      });
+    }
+  };
+
+  // src/deck/steps/index.js
+  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep };
+  var stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t, card) || s.type;
+  function normalizeAction(a) {
+    if (!a || typeof a !== "object") return null;
+    const steps = Array.isArray(a.steps) ? a.steps : a.entity ? [{ type: "ha", entity: a.entity, op: a.op === "activate" ? "run" : a.op || "toggle" }] : [];
+    return { id: a.id, name: a.name || "", icon: a.icon || "mdi:flash", scope: a.scope || "", tile: !!a.tile, steps: steps.filter((s) => STEP_UI[s?.type]) };
+  }
+
+  // src/deck/action-editor.js
+  var MAX_STEPS = 50;
+  var actionEditorMixin = {
+    _actionList(hubId) {
+      return (this._settings().actions?.[hubId] || []).map(normalizeAction).filter(Boolean);
+    },
+    // Status of the action runs of a hub (sensor "Sequence" of the integration).
+    _seqState(hubId) {
+      const ent = this._info?.lock?.[hubId]?.entities?.sequence;
+      const st = ent && this._hass?.states?.[ent];
+      return st ? { state: st.state, ...st.attributes } : { state: "idle" };
+    },
+    _actionsEdit(h, t) {
+      return this._actEdit ? this._actionForm(h, t) : this._actionListHtml(h, t);
+    },
+    _actionListHtml(h, t) {
+      const list = this._actionList(h.id);
+      const where = (a) => [a.scope || t.actGlobal, a.tile ? t.actTileShort : ""].filter(Boolean).join(" · ");
+      const rows = list.map((a) => this._actDel === a.id ? `<div class="actrow ask"><span><b>${esc(a.name)}</b><small>${t.actDelAsk}</small></span><button class="key" data-actdelno>${t.cancelBack}</button><button class="key warn" data-actdelyes="${esc(a.id)}">${t.remove}</button></div>` : `<div class="actrow"><button class="actopen" data-actopen="${esc(a.id)}"><ha-icon icon="${esc(a.icon)}"></ha-icon><span><b>${esc(a.name)}</b><small>${esc(fmtText(a.steps.length === 1 ? t.stepsOne : t.stepsMany, [a.steps.length]))} · ${esc(where(a))}</small></span><ha-icon class="chev" icon="mdi:chevron-right"></ha-icon></button><button class="key" data-actdel="${esc(a.id)}" title="${esc(t.remove)}"><ha-icon icon="mdi:delete-outline"></ha-icon></button></div>`).join("");
+      return `<div class="esec actedit" data-hub="${esc(h.id)}"><div class="etitle">${t.actions}</div>
+      <div class="ehint">${t.actionsHint}</div>${rows || `<div class="ehint">${t.actNone}</div>`}
+      <button class="key addact" data-actnew><ha-icon icon="mdi:plus"></ha-icon><span>${t.actAdd}</span></button></div>`;
+    },
+    _actionForm(h, t) {
+      const d = this._actDraft;
+      const acts = h.list.filter((n) => n !== "PowerOff");
+      const icon = d.icon || ACTION_ICONS[0][0];
+      const cur = ACTION_ICONS.find(([i]) => i === icon);
+      const open = !!this._actIconOpen;
+      const grid = open ? `<div class="icongrid">${ACTION_ICONS.map(([i, n]) => `<button type="button" class="iconcell ${i === icon ? "sel" : ""}" data-acticonpick="${esc(i)}" title="${esc(t.iconNames?.[i] || n)}"><ha-icon icon="${esc(i)}"></ha-icon></button>`).join("")}</div>` : "";
+      const seq = this._seqState(h.id);
+      const live = seq.draft && ["running", "error"].includes(seq.state) ? seq : null;
+      const steps = d.steps.map((s, i) => this._stepRow(h, t, s, i, live)).join("");
+      const add = this._stepAdd ? `<div class="steptypes">${Object.values(STEP_UI).map((u) => `<button type="button" class="steptype" data-stepnew="${u.type}"><ha-icon icon="${u.icon}"></ha-icon><b>${t.stepTypes[u.type]}</b><small>${t.stepTypeHints[u.type]}</small></button>`).join("")}</div><button type="button" class="mini txt" data-stepaddno>${t.cancelBack}</button>` : d.steps.length < MAX_STEPS ? `<button type="button" class="key addstep" data-stepadd><ha-icon icon="mdi:plus"></ha-icon><span>${t.stepAdd}</span></button>` : "";
+      const msg = this._actMsg ? `<div class="ehint actmsg ${this._actMsg.bad ? "err" : ""}">${esc(this._actMsg.text)}</div>` : "";
+      return `<div class="esec actedit actform" data-hub="${esc(h.id)}">
+      <div class="actformhead"><button type="button" class="mini txt" data-actback><ha-icon icon="mdi:arrow-left"></ha-icon>${t.actBack}</button><div class="etitle">${esc(d.name || t.actAdd)}</div></div>
+      <div class="egrp">
+        <label class="erow"><span>${t.actName}</span><input type="text" data-actname placeholder="${esc(t.actNamePh)}" value="${esc(d.name || "")}"></label>
+        <div class="erow"><span>${t.actIcon}</span><button type="button" class="iconbtn" data-acticonopen aria-expanded="${open}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(cur ? t.iconNames?.[cur[0]] || cur[1] : "")}</span><ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button></div>${grid}
+        <label class="erow"><span>${t.actScope}</span><select data-actscope><option value="">${t.actGlobal}</option>${acts.map((n) => `<option ${d.scope === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+        ${this._swRow(t.actTile, "data-acttile", d.tile)}
+      </div>
+      <div class="esub">${t.stepsTitle}</div>
+      <div class="steplist">${steps || `<div class="ehint">${t.stepsNone}</div>`}</div>
+      ${add}${msg}
+      <div class="actbtns"><button type="button" class="key" data-acttest ${d.steps.length ? "" : "disabled"}><ha-icon icon="${live?.state === "running" ? "mdi:stop" : "mdi:play"}"></ha-icon><span>${live?.state === "running" ? t.actStop : t.actTest}</span></button><button type="button" class="key editdone" data-actsave><ha-icon icon="mdi:content-save-outline"></ha-icon><span>${t.actSave}</span></button></div></div>`;
+    },
+    _stepRow(h, t, s, i, live) {
+      const ui = STEP_UI[s.type];
+      const open = this._stepOpen === i;
+      const n = this._actDraft.steps.length;
+      const runCls = live && live.step === i + 1 ? live.state === "error" ? "err" : "run" : "";
+      const bad = !ui.valid(s);
+      const head = `<div class="stephead ${runCls} ${bad ? "todo" : ""}"><span class="stepno">${i + 1}</span><button type="button" class="steplab" data-stepopen="${i}"><ha-icon icon="${ui.icon}"></ha-icon><span>${esc(stepLabel(s, t, this))}</span><ha-icon class="chev" icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>
+</div>`;
+      const err = live?.state === "error" && live.step === i + 1 && live.error ? `<div class="ehint err">${esc(live.error)}</div>` : "";
+      const body = open ? `<div class="stepbody" data-stepbox="${i}">      <span class="stepctl"><button type="button" class="ib" data-stepmove="${i}:-1" ${i ? "" : "disabled"} title="${esc(t.stepUp)}"><ha-icon icon="mdi:arrow-up"></ha-icon></button><button type="button" class="ib" data-stepmove="${i}:1" ${i < n - 1 ? "" : "disabled"} title="${esc(t.stepDown)}"><ha-icon icon="mdi:arrow-down"></ha-icon></button><button type="button" class="ib" data-steptest="${i}" ${bad ? "disabled" : ""} title="${esc(t.stepTest)}"><ha-icon icon="mdi:play-outline"></ha-icon></button><button type="button" class="ib" data-stepdel="${i}" title="${esc(t.remove)}"><ha-icon icon="mdi:close"></ha-icon></button></span>${ui.editor(s, { card: this, h, t, scope: this._actDraft.scope })}
+      <label class="erow"><span>${t.stepLabel}</span><input type="text" data-steplabel placeholder="${esc(ui.label(s, t, this))}" value="${esc(s.label || "")}"></label></div>` : "";
+      return `<div class="step">${head}${err}${body}</div>`;
+    },
+    _actOpen(a) {
+      this._actDraft = a ? JSON.parse(JSON.stringify(a)) : { id: "", name: "", icon: ACTION_ICONS[0][0], scope: "", tile: false, steps: [] };
+      this._actEdit = a ? a.id : "new";
+      this._actDirty = false;
+      this._stepOpen = null;
+      this._stepAdd = !a;
+      this._actMsg = null;
+      this._actIconOpen = false;
+    },
+    _actClose() {
+      this._actEdit = null;
+      this._actDraft = null;
+      this._stepOpen = null;
+      this._stepAdd = false;
+      this._actMsg = null;
+    },
+    // Problems that keep the draft from being saved (null = fine).
+    _actProblem(t) {
+      const d = this._actDraft;
+      if (!d.name.trim()) return t.actErrName;
+      if (!d.steps.length) return t.actErrSteps;
+      const bad = d.steps.findIndex((s) => !STEP_UI[s.type].valid(s));
+      return bad >= 0 ? fmtText(t.actErrStep, [bad + 1]) : null;
+    },
+    async _actSave(hubId) {
+      const t = this._t();
+      const problem = this._actProblem(t);
+      if (problem) {
+        this._actMsg = { text: problem, bad: true };
+        this._rerender();
+        return false;
+      }
+      const d = { ...this._actDraft, name: this._actDraft.name.trim() };
+      if (!d.id) d.id = Date.now().toString(36);
+      const list = this._actionList(hubId);
+      const i = list.findIndex((a) => a.id === d.id);
+      if (i >= 0) list[i] = d;
+      else list.push(d);
+      this._actClose();
+      await this._saveSettings({ actions: { ...this._settings().actions || {}, [hubId]: list } });
+      return true;
+    },
+    // "Done" of the edit mode while a changed draft is open: keep it if it is complete.
+    async _actFlush() {
+      if (this._actEdit && this._actDirty && !this._actProblem(this._t())) await this._actSave(this._actHub);
+      this._actClose();
+    },
+    async _actTest(hubId, only) {
+      const t = this._t();
+      const seq = this._seqState(hubId);
+      if (only === void 0 && seq.state === "running") {
+        try {
+          await this._hass.callWS({ type: "harmony_deck/action/stop", hub: hubId });
+        } catch (e) {
+        }
+        return;
+      }
+      this._actMsg = null;
+      try {
+        await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, draft: { steps: this._actDraft.steps }, ...only !== void 0 ? { only_step: only } : {} });
+      } catch (e) {
+        this._actMsg = { text: e?.code === "busy" ? t.actBusy : e?.code === "unknown_command" ? t.noIntegration : e?.message || String(e), bad: true };
+      }
+      this._rerender();
+    },
+    _bindActionEditor(root) {
+      const box = root.querySelector(".actedit");
+      if (!box) return;
+      const hub = box.dataset.hub;
+      this._actHub = hub;
+      const redraw = () => this._rerender();
+      const patch = (fn) => {
+        fn(this._actDraft);
+        this._actDirty = true;
+        this._actMsg = null;
+        redraw();
+      };
+      box.querySelector("[data-actnew]")?.addEventListener("click", () => {
+        this._actOpen(null);
+        redraw();
+      });
+      box.querySelectorAll("[data-actopen]").forEach((b) => b.addEventListener("click", () => {
+        this._actOpen(this._actionList(hub).find((a) => a.id === b.dataset.actopen));
+        redraw();
+      }));
+      box.querySelectorAll("[data-actdel]").forEach((b) => b.addEventListener("click", () => {
+        this._actDel = b.dataset.actdel;
+        redraw();
+      }));
+      box.querySelector("[data-actdelno]")?.addEventListener("click", () => {
+        this._actDel = null;
+        redraw();
+      });
+      box.querySelector("[data-actdelyes]")?.addEventListener("click", (e) => {
+        const id = e.currentTarget.dataset.actdelyes;
+        this._actDel = null;
+        this._saveSettings({ actions: { ...this._settings().actions || {}, [hub]: this._actionList(hub).filter((a) => a.id !== id) } });
+      });
+      if (!this._actDraft) return;
+      box.querySelector("[data-actback]")?.addEventListener("click", () => {
+        this._actClose();
+        redraw();
+      });
+      box.querySelector("[data-actsave]")?.addEventListener("click", () => this._actSave(hub));
+      box.querySelector("[data-acttest]")?.addEventListener("click", () => this._actTest(hub));
+      box.querySelector("[data-actname]")?.addEventListener("input", (e) => {
+        this._actDraft.name = e.target.value;
+        this._actDirty = true;
+      });
+      box.querySelector("[data-actscope]")?.addEventListener("change", (e) => patch((d) => {
+        d.scope = e.target.value;
+      }));
+      box.querySelector("[data-acttile]")?.addEventListener("change", (e) => patch((d) => {
+        d.tile = e.target.checked;
+      }));
+      box.querySelector("[data-acticonopen]")?.addEventListener("click", () => {
+        this._actIconOpen = !this._actIconOpen;
+        redraw();
+      });
+      box.querySelectorAll("[data-acticonpick]").forEach((b) => b.addEventListener("click", () => {
+        this._actIconOpen = false;
+        patch((d) => {
+          d.icon = b.dataset.acticonpick;
+        });
+      }));
+      box.querySelector("[data-stepadd]")?.addEventListener("click", () => {
+        this._stepAdd = true;
+        redraw();
+      });
+      box.querySelector("[data-stepaddno]")?.addEventListener("click", () => {
+        this._stepAdd = false;
+        redraw();
+      });
+      box.querySelectorAll("[data-stepnew]").forEach((b) => b.addEventListener("click", () => {
+        this._stepAdd = false;
+        patch((d) => {
+          d.steps.push(STEP_UI[b.dataset.stepnew].create());
+          this._stepOpen = d.steps.length - 1;
+        });
+      }));
+      box.querySelectorAll("[data-stepopen]").forEach((b) => b.addEventListener("click", () => {
+        const i = Number(b.dataset.stepopen);
+        this._stepOpen = this._stepOpen === i ? null : i;
+        redraw();
+      }));
+      box.querySelectorAll("[data-stepmove]").forEach((b) => b.addEventListener("click", () => {
+        const [i, dir] = b.dataset.stepmove.split(":").map(Number);
+        patch((d) => {
+          const [s] = d.steps.splice(i, 1);
+          d.steps.splice(i + dir, 0, s);
+          if (this._stepOpen === i) this._stepOpen = i + dir;
+        });
+      }));
+      box.querySelectorAll("[data-stepdel]").forEach((b) => b.addEventListener("click", () => {
+        const i = Number(b.dataset.stepdel);
+        patch((d) => {
+          d.steps.splice(i, 1);
+          if (this._stepOpen === i) this._stepOpen = null;
+          else if (this._stepOpen > i) this._stepOpen -= 1;
+        });
+      }));
+      box.querySelectorAll("[data-steptest]").forEach((b) => b.addEventListener("click", () => this._actTest(hub, Number(b.dataset.steptest))));
+      const open = box.querySelector("[data-stepbox]");
+      if (open) {
+        const i = Number(open.dataset.stepbox);
+        const s = this._actDraft.steps[i];
+        STEP_UI[s.type].bind(open, s, (p) => patch((d) => {
+          Object.assign(d.steps[i], p);
+        }), this);
+        open.querySelector("[data-steplabel]")?.addEventListener("input", (e) => {
+          s.label = e.target.value.trim();
+          if (!s.label) delete s.label;
+          this._actDirty = true;
+        });
+        const search = open.querySelector("[data-psearch]");
+        search?.addEventListener("input", () => {
+          const q = search.value.trim().toLowerCase();
+          open.querySelectorAll(".pgroups [data-q]").forEach((c) => {
+            c.hidden = !!q && !c.dataset.q.includes(q);
+          });
+          open.querySelectorAll(".pgroups .pgroup").forEach((g) => {
+            g.hidden = ![...g.querySelectorAll("[data-q]")].some((c) => !c.hidden);
+          });
+          open.querySelector(".prec")?.toggleAttribute("hidden", !!q);
+        });
+      }
+    }
+  };
+
+  // src/deck/actions.js
+  var actionsMixin = {
+    _actionsOf(hubId, cur) {
+      return this._actionList(hubId).filter((a) => !a.scope || a.scope === cur);
+    },
+    // Entity whose state an action shows (on = highlighted): only for an action with one Home Assistant step.
+    _actEntity(a) {
+      return a.steps.length === 1 && a.steps[0].type === "ha" ? a.steps[0].entity : null;
+    },
+    // One button for an action, the same in every place (block under the remote, tile in the activity list).
+    // Idle: symbol and name. Running: "3/7", a progress bar, hold to stop. Error: red, tap starts again.
+    _actionBtn(h, a, t, tile = false) {
+      const seq = this._seqState(h.id);
+      const mine = seq.action === a.id && !seq.draft;
+      const state = mine ? seq.state : "idle";
+      const running = state === "running";
+      const other = !mine && seq.state === "running" && !seq.draft;
+      const total = seq.total || a.steps.length;
+      const step = Math.min(seq.step || 1, total);
+      const cur = a.steps[step - 1];
+      const stepName = running && cur ? stepLabel(cur, t, this) : "";
+      const ent = this._actEntity(a);
+      const on = !running && ent && this._hass.states[ent]?.state === "on";
+      const miss = ent && !this._hass.states[ent];
+      const done = state === "done" && Date.now() - Date.parse(seq.finished || 0) < 6e3;
+      const label = running ? tile ? `${step}/${total} · ${stepName}` : `${step}/${total}` : a.name;
+      const hint = running ? t.actHoldStop : other ? fmtText(t.actBusyNow, [seq.name || "", seq.step || 1, seq.total || 1]) : "";
+      const tip = state === "error" ? `${a.name} – ${seq.error || t.actFailed}` : running ? `${a.name} – ${stepName}` : a.steps.length > 1 ? `${a.name}
+${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.name;
+      const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
+      const pct = running ? Math.round((step - 1) / total * 100) : 0;
+      const icon = state === "error" ? "mdi:alert-circle-outline" : running ? "mdi:progress-clock" : done ? "mdi:check" : a.icon;
+      return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
+    },
+    _actionsBlock(h, cur, t) {
+      const list = this._actionsOf(h.id, cur);
+      if (!list.length) return "";
+      return `<div class="block actions"><span class="dname">${t.actions}</span><div class="cells">${list.map((a) => this._actionBtn(h, a, t)).join("")}</div></div>`;
+    },
+    // Actions that are also shown as a tile in the activity list.
+    _actionTiles(h, cur, t) {
+      return this._actionsOf(h.id, cur).filter((a) => a.tile).map((a) => this._actionBtn(h, a, t, true));
+    },
+    // The integration carries out the steps (also when the page is closed).
+    async _runAction(hubId, id) {
+      this._buzz();
+      try {
+        await this._hass.callWS({ type: "harmony_deck/action/run", hub: hubId, action_id: id });
+      } catch (e) {
+      }
+    },
+    // Events of the action buttons: a tap starts, a tap while something runs only explains, holding a running one stops it.
+    _bindActions(root) {
+      root.querySelectorAll(".actbtn[data-actid]").forEach((b) => {
+        let tm = null, done = false;
+        const hint = () => {
+          if (!b.dataset.hinttext) return;
+          b.dataset.hint = "1";
+          setTimeout(() => b.removeAttribute("data-hint"), 2200);
+        };
+        const release = () => {
+          clearTimeout(tm);
+          b.classList.remove("holding");
+          tm = null;
+          if (this._holdingAct) {
+            this._holdingAct = false;
+            this._key = "";
+            setTimeout(() => {
+              this.hass = this._hass;
+            }, 0);
+          }
+        };
+        b.addEventListener("pointerdown", (e) => {
+          if (e.button > 0 || !b.hasAttribute("data-holdstop")) return;
+          done = false;
+          b.classList.add("holding");
+          this._buzz(8);
+          this._holdingAct = true;
+          tm = setTimeout(() => {
+            done = true;
+            release();
+            this._buzz(40);
+            this._hass.callWS({ type: "harmony_deck/action/stop", hub: b.dataset.hub }).catch(() => {
+            });
+          }, 700);
+        });
+        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, release));
+        b.addEventListener("contextmenu", (e) => e.preventDefault());
+        b.addEventListener("click", () => {
+          if (done) {
+            done = false;
+            return;
+          }
+          if (b.hasAttribute("data-holdstop") || b.classList.contains("otherrun")) {
+            this._buzz(20);
+            hint();
+            return;
+          }
+          this._runAction(b.dataset.hub, b.dataset.actid);
+        });
+      });
+    }
+  };
+
+  // src/deck/activities.js
+  var activitiesMixin = {
+    // Symbol of an activity: card option `icons`, own choice in the settings, else a guess (same keywords as the devices, so "Mac mini starten" looks like "Mac mini").
+    _actIcon(hubId, name2) {
+      return this._config.icons?.[name2] || this._settings().activityIcons?.[hubId]?.[name2] || activityIcon(name2, (n) => this._deviceIcon(n));
+    },
+    _activitiesView(h, cur, busy, t, index, part = "") {
+      const hidden = this._hidden(h.id);
+      const shown = h.list.filter((n) => n !== "PowerOff" && (this._edit || !hidden.has(n)));
+      const locks = this._locks(h);
+      const secOff = this._secLocked(h.id);
+      const offAct = this._fireOfflineAct(h);
+      const tiles = shown.map((n) => {
+        const on = !busy && cur === n, going = busy && h.starting === n, hid = hidden.has(n);
+        if (this._edit) {
+          return `<label class="tile edit-tile ${hid ? "hid" : ""}"><input type="checkbox" data-vis data-hub="${esc(h.id)}" data-act="${esc(n)}" ${hid ? "" : "checked"}>
+          <ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon><span>${esc(n)}</span></label>`;
+        }
+        if (!this._edit && secOff.has(n)) {
+          const st2 = this._tileStyle();
+          return `<button class="tile locked seclocked ts-${st2}" title="${esc(`${n} – ${t.secLockTile}`)}" data-seclocked data-hinttext="${esc(t.secLockTile)}">${st2 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st2 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:lock"></ha-icon></button>`;
+        }
+        if (n === offAct && !on && !going) {
+          const st3 = this._tileStyle();
+          return `<button class="tile locked offline ts-${st3}" title="${esc(`${n} – ${t.fireOfflineTile}`)}" data-seclocked data-hinttext="${esc(t.fireOfflineTile)}">${st3 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st3 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:television-off"></ha-icon></button>`;
+        }
+        const lk = locks.acts.has(n), st = this._tileStyle();
+        const hs = !lk && this._holdSwitchOn() && !on && !going && !!(cur || h.starting);
+        return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
+        ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
+      }).join("");
+      const aTiles = this._edit ? [] : this._actionTiles(h, cur, t);
+      const cols = Number(this._config.columns) || 3;
+      const rest = (shown.length + aTiles.length) % cols;
+      const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
+      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
+      if (part === "grid") return `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>`;
+      if (part === "below") return body;
+      return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>${body}`;
+    },
+    // The Fire TV activity while its direct (ADB) link is not reachable and the option "lock when not reachable" is on, else null.
+    _fireOfflineAct(h) {
+      const f = this._fireInfo(h.id);
+      if (!f || !f.cfg.lockOffline || f.mode !== "unknown") return null;
+      return this._fireActivity(h);
+    },
+    // Links: {activity, entity, lockActivities, lockKeys} per hub (card option `links` wins over the shared settings).
+    _links(h) {
+      const list = this._config.links?.[h.id] ?? this._settings().links?.[h.id] ?? [];
+      return list.filter((l) => l && l.activity);
+    },
+    _entityOn(entity) {
+      const st = entity && this._hass?.states?.[entity]?.state;
+      return !!st && !["off", "standby", "unavailable", "unknown", "none"].includes(st);
+    },
+    // Activities and key groups locked right now (link whose activity is running).
+    _locks(h) {
+      const acts = /* @__PURE__ */ new Set(), keys = /* @__PURE__ */ new Set();
+      for (const l of this._links(h)) {
+        if (h.current !== l.activity || h.starting) continue;
+        (l.lockActivities || []).forEach((a) => a !== l.activity && acts.add(a));
+        (l.lockKeys || []).forEach((k) => keys.add(k));
+      }
+      return { acts, keys };
+    },
+    _linkBars(h, t) {
+      if (this._edit || h.starting) return "";
+      return this._links(h).filter((l) => l.entity && this._entityOn(l.entity) && h.current !== l.activity).map((l) => {
+        const name2 = this._hass.states[l.entity]?.attributes?.friendly_name || l.entity;
+        return `<div class="linkbar"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name2, h.current || t.none))}</span>
+        <button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>`;
+      }).join("");
+    },
+    // Events of the activity tiles.
+    _bindActivities(root) {
+      root.querySelectorAll("[data-sync]").forEach((b) => b.addEventListener("click", () => {
+        this._buzz(25);
+        this._hass.callService("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act });
+      }));
+      root.querySelectorAll(".tile[data-locked]").forEach((b) => {
+        let tm = null;
+        b.addEventListener("pointerdown", () => {
+          b.classList.add("holding");
+          tm = setTimeout(() => {
+            this._buzz(40);
+            this._hass.callService("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act });
+          }, 700);
+        });
+        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => {
+          clearTimeout(tm);
+          b.classList.remove("holding");
+        }));
+      });
+      root.querySelectorAll(".tile[data-seclocked]").forEach((b) => b.addEventListener("click", () => {
+        this._buzz(20);
+        b.dataset.hint = "1";
+        setTimeout(() => b.removeAttribute("data-hint"), 1600);
+      }));
+      root.querySelectorAll(".tile[data-holdsw]").forEach((b) => {
+        let tm = null, done = false;
+        const stop = () => {
+          clearTimeout(tm);
+          b.classList.remove("holding");
+          if (!done && tm) {
+            b.dataset.hint = "1";
+            setTimeout(() => b.removeAttribute("data-hint"), 1600);
+          }
+          tm = null;
+        };
+        b.addEventListener("pointerdown", (e) => {
+          if (e.button > 0) return;
+          done = false;
+          b.classList.add("holding");
+          this._buzz(8);
+          tm = setTimeout(() => {
+            done = true;
+            tm = null;
+            b.classList.remove("holding");
+            this._buzz(40);
+            this._startActivity(b.dataset.hub, b.dataset.act);
+          }, 700);
+        });
+        ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
+        b.addEventListener("contextmenu", (e) => e.preventDefault());
+      });
+      root.querySelectorAll(".tile[data-act]:not([data-locked]):not([data-holdsw])").forEach((b) => b.addEventListener("click", () => {
+        this._buzz(25);
+        this._startActivity(b.dataset.hub, b.dataset.act);
+      }));
+    },
+    // Starts an activity and folds the header away (option collapse_header).
+    _startActivity(hub, activity) {
+      this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+      const apply = () => {
+        if (this._collapseOn()) {
+          this._hdrCollapsed = { ...this._hdrCollapsed || {}, [hub]: true };
+          this._scrollRemote = true;
+          this._scrollAt = Date.now();
+        }
+        this._rerender();
+      };
+      if (this._collapseOn()) this._animSection(hub, "collapse", apply);
+      else apply();
+    }
+  };
+
+  // src/deck/bind.js
+  var bindMixin = {
+    _bind() {
+      const root = this.shadowRoot;
+      this._bindSettings(root);
+      this._bindInfo(root);
+      this._bindFrame(root);
+      this._bindActivities(root);
+      this._bindHelp(root);
+      this._bindFire(root);
+      this._bindFireEditor(root);
+      this._bindKeyboard(root);
+      this._bindDevices(root);
+      this._bindFavorites(root);
+      this._bindProfiles(root);
+      this._bindActions(root);
+      this._bindActionEditor(root);
+      this._bindKeys(root);
+      this._bindLockMark(root);
+    }
+  };
+
   // src/deck/data.js
   var dataMixin = {
     // Optional: hold each key for a moment (config `hold_secs`), helps hosts that miss very short key presses.
@@ -836,45 +1289,12 @@
     }
   };
 
-  // src/shared/version.js
-  var VERSION = "0.4.1";
-
-  // src/shared/i18n.js
-  var TEXT_URL = "/harmony_deck/translations";
-  var TEXT_FUNCS = ["running", "starting", "linkMismatch"];
-  var TEXT_CACHE = {};
-  function fmtText(tpl, args) {
-    return String(tpl).replace(/\{(\d+)\}/g, (_, n) => args[+n] ?? "");
-  }
-  function mergeText(base, over) {
-    const out = { ...base };
-    for (const k of Object.keys(over || {})) {
-      out[k] = over[k] && typeof over[k] === "object" && !Array.isArray(over[k]) ? mergeText(base[k] || {}, over[k]) : over[k];
-    }
-    return out;
-  }
-  function loadText(lang) {
-    if (!TEXT_CACHE[lang]) {
-      const get = (code) => fetch(`${TEXT_URL}/${code}.json?v=${VERSION}`).then((r) => r.ok ? r.json() : null).catch(() => null);
-      TEXT_CACHE[lang] = Promise.all([get("en"), lang === "en" ? null : get(lang)]).then(([en, own]) => {
-        const t = mergeText(en || {}, own || {});
-        TEXT_FUNCS.forEach((k) => {
-          const tpl = t[k];
-          t[k] = (...a) => fmtText(tpl, a);
-        });
-        t.__ok = !!en;
-        return t;
-      });
-    }
-    return TEXT_CACHE[lang];
-  }
-
   // src/deck/devices.js
   var devicesMixin = {
-    _deviceIcon(name, hubId = "") {
-      const own = this._settings().deviceIcons?.[hubId]?.[name];
+    _deviceIcon(name2, hubId = "") {
+      const own = this._settings().deviceIcons?.[hubId]?.[name2];
       if (own) return own;
-      const k = name.toLowerCase();
+      const k = name2.toLowerCase();
       const map = [
         ["fire tv cube", "mdi:cube-outline"],
         ["cube", "mdi:cube-outline"],
@@ -1431,10 +1851,10 @@
       }));
       root.querySelectorAll("[data-pkgadd]").forEach((b) => b.addEventListener("click", () => {
         const box = b.closest(".pkgbox");
-        const name = box.querySelector("[data-pkgname]").value.trim();
+        const name2 = box.querySelector("[data-pkgname]").value.trim();
         const pkg = box.querySelector("[data-pkgnew]").value;
-        if (name && pkg) this._patchDirect(b.dataset.pkgadd, (c) => {
-          c.customApps = [...(c.customApps || []).filter((x) => x.name !== name), { name, pkg }];
+        if (name2 && pkg) this._patchDirect(b.dataset.pkgadd, (c) => {
+          c.customApps = [...(c.customApps || []).filter((x) => x.name !== name2), { name: name2, pkg }];
         });
       }));
       root.querySelectorAll("[data-pkgunmap]").forEach((b) => b.addEventListener("click", (e) => {
@@ -1516,8 +1936,8 @@
       if (hit) return { name: hit.name, abbr: hit.abbr || hit.name.slice(0, 2), color: hit.color || "#546e7a", fg: hit.fg || "#fff", icon: hit.icon || "" };
       const sys = SYS_APPS[raw];
       if (sys) return { name: t.appSys?.[sys[0]] || prettyPkg(raw), abbr: "", color: "#546e7a", fg: "#fff", icon: sys[1] };
-      const name = /^[\w]+(\.[\w]+)+$/.test(raw) ? APP_ALIASES[raw] || prettyPkg(raw) : String(raw);
-      return { name, abbr: name.slice(0, 2), color: "#546e7a", fg: "#fff", icon: "" };
+      const name2 = /^[\w]+(\.[\w]+)+$/.test(raw) ? APP_ALIASES[raw] || prettyPkg(raw) : String(raw);
+      return { name: name2, abbr: name2.slice(0, 2), color: "#546e7a", fg: "#fff", icon: "" };
     },
     _appBadge(a, t) {
       const mark = (cls, icon, tip) => `<ha-icon class="abadge ${cls}" icon="${icon}" title="${esc(tip)}"></ha-icon>`;
@@ -2649,7 +3069,7 @@
     _physCmd(hub, dev, e) {
       const cmds = this._devicesOf(hub)[dev] || [];
       const canon = (x) => String(x).toLowerCase().replace(/command|\u2318/g, "cmd").replace(/control/g, "ctrl").replace(/option/g, "alt").replace(/escape/g, "esc");
-      const byCanon = (name) => cmds.find((c) => canon(c) === name);
+      const byCanon = (name2) => cmds.find((c) => canon(c) === name2);
       const first = (list) => {
         for (const n of list) {
           const c = cmds.find((x) => x.toLowerCase() === n.toLowerCase());
@@ -2703,9 +3123,9 @@
         return "";
       }
     },
-    _choiceSet(name) {
+    _choiceSet(name2) {
       try {
-        if (name) localStorage.setItem("harmony_deck_profile", name);
+        if (name2) localStorage.setItem("harmony_deck_profile", name2);
         else localStorage.removeItem("harmony_deck_profile");
       } catch (e) {
       }
@@ -3240,26 +3660,26 @@
       <div class="etitle outside" data-t="acts">${t.visible}</div>`;
     },
     // Icon chooser for a device: shows the current symbol; tapping opens a grid of all symbols (a native select cannot show icons).
-    _iconPicker(hubId, name, t, kind = "dev") {
+    _iconPicker(hubId, name2, t, kind = "dev") {
       const act = kind === "act";
-      const own = (act ? this._settings().activityIcons : this._settings().deviceIcons)?.[hubId]?.[name] || "";
-      const key = `${kind}|${hubId}|${name}`;
+      const own = (act ? this._settings().activityIcons : this._settings().deviceIcons)?.[hubId]?.[name2] || "";
+      const key = `${kind}|${hubId}|${name2}`;
       const open = this._iconOpen === key;
       const list = act ? [...new Map([...DEVICE_ICONS, ...ACTION_ICONS].map((x) => [x[0], x])).values()] : DEVICE_ICONS;
       const cur = list.find(([ic]) => ic === own);
-      const auto = act ? activityIcon(name, (n) => this._deviceIcon(n)) : this._deviceIcon(name, hubId);
-      const cell = (ic, label, sel) => `<button class="iconcell ${sel ? "sel" : ""}" data-iconpick="${esc(ic)}" data-kind="${kind}" data-hub="${esc(hubId)}" data-dev="${esc(name)}" title="${esc(label)}"><ha-icon icon="${ic || auto}"></ha-icon>${ic ? "" : "<small>A</small>"}</button>`;
-      return `<div class="iconrow"><span class="iname"><ha-icon icon="${own || auto}"></ha-icon> ${esc(name)}</span>
+      const auto = act ? activityIcon(name2, (n) => this._deviceIcon(n)) : this._deviceIcon(name2, hubId);
+      const cell = (ic, label, sel) => `<button class="iconcell ${sel ? "sel" : ""}" data-iconpick="${esc(ic)}" data-kind="${kind}" data-hub="${esc(hubId)}" data-dev="${esc(name2)}" title="${esc(label)}"><ha-icon icon="${ic || auto}"></ha-icon>${ic ? "" : "<small>A</small>"}</button>`;
+      return `<div class="iconrow"><span class="iname"><ha-icon icon="${own || auto}"></ha-icon> ${esc(name2)}</span>
       <button class="iconbtn" data-iconopen="${esc(key)}" aria-expanded="${open}"><ha-icon icon="${own || auto}"></ha-icon><span>${esc(cur ? t.iconNames?.[cur[0]] || cur[1] : t.iconAuto)}</span><ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>
       ${open ? `<div class="icongrid">${cell("", t.iconAuto, !own)}${list.map(([ic, nm]) => cell(ic, t.iconNames?.[ic] || nm, ic === own)).join("")}</div>` : ""}</div>`;
     },
     // Entity chooser with search: type part of the name or the id, tap a match. The value sits in a hidden field (`attr="entity"`).
     _entSelect(attr, ids, value, t) {
       const st = this._hass.states || {};
-      const name = (id) => String(st[id]?.attributes?.friendly_name || "").trim();
-      const disp = (id) => name(id) ? `${name(id)} (${id})` : id;
-      const all = [.../* @__PURE__ */ new Set([...ids, ...value ? [value] : []])].sort((a, b) => (name(a) || a).localeCompare(name(b) || b, void 0, { sensitivity: "base" }));
-      const opts = all.map((id) => `<button type="button" class="entopt" data-v="${esc(id)}" data-d="${esc(disp(id))}" data-q="${esc(`${name(id)} ${id}`.toLowerCase())}"><span>${esc(name(id) || id)}</span>${name(id) ? `<small>${esc(id)}</small>` : ""}</button>`).join("");
+      const name2 = (id) => String(st[id]?.attributes?.friendly_name || "").trim();
+      const disp = (id) => name2(id) ? `${name2(id)} (${id})` : id;
+      const all = [.../* @__PURE__ */ new Set([...ids, ...value ? [value] : []])].sort((a, b) => (name2(a) || a).localeCompare(name2(b) || b, void 0, { sensitivity: "base" }));
+      const opts = all.map((id) => `<button type="button" class="entopt" data-v="${esc(id)}" data-d="${esc(disp(id))}" data-q="${esc(`${name2(id)} ${id}`.toLowerCase())}"><span>${esc(name2(id) || id)}</span>${name2(id) ? `<small>${esc(id)}</small>` : ""}</button>`).join("");
       return `<div class="entpick" data-entpick><input type="text" class="entin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(t.entityPick)}" value="${esc(value ? disp(value) : "")}"><input type="hidden" ${attr}="entity" value="${esc(value || "")}">
       <div class="entlist" hidden><button type="button" class="entopt none" data-v="" data-d="" data-q=""><span>${esc(t.linkNone)}</span></button>${opts}</div></div>`;
     },
@@ -3315,7 +3735,7 @@
       const l = this._links(h)[0] || {};
       const acts = h.list.filter((n) => n !== "PowerOff");
       const opts = [`<option value="">${t.linkNone}</option>`, ...acts.map((n) => `<option value="${esc(n)}" ${l.activity === n ? "selected" : ""}>${esc(n)}</option>`)].join("");
-      const checks = (name, items, on) => items.map(([v, label]) => `<label class="chk"><input type="checkbox" data-link="${name}" value="${esc(v)}" ${(on || []).includes(v) ? "checked" : ""}>${esc(label)}</label>`).join("");
+      const checks = (name2, items, on) => items.map(([v, label]) => `<label class="chk"><input type="checkbox" data-link="${name2}" value="${esc(v)}" ${(on || []).includes(v) ? "checked" : ""}>${esc(label)}</label>`).join("");
       const doms = ["media_player", "remote", "switch", "light", "input_boolean", "binary_sensor"];
       return `<div class="linkbox esec" data-t="acts" data-hub="${esc(h.id)}"><div class="etitle">${t.secLink}</div>
       <label class="erow"><span>${t.linkEntity}</span>${this._entSelect("data-link", Object.keys(this._hass.states || {}).filter((id) => doms.includes(id.split(".")[0])), l.entity || "", t)}</label>
@@ -3396,10 +3816,11 @@
         '[data-setting="helpManual"]': "helpManual",
         '[data-link="entity"]': "linkEntity",
         '[data-link="activity"]': "linkActivity",
-        '[data-act="name"]': "actName",
-        '[data-act="entity"]': "actEntity",
-        '[data-act="op"]': "actOp",
-        '[data-act="scope"]': "actScope"
+        "[data-actname]": "actName",
+        '[data-hent="entity"]': "actEntity",
+        "[data-hop]": "actOp",
+        "[data-actscope]": "actScope",
+        "[data-acttile]": "actTile"
       };
       const tip = (el, key) => {
         if (!tips[key] || !el || el.querySelector(":scope > .tip")) return;
@@ -3421,7 +3842,7 @@
       const lg = root.querySelectorAll(".linkbox .egroup > .ehint");
       tip(lg[0], "linkLockActs");
       tip(lg[1], "linkLockKeys");
-      tip(root.querySelector(".actedit .iconrow .iname"), "actIcon");
+      tip(root.querySelector(".actform [data-acticonopen]")?.closest(".erow")?.querySelector(":scope > span"), "actIcon");
       tip(root.querySelector(".actedit > .etitle"), "actions");
       tip(root.querySelector(".etitle[data-actfavs]"), "actFavs");
       tip(heading("data-hide-app"), "apps");
@@ -3437,6 +3858,7 @@
       else if (act === "cancelno") this._cancelAsk = false;
       else if (act === "cancelyes") {
         this._cancelAsk = false;
+        this._actClose();
         const snap = this._snap;
         this._editMode = null;
         this._snap = null;
@@ -3448,6 +3870,7 @@
           }
         }
       } else if (act === "off") {
+        if (this._editMode === "actions") await this._actFlush();
         this._editMode = null;
         this._snap = null;
         this._cancelAsk = false;
@@ -3767,7 +4190,46 @@
       .cells > .newrow { grid-column-start: 1; }
       .actbtn.acton { box-shadow: inset 0 0 0 2px var(--hr-accent), 0 0 12px color-mix(in srgb, var(--hr-accent) 45%, transparent); color: var(--hr-accent); } .actbtn.acton ha-icon { color: var(--hr-accent); } .actbtn.miss { opacity: .45; }
       .actbtn { flex-direction: column; gap: 4px; min-height: 58px; } .actbtn span { font-size: 0.78em; text-align: center; }
-      .actrow { display: flex; align-items: center; gap: 10px; padding: 6px 0; } .actrow span { flex: 1; min-width: 0; } .actrow b { display: block; font-weight: 600; } .actrow small { display: block; color: var(--hr-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .actrow .key { width: 38px; height: 38px; flex: none; }
+      .actrow { display: flex; align-items: center; gap: 10px; padding: 6px 0; } .actrow span { flex: 1; min-width: 0; } .actrow b { display: block; font-weight: 600; } .actrow small { display: block; color: var(--hr-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .actrow .key { width: 38px; height: 38px; flex: none; } .actrow.ask .key { width: auto; padding: 0 12px; }
+      .actrow > .actopen { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: none; background: none; color: inherit; font: inherit; text-align: left; padding: 4px 0; cursor: pointer; } .actrow .chev { color: var(--hr-muted); }
+      .actrow.ask { padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--hr-danger, #e55) 14%, transparent); } .key.warn { background: var(--hr-danger, #e55); color: #fff; }
+      .actformhead { display: flex; align-items: center; gap: 8px; } .actformhead .etitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
+      .steplist { display: flex; flex-direction: column; gap: 6px; }
+      .step { border-radius: 12px; background: var(--hr-tile-bg); overflow: hidden; }
+      .stephead { display: flex; align-items: center; gap: 6px; padding: 4px 6px; min-height: 44px; }
+      .stephead.run { box-shadow: inset 3px 0 0 var(--hr-accent); background: color-mix(in srgb, var(--hr-accent) 14%, transparent); }
+      .stephead.err { box-shadow: inset 3px 0 0 var(--hr-danger, #e55); background: color-mix(in srgb, var(--hr-danger, #e55) 14%, transparent); }
+      .stephead.todo .steplab span { color: var(--hr-muted); font-style: italic; }
+      .stepno { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 700; background: var(--hr-card-bg, var(--card-background-color)); color: var(--hr-muted); }
+      .steplab { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: none; background: none; color: var(--hr-text); font: inherit; font-size: 0.9em; text-align: left; padding: 6px 2px; cursor: pointer; --mdc-icon-size: 18px; }
+      .steplab span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .steplab .chev { color: var(--hr-muted); }
+      .stepctl { display: flex; gap: 6px; justify-content: flex-end; } .stepctl .ib { width: 40px; height: 36px; border-radius: 10px; background: var(--hr-card-bg, var(--card-background-color)) !important; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepctl .ib:disabled { opacity: .3; }
+      .stepbody { display: flex; flex-direction: column; gap: 8px; padding: 6px 10px 12px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); }
+      .stepbody > .ehint.err, .step > .ehint.err { padding: 0 10px 8px; }
+      .ehint.err { color: var(--hr-danger, #e55); }
+      .steptypes { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+      .steptype { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border: none; border-radius: 14px; background: var(--hr-tile-bg); color: var(--hr-text); font: inherit; cursor: pointer; text-align: center; --mdc-icon-size: 26px; }
+      .steptype ha-icon { color: var(--hr-accent); } .steptype small { color: var(--hr-muted); font-size: 0.75em; line-height: 1.25; }
+      .addstep { gap: 8px; padding: 10px 16px; }
+      .actbtns { display: flex; gap: 8px; } .actbtns .key { flex: 1; gap: 8px; padding: 10px 12px; } .actbtns .key:disabled { opacity: .4; }
+      .pchips { display: flex; flex-wrap: wrap; gap: 6px; } .pgroups { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+      .pchip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 7px 12px; border: none; border-radius: 999px; background: var(--hr-card-bg, var(--card-background-color)); color: var(--hr-text); font: inherit; font-size: 0.85em; cursor: pointer; --mdc-icon-size: 18px; }
+      .pchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pchip.hot { box-shadow: inset 0 0 0 1px var(--hr-accent); } .pchip.sel { background: var(--hr-accent); color: var(--hr-on-accent); }
+      .pchip[hidden], .pgroup[hidden], .prec[hidden] { display: none; }
+      .psearch { font: inherit; padding: 8px 12px; border-radius: 10px; background: var(--hr-select-bg, var(--hr-card-bg)); color: var(--hr-text); border: 1px solid var(--divider-color, #444); width: 100%; box-sizing: border-box; }
+      .stepper { display: inline-flex; align-items: center; gap: 10px; } .stepper button { width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--hr-card-bg, var(--card-background-color)); color: var(--hr-text); font: inherit; font-size: 1.1em; cursor: pointer; } .stepper b { min-width: 1.5em; text-align: center; }
+      .actbtn { position: relative; overflow: hidden; } .actbtn .actbar { position: absolute; left: 0; bottom: 0; height: 3px; width: var(--p, 0%); background: var(--hr-accent); transition: width .4s; }
+      .actbtn.running { outline: 2px solid var(--hr-accent); outline-offset: -2px; } .actbtn.running ha-icon { animation: pulse 1.4s ease-in-out infinite; }
+      .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
+      .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+      .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); transform-origin: bottom; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
+      .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
+      .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
+      .pent { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: none; border-radius: 10px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; text-align: left; cursor: pointer; }
+      .pent:hover { background: var(--hr-card-bg, var(--card-background-color)); } .pent[hidden] { display: none; }
+      .pent span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pent small, .pid { display: block; color: var(--hr-muted); font-size: 0.8em; overflow-wrap: anywhere; }
       .addact { gap: 8px; padding: 10px 16px; margin-top: 6px; background: var(--hr-accent); color: var(--hr-on-accent); } .addact ha-icon { color: var(--hr-on-accent); }
       .fdev { margin: 6px 0; } .fdev summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
       .chipbox { max-height: 170px; overflow: auto; display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; } .fchip input { display: none; } .fbr { flex-basis: 100%; height: 0; } .fchip span ha-icon { --mdc-icon-size: 16px; margin-right: 5px; vertical-align: -3px; } .fchip span { display: inline-block; padding: 6px 10px; border-radius: 999px; background: var(--hr-tile-bg); font-size: 0.8em; cursor: pointer; } .fchip input:checked + span { background: var(--hr-accent); color: var(--hr-on-accent); } .fchip.via span { background: transparent; color: var(--hr-muted); box-shadow: inset 0 0 0 1px var(--hr-accent); cursor: default; }
@@ -3782,13 +4244,13 @@
       .sbtn > span:last-child { min-width: 0; overflow-wrap: anywhere; }
       .erow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; font-size: 0.9em; color: var(--hr-text); }
       .erow > span:first-child { flex: 1 1 auto; color: var(--hr-text); }
-      .erow > select, .erow > input[type=text], .erow > .entpick, .erow > .picker { flex: 0 0 min(55%, 240px); }
+      .erow > select, .erow > input[type=text], .erow > input[type=number], .erow > .entpick, .erow > .picker { flex: 0 0 min(55%, 240px); }
       label.erow { cursor: pointer; } label.erow.swrow { -webkit-tap-highlight-color: transparent; }
       .egrp { display: flex; flex-direction: column; }
       .egrp > .erow { padding: 6px 0; } .egrp > .erow + .erow { border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 55%, transparent); }
       .esub { font-size: 0.8em; font-weight: 600; color: var(--hr-muted); margin: 6px 0 2px; } .egrp:first-child > .esub, .etitle + .egrp > .esub { margin-top: 0; }
       select option, select optgroup { background-color: var(--hr-select-bg, var(--card-background-color, #1f2227)); color: var(--hr-text); }
-      .erow input[type=text], .erow select { font: inherit; padding: 8px 10px; border-radius: 10px; background: var(--hr-select-bg, var(--hr-tile-bg)); color: var(--hr-text); border: 1px solid var(--divider-color, #444); min-width: 0; width: 100%; box-sizing: border-box; }
+      .erow input[type=text], .erow input[type=number], .erow select { font: inherit; padding: 8px 10px; border-radius: 10px; background: var(--hr-select-bg, var(--hr-tile-bg)); color: var(--hr-text); border: 1px solid var(--divider-color, #444); min-width: 0; width: 100%; box-sizing: border-box; }
       .picker { display: block; min-width: 0; } .picker ha-entity-picker { display: block; width: 100%; }
       .sw { flex: none; position: relative; width: 48px; height: 28px; }
       .sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
@@ -4014,9 +4476,9 @@
           const f = this._fireInfo(h.id);
           return f && [f.mode, f.app];
         }),
-        hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], (this._settings().actions?.[h.id] || []).map((a) => this._hass.states?.[a.entity]?.state)])
+        hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])
       ]);
-      if (key === this._key) return;
+      if (key === this._key || this._holdingAct) return;
       this._key = key;
       this._render(hubs);
     }
@@ -4035,7 +4497,7 @@
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

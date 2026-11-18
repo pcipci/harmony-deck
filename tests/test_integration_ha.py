@@ -52,7 +52,7 @@ def _lock_entities(hass, entry):
 async def test_lock_entities_exist_with_names(hass: HomeAssistant):
     entry, harmony, _ = await _setup(hass)
     ents = _lock_entities(hass, entry)
-    for key in ("lock", "lock_mode", "release_minutes", "release", "lock_active", "released_until", "last_action"):
+    for key in ("lock", "lock_mode", "release_minutes", "release", "lock_active", "released_until", "last_action", "interventions_today", "intervention", "sequence"):
         assert key in ents, f"missing entity {key}"
         assert ents[key].unique_id == f"{entry.entry_id}_{harmony.entry_id}_{key}"
     assert hass.states.get(ents["lock"].entity_id).state == "off"
@@ -79,6 +79,10 @@ async def test_switch_locks_and_switches_off(hass: HomeAssistant, freezer):
     assert ("remote", "turn_off", {"entity_id": REMOTE}) in calls
     last = hass.states.get(ents["last_action"].entity_id)
     assert last.attributes["what"] == "Harmony: XBOX" and last.attributes["today"] >= 1
+    # the same intervention as an event and in the daily count
+    event = hass.states.get(ents["intervention"].entity_id)
+    assert event.attributes["event_type"] == "hub" and event.attributes["what"] == "XBOX"
+    assert hass.states.get(ents["interventions_today"].entity_id).state == "1"
     # release: the lock stops working, the entities follow
     await hass.services.async_call("button", "press", {"entity_id": ents["release"].entity_id}, blocking=True)
     assert hass.states.get(ents["lock_active"].entity_id).state == "off"
@@ -101,7 +105,7 @@ async def test_websocket_api(hass: HomeAssistant, hass_ws_client):
     assert res["success"], res
     hub = res["result"]["hubs"][REMOTE]
     assert hub["hub"] == harmony.entry_id and hub["mode"] == "off" and hub["all_activities"] == ["SAT", "XBOX"]
-    assert set(hub["entities"]) == {"lock", "lock_mode", "release_minutes", "release", "lock_active", "released_until", "last_action"}
+    assert set(hub["entities"]) == {"lock", "lock_mode", "release_minutes", "release", "lock_active", "released_until", "last_action", "interventions_today", "intervention", "sequence"}
     assert res["result"]["admin"] is True
 
     window = {"days": [0, 1], "from": "19:00", "to": "07:00"}
@@ -186,3 +190,84 @@ async def test_fire_issue_after_short_wait_and_gone_when_back(hass: HomeAssistan
     hass.states.async_set(FIRE, "idle")                          # back: the hint goes away without waiting for the next refresh
     await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, issue_id) is None
+
+
+async def _with_actions(hass, actions):
+    hass.data[DOMAIN]["settings"]["actions"] = {REMOTE: actions}
+
+
+async def test_action_runs_steps_in_order_and_reports(hass: HomeAssistant, hass_ws_client):
+    entry, _, calls = await _setup(hass)
+    sent = []
+
+    async def send(call):
+        sent.append((call.data["device"], call.data["command"], call.data.get("num_repeats")))
+
+    hass.services.async_register("remote", "send_command", send)
+    hass.states.async_set("light.kerzen", "off")
+    hass.services.async_register("homeassistant", "toggle", lambda call: sent.append(("toggle", call.data["entity_id"], None)))
+    await _with_actions(hass, [{"id": "dvd", "name": "DVD", "steps": [
+        {"type": "key", "device": "Panasonic", "command": "Input", "repeat": 2},
+        {"type": "pause", "secs": 0.1},
+        {"type": "ha", "entity": "light.kerzen", "op": "toggle"},
+    ]}])
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": "dvd"})
+    res = await client.receive_json()
+    assert res["success"] and res["result"]["state"] == "running" and res["result"]["total"] == 3
+    ent = _lock_entities(hass, entry)["sequence"].entity_id
+    for _ in range(50):
+        await hass.async_block_till_done()
+        if hass.states.get(ent).state != "running":
+            break
+        import asyncio
+        await asyncio.sleep(0.02)
+    st = hass.states.get(ent)
+    assert st.state == "done" and st.attributes["step"] == 3 and st.attributes["name"] == "DVD"
+    assert sent == [("Panasonic", "Input", 2), ("toggle", "light.kerzen", None)]
+
+
+async def test_action_busy_stop_and_service(hass: HomeAssistant, hass_ws_client):
+    import asyncio
+
+    entry, _, _ = await _setup(hass)
+    await _with_actions(hass, [{"id": "long", "name": "Lang", "steps": [{"type": "pause", "secs": 30}]}])
+    client = await hass_ws_client(hass)
+    await hass.services.async_call(DOMAIN, "run_action", {"hub": REMOTE, "action": "lang"}, blocking=True)
+    ent = _lock_entities(hass, entry)["sequence"].entity_id
+    assert hass.states.get(ent).state == "running"
+    await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": "long"})
+    res = await client.receive_json()
+    assert not res["success"] and res["error"]["code"] == "busy"          # second start is refused, not queued
+    await client.send_json_auto_id({"type": "harmony_deck/action/stop", "hub": REMOTE})
+    assert (await client.receive_json())["result"] == {"stopped": True}
+    await asyncio.sleep(0)
+    await hass.async_block_till_done()
+    assert hass.states.get(ent).state == "stopped"
+
+
+async def test_action_errors_before_and_during(hass: HomeAssistant, hass_ws_client, hass_read_only_access_token):
+    import asyncio
+
+    entry, _, _ = await _setup(hass)
+    await _with_actions(hass, [{"id": "bad", "name": "Bad", "steps": [{"type": "ha", "entity": "light.missing", "op": "on"}]},
+                               {"id": "boom", "name": "Boom", "steps": [{"type": "key", "device": "TV", "command": "Off"}]}])
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": "bad"})
+    res = await client.receive_json()
+    assert res["error"]["code"] == "invalid" and "light.missing" in res["error"]["message"]   # nothing was sent
+
+    async def fail(call):
+        raise RuntimeError("hub said no")
+
+    hass.services.async_register("remote", "send_command", fail)
+    await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": "boom"})
+    assert (await client.receive_json())["success"]
+    await asyncio.sleep(0.05)
+    await hass.async_block_till_done()
+    st = hass.states.get(_lock_entities(hass, entry)["sequence"].entity_id)
+    assert st.state == "error" and st.attributes["step"] == 1 and "hub said no" in st.attributes["error"]
+    # a draft (unsaved) may only be tested by an administrator; starting a stored one is fine for everyone
+    ro = await hass_ws_client(hass, hass_read_only_access_token)
+    await ro.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "draft": {"steps": [{"type": "pause", "secs": 1}]}})
+    assert (await ro.receive_json())["error"]["code"] == "unauthorized"

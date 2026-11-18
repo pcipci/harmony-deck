@@ -15,6 +15,7 @@ export const bindMixin = {
     this._bindFavorites(root);
     this._bindProfiles(root);
     this._bindActions(root);
+    this._bindActionEditor(root);
     this._bindKeys(root);
     this._bindLockMark(root);
   },

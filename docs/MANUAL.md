@@ -27,7 +27,7 @@ Every hub becomes a tab (room). At the top you see what is running, below the ac
 **ⓘ** opens the hub info and the three ways to edit:
 - **Settings**: look, behaviour, symbols, hub, Fire TV, info. Every tab starts with one sentence about what it is for. Each option is one row: tap anywhere on the row to switch it.
 - **Favorites**: mark keys with a star, per device or per activity. The third button, **Hide keys**, hides keys you never use (see section 6).
-- **Actions**: own buttons for Home Assistant entities, in an edit mode of their own.
+- **Actions**: own buttons and sequences of Harmony keys, pauses and Home Assistant entities, in an edit mode of their own.
 
 **Done** saves, **Cancel** drops every change of this session. Settings are stored in Home Assistant and apply on all devices.
 
@@ -55,9 +55,26 @@ When an activity does not start right (TV off, wrong input), open the **life rin
 
 **Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. This is not the lock: hidden keys are only not shown. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
 
-## 7. Actions
+## 7. Actions and sequences
 
-**ⓘ › Actions** (an edit mode of its own, with Done and Cancel like Settings): name, entity (light, switch, scene, script, automation, button …), what to do (toggle, on, off, run), symbol and when it is shown (always or only in one activity). Actions appear below the remote and show their state (on = highlighted).
+**ⓘ › Actions** is an edit mode of its own (Done and Cancel like Settings). An **action** is a button that Harmony Deck starts itself. It has a name, a symbol and a list of **steps**. An action with several steps is a **sequence**.
+
+Step types:
+- **Harmony key:** choose a device (the devices of the activity first), then a key. The keys are in the usual groups, with a search field and a row "recently used". "Repeat" sends the key several times.
+- **Pause:** 1, 2, 5 or 10 seconds, or your own value.
+- **Home Assistant:** a light, switch, script, scene, automation or button, with a search field, filter chips (Light, Switch, Script …) and recently used entities on top.
+
+In the editor, the arrows move a step, the play button tests only this step and "Test the sequence" runs the whole draft. Every step can have an own label. An action with one step, such as "toggle the candles", works like the buttons of 0.4.
+
+**Where an action appears** (set per action):
+- Under the remote in the block "Actions", in all activities or only in one ("Visible in").
+- With "Show as a tile in the activity list" also as a tile next to the activities of the hub.
+
+**While it runs:** the button shows "3/7" and a progress bar, the tile also the step ("3/7 · Pause 3 s"). A tap while something runs does not start anything and only explains. **Hold** the running button to stop it; the sequence ends between two steps, a key that was already sent cannot be taken back. Only one action runs per hub at a time. If a step fails, the button turns red and its tooltip says why.
+
+The integration carries out the steps, so a sequence also finishes when the page is closed. For automations there are the services `harmony_deck.run_action` (hub, action name or id) and `harmony_deck.stop_action`, and per hub the sensor **Sequence** (idle, running, done, stopped, error, with step and progress as attributes). Anyone who is logged in can start a stored action; testing an unsaved draft is for administrators.
+
+Actions of 0.4 are converted to a single step by themselves. Actions are the same for all profiles.
 
 ## 8. Fire TV
 
@@ -103,7 +120,7 @@ The lock is a household aid, not a security product.
 
 ## 12. Entities
 
-Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Released until, Last intervention, Hub configuration readable, Activities, Devices. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
+Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Sequence (state and progress of the actions), Released until, Last intervention, Interventions today, Intervention (event: fires with `what` each time the lock switches something off, so an automation can notify you), Hub configuration readable, Activities, Devices. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
 
 ## 13. Troubleshooting
 

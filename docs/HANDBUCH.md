@@ -27,7 +27,7 @@ Jeder Hub erscheint als Reiter (Raum). Oben steht, was gerade läuft, darunter d
 Über **ⓘ** öffnest du die Infos zum Hub und die drei Bearbeitungswege:
 - **Einstellungen**: Darstellung, Bedienung, Symbole, Hub, Fire TV, Info. Jeder Reiter beginnt mit einem Satz, wofür er da ist. Jede Option ist eine Zeile: Du kannst irgendwo auf die Zeile tippen, um sie umzuschalten.
 - **Favoriten**: Tasten mit Stern markieren, pro Gerät oder pro Aktivität. Mit dem dritten Knopf **Tasten ausblenden** versteckst du Tasten, die du nie brauchst (siehe Abschnitt 6).
-- **Aktionen**: eigene Tasten für Home-Assistant-Entitäten, als eigener Bearbeitungsmodus.
+- **Aktionen**: eigene Tasten und Sequenzen aus Harmony-Tasten, Pausen und Home-Assistant-Entitäten, als eigener Bearbeitungsmodus.
 
 Mit **Fertig** speicherst du, mit **Abbrechen** verwirfst du alle Änderungen dieser Sitzung. Die Einstellungen liegen in Home Assistant und gelten auf allen Geräten.
 
@@ -55,9 +55,26 @@ Startet eine Aktivität nicht richtig (Fernseher aus, falscher Eingang), öffnes
 
 **Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
 
-## 7. Aktionen
+## 7. Aktionen und Sequenzen
 
-**ⓘ › Aktionen** (eigener Bearbeitungsmodus mit Fertig und Abbrechen wie bei den Einstellungen): Name, Entität (Licht, Schalter, Szene, Skript, Automation, Taste …), was passieren soll (umschalten, an, aus, ausführen), Symbol und wann sie sichtbar ist (immer oder nur in einer Aktivität). Aktionen erscheinen unter der Fernbedienung und zeigen ihren Zustand (an = hervorgehoben).
+**ⓘ › Aktionen** ist ein eigener Bearbeitungsmodus (mit Fertig und Abbrechen wie bei den Einstellungen). Eine **Aktion** ist eine Taste, die Harmony Deck selbst auslöst. Sie hat einen Namen, ein Symbol und eine Liste von **Schritten**. Eine Aktion mit mehreren Schritten ist eine **Sequenz**.
+
+Schritt-Arten:
+- **Harmony-Taste:** Gerät wählen (die Geräte der Aktivität zuerst), dann eine Taste. Die Tasten stehen in den bekannten Gruppen, mit Suchfeld und einer Zeile „Zuletzt benutzt". „Wiederholen" sendet die Taste mehrfach.
+- **Pause:** 1, 2, 5 oder 10 Sekunden oder ein eigener Wert.
+- **Home Assistant:** Licht, Schalter, Skript, Szene, Automation oder Taste, mit Suchfeld, Filter-Chips (Licht, Schalter, Skript …) und den zuletzt benutzten Entitäten oben.
+
+Im Editor verschieben die Pfeile einen Schritt, die Play-Taste testet nur diesen Schritt, und „Ablauf testen" führt den ganzen Entwurf aus. Jeder Schritt kann eine eigene Beschriftung bekommen. Eine Aktion mit einem Schritt, etwa „Kerzen umschalten", funktioniert wie die Tasten aus 0.4.
+
+**Wo eine Aktion erscheint** (pro Aktion einstellbar):
+- Unter der Fernbedienung im Block „Aktionen", in allen Aktivitäten oder nur in einer („Sichtbar bei").
+- Mit „Als Kachel in der Aktivitätenliste zeigen" zusätzlich als Kachel neben den Aktivitäten des Hubs.
+
+**Während sie läuft:** Die Taste zeigt „3/7" und einen Fortschrittsbalken, die Kachel zusätzlich den Schritt („3/7 · Pause 3 s"). Ein Tipp, solange etwas läuft, startet nichts und erklärt nur. Die laufende Taste **halten** bricht ab. Die Sequenz endet zwischen zwei Schritten, eine schon gesendete Taste lässt sich nicht zurücknehmen. Pro Hub läuft immer nur eine Aktion. Scheitert ein Schritt, wird die Taste rot, und der Tooltip nennt den Grund.
+
+Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei geschlossener Seite zu Ende. Für Automationen gibt es die Dienste `harmony_deck.run_action` (Hub, Name oder Id der Aktion) und `harmony_deck.stop_action`, dazu pro Hub den Sensor **Sequenz** (bereit, läuft, fertig, abgebrochen, Fehler, mit Schritt und Fortschritt als Attribute). Jeder angemeldete Benutzer darf eine gespeicherte Aktion starten, einen ungespeicherten Entwurf testen nur Administratoren.
+
+Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle Profile.
 
 ## 8. Fire TV
 
@@ -103,7 +120,7 @@ Die Sperre ist eine Hilfe im Haushalt, kein Sicherheitsprodukt.
 
 ## 12. Entitäten
 
-Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Freigegeben bis, Letzter Eingriff, Hub-Konfiguration lesbar, Aktivitäten, Geräte. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
+Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Sequenz (Zustand und Fortschritt der Aktionen), Freigegeben bis, Letzter Eingriff, Eingriffe heute, Eingriff (Ereignis: wird bei jedem Eingriff der Sperre mit `what` ausgelöst, damit eine Automation dich benachrichtigen kann), Hub-Konfiguration lesbar, Aktivitäten, Geräte. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
 
 ## 13. Fehlerbehebung
 

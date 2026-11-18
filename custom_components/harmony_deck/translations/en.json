@@ -43,6 +43,19 @@
       },
       "last_action": {
         "name": "Last intervention"
+      },
+      "interventions_today": {
+        "name": "Interventions today"
+      },
+      "sequence": {
+        "name": "Sequence",
+        "state": {
+          "idle": "Idle",
+          "running": "Running",
+          "done": "Done",
+          "stopped": "Stopped",
+          "error": "Error"
+        }
       }
     },
     "switch": {
@@ -69,6 +82,20 @@
           "schedule": "Schedule"
         }
       }
+    },
+    "event": {
+      "intervention": {
+        "name": "Intervention",
+        "state_attributes": {
+          "event_type": {
+            "name": "Intervention",
+            "state": {
+              "fire": "Fire TV app switched off",
+              "hub": "Harmony activity switched off"
+            }
+          }
+        }
+      }
     }
   },
   "issues": {
@@ -83,6 +110,32 @@
     "fire_unreachable": {
       "title": "Fire TV “{name}” is not reachable",
       "description": "Harmony Deck cannot reach “{name}” for several minutes. Its keys and apps then only work through Harmony, and its status in the card is unknown. Check that the device is on and ADB debugging is enabled (a sleeping Fire TV is often unreachable)."
+    }
+  },
+  "services": {
+    "run_action": {
+      "name": "Run action",
+      "description": "Starts an action (or sequence) of Harmony Deck. Refused while another action runs on the same hub.",
+      "fields": {
+        "hub": {
+          "name": "Hub",
+          "description": "Remote entity of the Harmony hub."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Name or id of the action, as set in the card."
+        }
+      }
+    },
+    "stop_action": {
+      "name": "Stop action",
+      "description": "Stops the running action of a hub between two steps.",
+      "fields": {
+        "hub": {
+          "name": "Hub",
+          "description": "Remote entity of the Harmony hub."
+        }
+      }
     }
   }
 }

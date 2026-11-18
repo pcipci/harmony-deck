@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.button import ButtonEntity
+from homeassistant.components.event import EventEntity
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.select import SelectEntity
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
@@ -17,6 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import Entity, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_change
 
 from .const import DOMAIN
 from .lock import LockManager, lock_hubs
@@ -31,6 +33,9 @@ LOCK_KEYS = {
     "lock_active": "binary_sensor",
     "released_until": "sensor",
     "last_action": "sensor",
+    "interventions_today": "sensor",
+    "intervention": "event",
+    "sequence": "sensor",
 }
 
 
@@ -183,6 +188,37 @@ class LastAction(LockEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"what": self._manager.hub(self._hub_id).get("last_what"), "today": self._manager.today_count(self._hub_id)}
+
+
+class InterventionsToday(LockEntity, SensorEntity):
+    """Number of interventions of the lock today (starts again at midnight)."""
+
+    _attr_state_class = None
+
+    @property
+    def native_value(self) -> int:
+        return self._manager.today_count(self._hub_id)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # The count starts again at midnight, which is not a change the manager reports.
+        self.async_on_remove(async_track_time_change(self.hass, lambda _now: self.async_write_ha_state(), hour=0, minute=0, second=5))
+
+
+class Intervention(LockEntity, EventEntity):
+    """Fires when the lock switches something off: "fire" (a Fire TV app) or "hub" (a Harmony activity); `what` names it."""
+
+    _attr_event_types = ["fire", "hub"]
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self._manager.async_add_intervention_listener(self._on_intervention))
+
+    @callback
+    def _on_intervention(self, hub_id: str, kind: str, what: str) -> None:
+        if hub_id == self._hub_id:
+            self._trigger_event(kind, {"what": what})
+            self.async_write_ha_state()
 
 
 def setup_platform(factory: Callable[..., Entity], *keys: str):

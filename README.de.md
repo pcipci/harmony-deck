@@ -31,7 +31,7 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 | **Fernbedienung** | Lautstärke, Steuerkreuz, Kanal, Wiedergabe, Farbtasten, Ziffern, jeweils an das richtige Gerät der Aktivität |
 | **Geräte** | Eine Fernbedienung pro Gerät, Tasten in Gruppen (Eingänge, Ton, Menüs …), Tastatur für PC/Mac |
 | **Favoriten** | Pro Gerät und pro Aktivität; Tasten, die du nie brauchst, lassen sich pro Gerät ausblenden |
-| **Aktionen** | Eigene Tasten für Lampen, Szenen, Skripte und jede Home-Assistant-Entität, für alle Aktivitäten oder nur eine |
+| **Aktionen** | Eigene Tasten und Sequenzen aus Harmony-Tasten, Pausen und Home-Assistant-Aktionen, mit Fortschritt und Abbruch, als Taste oder Kachel; auch für Automationen |
 | **Fire TV** | Apps, Wiedergabe/Pause, Standby, Texteingabe und Zusatztasten per ADB; beim Fire TV Cube Lautstärke über den Infrarot-Sender |
 | **Sperre** | Aus / Immer / Zeitplan, zeitliche Freigabe, erlaubte Aktivitäten und Apps, Geräte, die mit dem Fire TV ausgehen, letzte 100 Eingriffe |
 | **Looks** | 11 Looks, Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
@@ -98,7 +98,7 @@ Die ausführliche Anleitung steht im [Handbuch](docs/HANDBUCH.md) (englisch: [Ma
 
 ## Die Sperre
 
-Pro Hub legt die Integration **Sperre** (Schalter), **Sperr-Modus** (aus, immer, Zeitplan), **Freigabedauer**, **Freigeben** (Taste), **Sperre wirksam** (Binärsensor, erlaubte Aktivitäten als Attribut), **Freigegeben bis** und **Letzter Eingriff** an. Alle lassen sich in Automationen nutzen.
+Pro Hub legt die Integration **Sperre** (Schalter), **Sperr-Modus** (aus, immer, Zeitplan), **Freigabedauer**, **Freigeben** (Taste), **Sperre wirksam** (Binärsensor, erlaubte Aktivitäten als Attribut), **Freigegeben bis**, **Letzter Eingriff**, **Eingriffe heute** und ein Ereignis **Eingriff** (mit dem Namen des Ausgeschalteten, für Benachrichtigungen) an. Alle lassen sich in Automationen nutzen.
 
 Solange die Sperre wirkt:
 

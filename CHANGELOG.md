@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+- **Actions with steps (sequences).** An action is a list of steps: Harmony key (device, key, repeat), pause, Home Assistant entity (light, switch, script, scene, automation, button). The integration carries them out, also when the page is closed; one action runs per hub at a time, a second start is refused.
+- The card shows the progress on the button ("3/7") and on the tile ("3/7 · step"), holding a running button stops it, a failed step turns it red with the reason.
+- Where an action appears: under the remote (all activities or one) and, new, as a tile in the activity list.
+- Step editor in the edit mode "Actions": add, move, test one step, test the whole draft, own labels; pickers with search, filter chips and "recently used".
+- Services `harmony_deck.run_action` and `harmony_deck.stop_action`, websocket `harmony_deck/action/run|stop`, and a sensor "Sequence" per hub (state and progress as attributes).
+- Lock entities: event "Intervention" (fires with `what` each time the lock switches something off, for notifications) and sensor "Interventions today".
+
+### Changed
+- Actions are stored per installation (not per profile). Actions of 0.4 become one step by themselves. Their buttons now run through the integration.
+
 ## 0.4.1
 
 ### Changed

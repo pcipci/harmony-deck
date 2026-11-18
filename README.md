@@ -31,7 +31,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Remote** | Volume, D‑pad, channel, transport, colour keys, number pad, each sent to the right device of the activity |
 | **Devices** | One remote per device, keys grouped (inputs, sound, menus …), keyboard for PC/Mac devices |
 | **Favourites** | Per device and per activity; keys you never use can be hidden per device |
-| **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with values (brightness, colour, volume, source …), volume for infrared devices, step list, progress and stop, favorites per action, as a button or a tile; also for automations |
+| **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with conditions (wait until, if), values (brightness, colour, volume, source …), volume for infrared devices, step list, progress and stop, favorites per action, as a button or a tile; also for automations |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
 | **Looks** | 11 skins, tile and key styles, coloured icons, light and dark |

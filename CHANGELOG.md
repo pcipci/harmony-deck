@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+- **Step "Wait until":** waits until a condition holds (at most 1–120 s), then goes on or stops with an error. Replaces guessed pauses.
+- **Step "If":** checks a condition once; if it does not hold, skip the next 1–10 steps, end the action, or stop with an error and an own message. Actions still only move forward (no loops).
+- **Conditions** are generic: any Home Assistant entity, its state or an attribute, compared with a value (is, is not, greater, less, at least, at most). Nothing is tied to a kind of device.
+- Steps an "if" skipped are shown crossed out in the step list; the sequence sensor has a new attribute `skipped`.
+
 ## 0.5.3
 
 Contains what was planned as 0.5.2 (values) and 0.5.3 (volume over infrared).

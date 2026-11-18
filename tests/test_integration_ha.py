@@ -316,3 +316,67 @@ async def test_action_values_and_ir_volume(hass: HomeAssistant, hass_ws_client):
     assert (await run("src"))["success"]          # unknown source: error in the step, nothing sent
     st = hass.states.get(ent)
     assert st.state == "error" and "unknown source" in st.attributes["error"]
+
+
+async def test_action_wait_and_if(hass: HomeAssistant, hass_ws_client):
+    import asyncio
+
+    entry, _, _ = await _setup(hass)
+    sent = []
+
+    async def rec(call):
+        sent.append(call.data["entity_id"])
+
+    hass.services.async_register("homeassistant", "turn_on", rec)
+    hass.states.async_set("media_player.tv", "off")
+    for e in ("light.a", "light.b", "light.c"):
+        hass.states.async_set(e, "off")
+    on = {"entity": "media_player.tv", "value": "on"}
+    await _with_actions(hass, [
+        {"id": "w", "name": "Wait", "steps": [{"type": "wait", "cond": on, "timeout": 5}, {"type": "ha", "entity": "light.a", "op": "on"}]},
+        {"id": "s", "name": "Skip", "steps": [{"type": "if", "cond": {**on, "op": "not"}, "else": "skip", "skip": 1},
+                                              {"type": "ha", "entity": "light.a", "op": "on"}, {"type": "ha", "entity": "light.b", "op": "on"}]},
+        {"id": "e", "name": "End", "steps": [{"type": "if", "cond": {**on, "value": "playing"}, "else": "end"},
+                                             {"type": "ha", "entity": "light.c", "op": "on"}]},
+        {"id": "t", "name": "Timeout", "steps": [{"type": "wait", "cond": {**on, "value": "playing"}, "timeout": 1}]},
+        {"id": "f", "name": "Fail", "steps": [{"type": "if", "cond": {**on, "value": "playing"}, "else": "fail", "message": "TV not playing"}]},
+    ])
+    client = await hass_ws_client(hass)
+    ent = _lock_entities(hass, entry)["sequence"].entity_id
+
+    async def start(action):
+        await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": action})
+        assert (await client.receive_json())["success"]
+
+    async def finish():
+        for _ in range(200):
+            await hass.async_block_till_done()
+            if hass.states.get(ent).state != "running":
+                return hass.states.get(ent)
+            await asyncio.sleep(0.02)
+        return hass.states.get(ent)
+
+    await start("w")                                  # waits until the TV is on, then goes on
+    await asyncio.sleep(0.2)
+    assert hass.states.get(ent).state == "running" and sent == []
+    hass.states.async_set("media_player.tv", "on")
+    st = await finish()
+    assert st.state == "done" and sent == ["light.a"]
+
+    sent.clear()
+    await start("s")                                  # TV is on, so "if not on" fails -> skip one step
+    st = await finish()
+    assert st.state == "done" and sent == ["light.b"] and st.attributes["skipped"] == [2]
+
+    sent.clear()
+    await start("e")                                  # not playing -> end without the rest
+    st = await finish()
+    assert st.state == "done" and sent == [] and st.attributes["skipped"] == [2]
+
+    await start("t")
+    st = await finish()
+    assert st.state == "error" and "condition not met" in st.attributes["error"]
+
+    await start("f")
+    st = await finish()
+    assert st.state == "error" and st.attributes["error"] == "TV not playing"

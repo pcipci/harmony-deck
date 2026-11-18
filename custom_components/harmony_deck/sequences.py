@@ -5,7 +5,8 @@ Status per hub (read by the "Sequence" sensor and through it by the card)::
     {"state": "idle" | "running" | "done" | "stopped" | "error",
      "action": id, "name": name, "step": 1-based number of the current (or failed / last) step, "total": n,
      "first": 1-based number of the first step of this run, "error": message or None,
-     "started": iso, "step_started": iso, "finished": iso or None, "draft": bool}
+     "started": iso, "step_started": iso, "finished": iso or None, "draft": bool,
+     "skipped": 1-based numbers of the steps an "if" skipped in this run}
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.util import dt as dt_util
 
 from .actionsmodel import MAX_RUNTIME
-from .steps import STEP_TYPES, RunContext, StepError
+from .steps import STEP_TYPES, Flow, RunContext, StepError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ class SequenceRunner:
                 raise StepError(f"step {n + 1}: {err}") from err
         now = dt_util.utcnow().isoformat()
         self._set(hub, state="running", action=action.get("id"), name=action.get("name"), step=first + 1, first=first + 1,
-                  total=len(steps), error=None, started=now, step_started=now, finished=None, draft=draft)
+                  total=len(steps), error=None, started=now, step_started=now, finished=None, draft=draft, skipped=[])
         task = self.hass.async_create_background_task(self._run(ctx, steps, first, last), f"harmony_deck action {hub}")
         self._tasks[hub] = task
 
@@ -113,11 +114,21 @@ class SequenceRunner:
     async def _run(self, ctx: RunContext, steps: list[dict[str, Any]], first: int, last: int) -> None:
         hub = ctx.hub
         n = first
+        skipped: list[int] = []
         try:
             async with asyncio.timeout(MAX_RUNTIME):
-                for n in range(first, last):
+                while n < last:
                     self._set(hub, step=n + 1, step_started=dt_util.utcnow().isoformat())
-                    await STEP_TYPES[steps[n]["type"]].run(ctx, steps[n])
+                    flow = await STEP_TYPES[steps[n]["type"]].run(ctx, steps[n])
+                    if isinstance(flow, Flow) and flow.end:
+                        skipped += range(n + 2, last + 1)
+                        self._set(hub, skipped=list(skipped))
+                        break
+                    jump = flow.skip if isinstance(flow, Flow) else 0
+                    if jump:
+                        skipped += range(n + 2, min(n + 2 + jump, last + 1))
+                        self._set(hub, skipped=list(skipped))
+                    n += 1 + jump
         except asyncio.CancelledError:
             self._set(hub, state="stopped", step=n + 1, finished=dt_util.utcnow().isoformat())
             return

@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 
+from .conditions import clean_condition
 from .values import SET_ONLY, clean_values
 
 MAX_ACTIONS = 60          # per hub
@@ -26,6 +27,8 @@ MAX_RUNTIME = 600.0       # seconds, a whole run
 MAX_REPEAT = 10
 MAX_TEXT = 60
 MAX_FAVS = 40            # favourite keys per action
+MAX_SKIP = 10            # "if" may skip at most this many following steps
+ELSE = ("skip", "end", "fail")
 HA_OPS = ("toggle", "on", "off", "run", "set")   # "set": only the values, nothing switched
 _ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
@@ -85,7 +88,39 @@ def _irvol(step: dict[str, Any]) -> dict[str, Any] | None:
     return {"type": "irvol", "device": device, "level": round(min(level, 200), 1)}
 
 
-STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha, "irvol": _irvol}
+def _wait(step: dict[str, Any]) -> dict[str, Any] | None:
+    """Wait until a condition holds, at most `timeout` seconds; then go on or stop with an error."""
+    cond = clean_condition(step.get("cond"))
+    if cond is None:
+        return None
+    try:
+        timeout = float(step.get("timeout") or 30)
+    except (TypeError, ValueError):
+        timeout = 30.0
+    if timeout != timeout:
+        timeout = 30.0
+    return {"type": "wait", "cond": cond, "timeout": round(min(max(timeout, 1), MAX_PAUSE), 1),
+            "onTimeout": "continue" if step.get("onTimeout") == "continue" else "abort"}
+
+
+def _if(step: dict[str, Any]) -> dict[str, Any] | None:
+    """If a condition holds, go on; else skip the next steps, end the action, or stop with an error."""
+    cond = clean_condition(step.get("cond"))
+    if cond is None:
+        return None
+    other = step.get("else") if step.get("else") in ELSE else "skip"
+    out = {"type": "if", "cond": cond, "else": other}
+    if other == "skip":
+        try:
+            out["skip"] = min(max(int(step.get("skip") or 1), 1), MAX_SKIP)
+        except (TypeError, ValueError):
+            out["skip"] = 1
+    if other == "fail" and (msg := _text(step.get("message"))):
+        out["message"] = msg
+    return out
+
+
+STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha, "irvol": _irvol, "wait": _wait, "if": _if}
 
 
 def clean_step(step: Any) -> dict[str, Any] | None:

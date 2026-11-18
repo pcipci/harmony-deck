@@ -13,6 +13,7 @@ from typing import Any
 from homeassistant.core import Context, HomeAssistant
 
 from . import irvolume
+from .conditions import holds
 from .const import DOMAIN
 from .values import DEFAULT_VOLUME_CAP, calls, out_of_range, unsupported
 
@@ -36,13 +37,21 @@ class RunContext:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class Flow:
+    """What the runner does after a step: go on (default), skip the next `skip` steps, or end the action."""
+
+    skip: int = 0
+    end: bool = False
+
+
 class StepType:
-    """Base of all step types."""
+    """Base of all step types. run() may return a Flow to change the order; None means "next step"."""
 
     def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
         """Raise StepError if the step cannot run (called for all steps before the first one is sent)."""
 
-    async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
+    async def run(self, ctx: RunContext, step: dict[str, Any]) -> Flow | None:
         raise NotImplementedError
 
 
@@ -73,6 +82,53 @@ class PauseStep(StepType):
 
     async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
         await asyncio.sleep(step["secs"])
+
+
+_POLL = 0.5  # seconds between two looks while waiting
+
+
+def _holds(ctx: RunContext, cond: dict[str, Any]) -> bool:
+    state = ctx.hass.states.get(cond["entity"])
+    return holds(cond, None if state is None else state.state, None if state is None else dict(state.attributes))
+
+
+def _check_cond(ctx: RunContext, cond: dict[str, Any]) -> None:
+    if ctx.hass.states.get(cond["entity"]) is None:
+        raise StepError(f"unknown entity: {cond['entity']}")
+
+
+class WaitStep(StepType):
+    """Wait until a condition holds (at most `timeout` seconds). Stop ends the wait at once."""
+
+    def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        _check_cond(ctx, step["cond"])
+
+    async def run(self, ctx: RunContext, step: dict[str, Any]) -> Flow | None:
+        loop = asyncio.get_running_loop()
+        end = loop.time() + step["timeout"]
+        while not _holds(ctx, step["cond"]):
+            if loop.time() >= end:
+                if step["onTimeout"] == "continue":
+                    return None
+                raise StepError(f"waited {step['timeout']:g} s, condition not met")
+            await asyncio.sleep(min(_POLL, max(end - loop.time(), 0.01)))
+        return None
+
+
+class IfStep(StepType):
+    """Look at a condition once: holds -> next step; else skip some steps, end the action, or fail."""
+
+    def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        _check_cond(ctx, step["cond"])
+
+    async def run(self, ctx: RunContext, step: dict[str, Any]) -> Flow | None:
+        if _holds(ctx, step["cond"]):
+            return None
+        if step["else"] == "end":
+            return Flow(end=True)
+        if step["else"] == "fail":
+            raise StepError(step.get("message") or "condition not met")
+        return Flow(skip=step.get("skip", 1))
 
 
 def _settings(ctx: RunContext) -> dict[str, Any]:
@@ -177,4 +233,4 @@ async def _call(ctx: RunContext, domain: str, service: str, data: dict[str, Any]
         raise StepError(f"{domain}.{service}: {err}") from err
 
 
-STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep(), "irvol": IrVolumeStep()}
+STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep(), "irvol": IrVolumeStep(), "wait": WaitStep(), "if": IfStep()}

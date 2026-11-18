@@ -19,6 +19,7 @@ export const sequencePanelMixin = {
     const mine = seq.action === a.id && !seq.draft;
     if (!mine) return "open";
     const n = i + 1, first = seq.first || 1;
+    if ((seq.skipped || []).includes(n)) return "skipped";
     if (seq.state === "done") return n >= first ? "done" : "open";
     if (n < first) return "open";
     if (n < seq.step) return "done";
@@ -52,7 +53,7 @@ export const sequencePanelMixin = {
     const n = a.steps.length;
     const status = !mine ? "" : seq.state === "running" ? fmtText(t.seqStep, [seq.step, n])
       : seq.state === "done" ? t.seqDone : seq.state === "stopped" ? fmtText(t.seqStopped, [seq.step]) : seq.state === "error" ? fmtText(t.seqFailed, [seq.step]) : "";
-    const marks = { done: "mdi:check-circle", current: "mdi:progress-clock", error: "mdi:alert-circle", stopped: "mdi:stop-circle-outline", open: "mdi:circle-outline" };
+    const marks = { done: "mdi:check-circle", current: "mdi:progress-clock", error: "mdi:alert-circle", stopped: "mdi:stop-circle-outline", open: "mdi:circle-outline", skipped: "mdi:skip-next-circle-outline" };
     const rows = a.steps.map((s, i) => {
       const m = this._stepMark(seq, a, i);
       const err = m === "error" && seq.error ? `<small class="seqerr">${esc(seq.error)}</small>` : "";

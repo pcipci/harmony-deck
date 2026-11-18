@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.5.3";
+  var VERSION = "0.6.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -454,6 +454,97 @@
         filter();
       }));
       filter();
+    }
+  };
+
+  // src/deck/steps/cond.js
+  var HIDDEN_ATTRS = /* @__PURE__ */ new Set(["friendly_name", "icon", "entity_picture", "supported_features", "supported_color_modes", "attribution", "restored", "editable", "assumed_state", "entity_picture_local"]);
+  var OPS = ["is", "not", "gt", "lt", "ge", "le"];
+  var NUMERIC = ["gt", "lt", "ge", "le"];
+  var SHOWN2 = 60;
+  var states = (card) => card?._hass?.states || {};
+  var nameOf = (card, id) => states(card)[id]?.attributes?.friendly_name || id;
+  var opText = (t) => ({ is: t.cOpIs, not: t.cOpNot, gt: t.cOpGt, lt: t.cOpLt, ge: t.cOpGe, le: t.cOpLe });
+  var scalar = (v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? String(v) : null;
+  var newCond = () => ({ entity: "", attr: "", op: "is", value: "" });
+  function condValid(c) {
+    if (!c || !/^[a-z_]+\.[a-z0-9_]+$/.test(c.entity || "")) return false;
+    if (NUMERIC.includes(c.op)) return c.value !== "" && Number.isFinite(Number(c.value));
+    return String(c.value ?? "") !== "";
+  }
+  function condText(c, card, t) {
+    if (!c?.entity) return t.cPick;
+    return [nameOf(card, c.entity), c.attr, opText(t)[c.op] || c.op, c.value === "" ? "…" : c.value].filter(Boolean).join(" ");
+  }
+  function pickerHtml(card, t) {
+    const st = states(card);
+    const ids = Object.keys(st).sort((a, b) => nameOf(card, a).localeCompare(nameOf(card, b), void 0, { sensitivity: "base" }));
+    const item = (id) => `<button type="button" class="pent" data-cpick="${esc(id)}" data-q="${esc(`${nameOf(card, id)} ${id}`.toLowerCase())}"><span>${esc(nameOf(card, id))}</span><small>${esc(id)} · ${esc(st[id]?.state ?? "")}</small></button>`;
+    return `<input type="search" class="psearch" data-csearch placeholder="${esc(t.stepSearchEntity)}" autocomplete="off">
+    <div class="plist" data-clist>${ids.map(item).join("")}</div><div class="ehint" data-cmore hidden>${t.stepMore}</div>`;
+  }
+  function condHtml(c, card, t) {
+    if (!c.entity) return pickerHtml(card, t);
+    const st = states(card)[c.entity];
+    const attrs = Object.keys(st?.attributes || {}).filter((k) => !HIDDEN_ATTRS.has(k)).sort();
+    if (c.attr && !attrs.includes(c.attr)) attrs.unshift(c.attr);
+    const cur = c.attr ? scalar(st?.attributes?.[c.attr]) : st?.state ?? null;
+    const ops = opText(t);
+    const chips = [...new Set([cur, ...c.attr ? [] : ["on", "off"]].filter((x) => x !== null && x !== ""))];
+    return `<div class="erow"><span><b>${esc(nameOf(card, c.entity))}</b><small class="pid">${esc(c.entity)} · ${esc(st?.state ?? t.unavailable)}</small></span><button type="button" class="mini txt" data-cpick="">${t.stepChange}</button></div>
+    <label class="erow"><span>${t.cWhat}</span><select data-cattr><option value="" ${c.attr ? "" : "selected"}>${esc(t.cState)}</option>${attrs.map((a) => `<option value="${esc(a)}" ${a === c.attr ? "selected" : ""}>${esc(a)}</option>`).join("")}</select></label>
+    <label class="erow"><span>${t.cCompare}</span><select data-cop>${OPS.map((o) => `<option value="${o}" ${o === c.op ? "selected" : ""}>${esc(ops[o])}</option>`).join("")}</select></label>
+    <label class="erow"><span>${t.cValue}</span><input type="${NUMERIC.includes(c.op) ? "number" : "text"}" step="any" data-cval value="${esc(c.value)}"></label>
+    ${chips.length ? `<div class="pchips">${chips.map((x, i) => `<button type="button" class="pchip ${String(c.value) === x ? "sel" : ""}" data-cchip="${esc(x)}">${esc(x)}${i === 0 && cur === x ? ` · ${esc(t.cNow)}` : ""}</button>`).join("")}</div>` : ""}`;
+  }
+  function bindCond(box, c, set) {
+    box.querySelectorAll("[data-cpick]").forEach((b) => b.addEventListener("click", () => set({ ...newCond(), entity: b.dataset.cpick })));
+    box.querySelector("[data-cattr]")?.addEventListener("change", (e) => set({ ...c, attr: e.target.value, value: "" }));
+    box.querySelector("[data-cop]")?.addEventListener("change", (e) => set({ ...c, op: e.target.value, value: NUMERIC.includes(e.target.value) && !Number.isFinite(Number(c.value)) ? "" : c.value }));
+    box.querySelector("[data-cval]")?.addEventListener("change", (e) => set({ ...c, value: e.target.value.trim() }));
+    box.querySelectorAll("[data-cchip]").forEach((b) => b.addEventListener("click", () => set({ ...c, value: b.dataset.cchip, op: NUMERIC.includes(c.op) && !Number.isFinite(Number(b.dataset.cchip)) ? "is" : c.op })));
+    const search = box.querySelector("[data-csearch]");
+    const list = box.querySelector("[data-clist]");
+    if (!search || !list) return;
+    const filter = () => {
+      const q = search.value.trim().toLowerCase();
+      let n = 0, hits = 0;
+      list.querySelectorAll("[data-cpick]").forEach((b) => {
+        const ok = !q || b.dataset.q.includes(q);
+        if (ok) hits++;
+        b.hidden = !ok || n >= SHOWN2;
+        if (ok && n < SHOWN2) n++;
+      });
+      box.querySelector("[data-cmore]").hidden = hits <= SHOWN2;
+    };
+    search.addEventListener("input", filter);
+    filter();
+  }
+
+  // src/deck/steps/if.js
+  var ifStep = {
+    type: "if",
+    icon: "mdi:call-split",
+    create: () => ({ type: "if", cond: newCond(), else: "skip", skip: 1 }),
+    valid: (s) => condValid(s.cond),
+    label(s, t, card) {
+      if (!s.cond?.entity) return t.cPick;
+      const other = s.else === "end" ? t.ifEnd : s.else === "fail" ? t.ifFail : fmtText(s.skip > 1 ? t.ifSkipMany : t.ifSkipOne, [String(s.skip || 1)]);
+      return fmtText(t.ifLabel, [condText(s.cond, card, t), other]);
+    },
+    editor(s, { card, t }) {
+      const body = condHtml(s.cond, card, t);
+      if (!s.cond.entity) return `<div class="esub">${t.cPickIf}</div>${body}`;
+      const stepper = s.else === "skip" ? `<div class="erow"><span>${t.ifHowMany}</span><span class="stepper"><button type="button" data-iskip="-1">−</button><b>${s.skip || 1}</b><button type="button" data-iskip="1">+</button></span></div>` : "";
+      const msg = s.else === "fail" ? `<label class="erow"><span>${t.ifMessage}</span><input type="text" data-imsg maxlength="60" placeholder="${esc(t.ifMessagePh)}" value="${esc(s.message || "")}"></label>` : "";
+      return `${body}<div class="esub">${t.ifOtherwise}</div>
+      <label class="erow"><span>${t.ifThen}</span><select data-ielse><option value="skip" ${s.else === "skip" ? "selected" : ""}>${t.ifOptSkip}</option><option value="end" ${s.else === "end" ? "selected" : ""}>${t.ifOptEnd}</option><option value="fail" ${s.else === "fail" ? "selected" : ""}>${t.ifOptFail}</option></select></label>${stepper}${msg}`;
+    },
+    bind(box, s, update) {
+      bindCond(box, s.cond, (cond) => update({ cond }));
+      box.querySelector("[data-ielse]")?.addEventListener("change", (e) => update({ else: e.target.value }));
+      box.querySelectorAll("[data-iskip]").forEach((b) => b.addEventListener("click", () => update({ skip: Math.min(10, Math.max(1, (s.skip || 1) + Number(b.dataset.iskip))) })));
+      box.querySelector("[data-imsg]")?.addEventListener("change", (e) => update({ message: e.target.value.trim() }));
     }
   };
 
@@ -818,8 +909,28 @@
     }
   };
 
+  // src/deck/steps/wait.js
+  var waitStep = {
+    type: "wait",
+    icon: "mdi:clock-check-outline",
+    create: () => ({ type: "wait", cond: newCond(), timeout: 30, onTimeout: "abort" }),
+    valid: (s) => condValid(s.cond),
+    label: (s, t, card) => s.cond?.entity ? fmtText(t.waitLabel, [condText(s.cond, card, t), String(s.timeout)]) : t.cPick,
+    editor(s, { card, t }) {
+      const body = condHtml(s.cond, card, t);
+      if (!s.cond.entity) return `<div class="esub">${t.cPickWait}</div>${body}`;
+      return `${body}<div class="esub">${t.waitTime}</div>${rangeHtml({ attr: "wtime", value: s.timeout, min: 1, max: 120, step: 1, fmt: (v) => `${v} s` })}
+      <label class="erow"><span>${t.waitThen}</span><select data-wthen><option value="abort" ${s.onTimeout === "abort" ? "selected" : ""}>${t.waitAbort}</option><option value="continue" ${s.onTimeout === "continue" ? "selected" : ""}>${t.waitContinue}</option></select></label>`;
+    },
+    bind(box, s, update) {
+      bindCond(box, s.cond, (cond) => update({ cond }));
+      bindRange(box, "wtime", (v) => `${v} s`, (v) => update({ timeout: v }));
+      box.querySelector("[data-wthen]")?.addEventListener("change", (e) => update({ onTimeout: e.target.value }));
+    }
+  };
+
   // src/deck/steps/index.js
-  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep };
+  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep, wait: waitStep, if: ifStep };
   var stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t, card) || s.type;
   function normalizeAction(a) {
     if (!a || typeof a !== "object") return null;
@@ -1418,11 +1529,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!this._hass?.user?.is_admin) return;
       const st = this._settings();
       const patch = {};
-      const states = this._hass.states || {};
+      const states2 = this._hass.states || {};
       const hidden = {};
       let changed = false;
       for (const [hub, list] of Object.entries(st.hidden || {})) {
-        const known = states[hub]?.attributes?.activity_list;
+        const known = states2[hub]?.attributes?.activity_list;
         if (!Array.isArray(known) || !known.length) {
           hidden[hub] = list;
           continue;
@@ -1456,7 +1567,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const links = {};
       let linkChanged = false;
       for (const [hub, list] of Object.entries(st.links || {})) {
-        const known = states[hub]?.attributes?.activity_list;
+        const known = states2[hub]?.attributes?.activity_list;
         if (!Array.isArray(known) || !known.length) {
           links[hub] = list;
           continue;
@@ -1469,7 +1580,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const actFavs = {};
       let actFavChanged = false;
       for (const [hub, acts] of Object.entries(st.activityFavs || {})) {
-        const knownActs = states[hub]?.attributes?.activity_list;
+        const knownActs = states2[hub]?.attributes?.activity_list;
         const knownDevs = this._info?.hubs?.[hub]?.devices;
         if (!Array.isArray(knownActs) || !knownActs.length || !knownDevs || !Object.keys(knownDevs).length) {
           actFavs[hub] = acts;
@@ -1488,10 +1599,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return this._info?.settings || {};
     },
     _hubs() {
-      const states = this._hass?.states || {};
-      const ids = this._config.entity ? [this._config.entity] : Object.keys(states).filter((id) => id.startsWith("remote.") && Array.isArray(states[id].attributes.activity_list));
-      const list = ids.filter((id) => states[id]).map((id) => {
-        const s = states[id], a = s.attributes;
+      const states2 = this._hass?.states || {};
+      const ids = this._config.entity ? [this._config.entity] : Object.keys(states2).filter((id) => id.startsWith("remote.") && Array.isArray(states2[id].attributes.activity_list));
+      const list = ids.filter((id) => states2[id]).map((id) => {
+        const s = states2[id], a = s.attributes;
         return {
           id,
           state: s.state,
@@ -3895,6 +4006,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const mine = seq.action === a.id && !seq.draft;
       if (!mine) return "open";
       const n = i + 1, first = seq.first || 1;
+      if ((seq.skipped || []).includes(n)) return "skipped";
       if (seq.state === "done") return n >= first ? "done" : "open";
       if (n < first) return "open";
       if (n < seq.step) return "done";
@@ -3925,7 +4037,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const busy = seq.state === "running";
       const n = a.steps.length;
       const status = !mine ? "" : seq.state === "running" ? fmtText(t.seqStep, [seq.step, n]) : seq.state === "done" ? t.seqDone : seq.state === "stopped" ? fmtText(t.seqStopped, [seq.step]) : seq.state === "error" ? fmtText(t.seqFailed, [seq.step]) : "";
-      const marks = { done: "mdi:check-circle", current: "mdi:progress-clock", error: "mdi:alert-circle", stopped: "mdi:stop-circle-outline", open: "mdi:circle-outline" };
+      const marks = { done: "mdi:check-circle", current: "mdi:progress-clock", error: "mdi:alert-circle", stopped: "mdi:stop-circle-outline", open: "mdi:circle-outline", skipped: "mdi:skip-next-circle-outline" };
       const rows = a.steps.map((s, i) => {
         const m = this._stepMark(seq, a, i);
         const err = m === "error" && seq.error ? `<small class="seqerr">${esc(seq.error)}</small>` : "";
@@ -4615,6 +4727,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .vdots { display: flex; flex-wrap: wrap; gap: 6px; } .vdot { width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); } .vdot.sel { box-shadow: 0 0 0 2px var(--hr-bg, #1e2126), 0 0 0 4px var(--hr-accent); }
       .vhue input[type=range] { appearance: none; -webkit-appearance: none; height: 12px; border-radius: 6px; background: linear-gradient(90deg, red, #ff0, lime, cyan, blue, #f0f, red); } .vhue .pval { display: none; }
       .irsetup summary { font-weight: 500; }
+      .seqrow.skipped { opacity: .55; } .seqrow.skipped .seqlab > span { text-decoration: line-through; }
       .stepmoves { flex: none; display: flex; gap: 4px; } .stepmoves .ib { width: 34px; height: 34px; border-radius: 10px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepmoves .ib:disabled { opacity: .3; }
       .stephead.open { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .stepacts { display: flex; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); } .stepacts .key { flex: 1; min-width: 0; } .stepacts .del { color: var(--hr-danger, #e55); }
@@ -4941,9 +5054,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
     _schema() {
       const t = this._txt;
-      const states = this._hass?.states || {};
-      const hubs = Object.keys(states).filter((id) => id.startsWith("remote.") && Array.isArray(states[id].attributes.activity_list));
-      const activities = [...new Set(hubs.flatMap((id) => states[id].attributes.activity_list))].filter((n) => n !== "PowerOff");
+      const states2 = this._hass?.states || {};
+      const hubs = Object.keys(states2).filter((id) => id.startsWith("remote.") && Array.isArray(states2[id].attributes.activity_list));
+      const activities = [...new Set(hubs.flatMap((id) => states2[id].attributes.activity_list))].filter((n) => n !== "PowerOff");
       const opts = (map) => Object.entries(map || {}).map(([value, label]) => ({ value, label }));
       return [
         { name: "entity", selector: { entity: { domain: "remote" } } },

@@ -287,6 +287,7 @@ export const styleMixin = {
       .vdots { display: flex; flex-wrap: wrap; gap: 6px; } .vdot { width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); } .vdot.sel { box-shadow: 0 0 0 2px var(--hr-bg, #1e2126), 0 0 0 4px var(--hr-accent); }
       .vhue input[type=range] { appearance: none; -webkit-appearance: none; height: 12px; border-radius: 6px; background: linear-gradient(90deg, red, #ff0, lime, cyan, blue, #f0f, red); } .vhue .pval { display: none; }
       .irsetup summary { font-weight: 500; }
+      .seqrow.skipped { opacity: .55; } .seqrow.skipped .seqlab > span { text-decoration: line-through; }
       .stepmoves { flex: none; display: flex; gap: 4px; } .stepmoves .ib { width: 34px; height: 34px; border-radius: 10px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepmoves .ib:disabled { opacity: .3; }
       .stephead.open { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .stepacts { display: flex; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); } .stepacts .key { flex: 1; min-width: 0; } .stepacts .del { color: var(--hr-danger, #e55); }

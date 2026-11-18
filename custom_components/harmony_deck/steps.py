@@ -12,7 +12,7 @@ from typing import Any
 
 from homeassistant.core import Context, HomeAssistant
 
-from . import irvolume
+from . import direct, irvolume
 from .conditions import holds
 from .const import DOMAIN
 from .values import DEFAULT_VOLUME_CAP, calls, out_of_range, unsupported
@@ -171,6 +171,36 @@ class HaStep(StepType):
             await _call(ctx, domain, service, data)
 
 
+class DevStep(StepType):
+    """Talk to the direct device of a Harmony device (on, off, volume, mute, source) without the hub."""
+
+    def _entity(self, ctx: RunContext, step: dict[str, Any]) -> str:
+        linked = direct.device_of(ctx.hass, ctx.hub, step["device"])
+        if linked is None:
+            raise StepError(f"{step['device']} has no direct device")
+        return linked["entity"]
+
+    def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        entity = self._entity(ctx, step)
+        if ctx.hass.states.get(entity) is None:
+            raise StepError(f"unknown entity: {entity}")
+        if step["op"] == "volume" and step["value"] > volume_cap(ctx):
+            raise StepError(f"volume above the limit ({volume_cap(ctx)} %)")
+
+    async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        # Capabilities are checked only now: a TV that is off may report less than when it is on.
+        try:
+            await direct.run(ctx.hass, self._entity(ctx, step), step["op"], step.get("value"), ctx.context)
+        except TimeoutError as err:
+            raise StepError(f"{step['device']}: no answer") from err
+        except ValueError as err:
+            raise StepError(str(err)) from err
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:  # noqa: BLE001 - the message goes to the card
+            raise StepError(f"{step['device']}: {err}") from err
+
+
 class IrVolumeStep(StepType):
     """Set the volume of an infrared device: down to 0, then up to the level (see irvolume.py)."""
 
@@ -190,10 +220,19 @@ class IrVolumeStep(StepType):
             raise StepError(f"{step['device']} has no volume keys")
 
     async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        cfg = self._cfg(ctx, step)
+        linked = direct.device_of(ctx.hass, ctx.hub, step["device"])
+        if linked and linked["volumeDirect"] and "volume_set" in direct.caps(ctx.hass, linked["entity"]):
+            # The device takes a level directly: no counting down and up.
+            percent = min(step["level"], cfg["max"]) / cfg["max"] * 100
+            try:
+                await direct.run(ctx.hass, linked["entity"], "volume", percent, ctx.context)
+            except (TimeoutError, ValueError) as err:
+                raise StepError(f"{step['device']}: {err or 'no answer'}") from err
+            return
         state = ctx.hass.states.get(ctx.hub)
         if state is None or state.state == "unavailable":
             raise StepError("hub not available")
-        cfg = self._cfg(ctx, step)
         up, down = irvolume.commands((ctx.devices or {}).get(step["device"]) or [])
         up, down = up or "VolumeUp", down or "VolumeDown"
         presses_down, presses_up = irvolume.plan(cfg, step["level"])
@@ -233,4 +272,4 @@ async def _call(ctx: RunContext, domain: str, service: str, data: dict[str, Any]
         raise StepError(f"{domain}.{service}: {err}") from err
 
 
-STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep(), "irvol": IrVolumeStep(), "wait": WaitStep(), "if": IfStep()}
+STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep(), "irvol": IrVolumeStep(), "wait": WaitStep(), "if": IfStep(), "dev": DevStep()}

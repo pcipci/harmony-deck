@@ -80,6 +80,8 @@ In the editor, every step is one row: tap it to open it, the arrows at its right
 
 The integration carries out the steps, so a sequence also finishes when the page is closed. For automations there are the services `harmony_deck.run_action` (hub, action name or id) and `harmony_deck.stop_action`, and per hub the sensor **Sequence** (idle, running, done, stopped, error, with step and progress as attributes). Anyone who is logged in can start a stored action; testing an unsaved draft is for administrators.
 
+**Direct devices (0.7):** under Settings › **Direct devices** you link a Harmony device to a Home Assistant media player (for example your TV). The keys keep going through the hub; the player adds the state, a real volume level and the source. Per device you see what the player can do and what it reports now. If maker/model or name fit clearly, a suggestion with "Use it" appears; otherwise you pick the player yourself. Linked devices can be used in the step **Device** (switch on/off, volume, mute, source). With "Set volume directly instead of via IR" the step "Volume (IR)" sets the level on the device and no longer counts keys. The volume limit applies to both.
+
 Actions of 0.4 are converted to a single step by themselves. Actions are the same for all profiles.
 
 ## 8. Fire TV

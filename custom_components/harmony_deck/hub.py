@@ -161,10 +161,24 @@ def fixit_raw(config: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
+def device_meta(config: Mapping[str, Any]) -> dict[str, dict[str, str]]:
+    """{device label: {"manufacturer", "model"}} as the hub knows them (to suggest a matching direct device)."""
+    result: dict[str, dict[str, str]] = {}
+    for device in config.get("device", []) or []:
+        label = device.get("label")
+        if not label:
+            continue
+        meta = {k: str(device[k])[:80] for k in ("manufacturer", "model") if device.get(k)}
+        if meta:
+            result[label] = meta
+    return result
+
+
 def hub_info(config: Mapping[str, Any]) -> dict[str, Any]:
     """Everything the card needs to know about one hub."""
     return {
         "devices": device_commands(config),
+        "deviceMeta": device_meta(config),
         "activities": activity_roles(config),
         "setup": activity_setup(config),
         "fixit": fixit_raw(config),

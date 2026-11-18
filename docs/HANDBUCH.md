@@ -80,6 +80,8 @@ Im Editor ist jeder Schritt eine Zeile: antippen öffnet ihn, die Pfeile rechts 
 
 Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei geschlossener Seite zu Ende. Für Automationen gibt es die Dienste `harmony_deck.run_action` (Hub, Name oder Id der Aktion) und `harmony_deck.stop_action`, dazu pro Hub den Sensor **Sequenz** (bereit, läuft, fertig, abgebrochen, Fehler, mit Schritt und Fortschritt als Attribute). Jeder angemeldete Benutzer darf eine gespeicherte Aktion starten, einen ungespeicherten Entwurf testen nur Administratoren.
 
+**Direktgeräte (0.7):** Unter Einstellungen › **Direktgeräte** verbindest du ein Harmony-Gerät mit einem Mediaplayer in Home Assistant (zum Beispiel deinen Fernseher). Die Tasten laufen weiter über den Hub; der Mediaplayer liefert zusätzlich den Zustand, einen echten Lautstärke-Wert und die Quelle. Pro Gerät siehst du, was der Mediaplayer kann und was er gerade meldet. Passen Hersteller/Modell oder Name eindeutig, erscheint ein Vorschlag mit „Übernehmen“, sonst wählst du den Mediaplayer selbst. Verbundene Geräte kannst du im Schritt **Gerät** nutzen (ein-/ausschalten, Lautstärke, Stumm, Quelle). Mit „Lautstärke direkt setzen statt per IR“ stellt der Schritt „Lautstärke (IR)“ den Wert am Gerät ein und zählt keine Tasten mehr. Die Lautstärke-Grenze gilt für beide.
+
 Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle Profile.
 
 ## 8. Fire TV

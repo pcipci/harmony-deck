@@ -10,6 +10,7 @@ export const bindMixin = {
     this._bindHelp(root);
     this._bindFire(root);
     this._bindFireEditor(root);
+    this._bindDirectDev(root);
     this._bindKeyboard(root);
     this._bindDevices(root);
     this._bindFavorites(root);

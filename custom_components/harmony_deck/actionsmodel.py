@@ -18,6 +18,7 @@ import re
 from typing import Any, Callable
 
 from .conditions import clean_condition
+from .directdev import clean_op
 from .values import SET_ONLY, clean_values
 
 MAX_ACTIONS = 60          # per hub
@@ -120,7 +121,19 @@ def _if(step: dict[str, Any]) -> dict[str, Any] | None:
     return out
 
 
-STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha, "irvol": _irvol, "wait": _wait, "if": _if}
+def _dev(step: dict[str, Any]) -> dict[str, Any] | None:
+    """Direct device of a Harmony device: switch on / off, set volume, mute, pick a source (see directdev.py)."""
+    device = _text(step.get("device"), 120)
+    op = clean_op(step.get("op"), step.get("value"))
+    if not device or op is None:
+        return None
+    out: dict[str, Any] = {"type": "dev", "device": device, "op": op[0]}
+    if op[1] is not None:
+        out["value"] = op[1]
+    return out
+
+
+STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha, "irvol": _irvol, "wait": _wait, "if": _if, "dev": _dev}
 
 
 def clean_step(step: Any) -> dict[str, Any] | None:

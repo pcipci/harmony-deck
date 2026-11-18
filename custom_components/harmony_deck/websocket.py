@@ -14,6 +14,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from .actionsmodel import clean_actions
 from .irvolume import clean_config
+from .directdev import clean_config as clean_direct
 from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS
 from . import profiles as prof
 from .hub import conf_commands, hub_info, match_conf, merge_conf_commands
@@ -196,6 +197,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
         settings["actions"] = clean_actions(settings["actions"])
     if "irVolume" in settings:
         settings["irVolume"] = clean_config(settings["irVolume"])
+    if "directDevices" in settings:
+        settings["directDevices"] = clean_direct(settings["directDevices"])
     if "volumeCap" in settings:
         try:
             settings["volumeCap"] = min(max(int(settings["volumeCap"]), 10), 100)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0
+
+### Added
+- **Direct devices** (Settings › Direct devices): link a Harmony device (e.g. the TV) to a Home Assistant media player. The keys stay with the hub; the player adds what infrared cannot: the state, a real volume level and the source. The integration lists the players that can do something useful, shows what each one can do and what it reports now, and suggests a match when maker/model or name fit clearly. Nothing is linked without you.
+- **Step "Device":** switch on, switch off, set volume (within the volume limit), mute or pick a source of a linked device. What is offered follows from what the player can do; a source is checked against its source list.
+- **"Set volume directly instead of via IR"** per linked device: the step "Volume (IR)" then sets the level on the device instead of counting down and up.
+- New setting `directDevices`, websocket `harmony_deck/direct/overview`. The generic adapter uses only standard Home Assistant features, so it works for any `media_player` (webOS, Samsung, Sonos, …). Brand specific extensions (extra values a player does not offer in Home Assistant) plug into `direct.py`; none is shipped yet. The Fire TV link is unchanged.
+
 ## 0.6.0
 
 ### Added

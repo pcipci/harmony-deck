@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.6.0";
+  var VERSION = "0.7.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -364,6 +364,55 @@
     box.querySelectorAll("[data-vmute]").forEach((b) => b.addEventListener("click", () => set({ mute: b.dataset.vmute === "1" })));
   }
 
+  // src/deck/steps/dev.js
+  var NEED = { on: "power_on", off: "power_off", volume: "volume_set", mute: "mute", source: "source_select" };
+  var OPS = Object.keys(NEED);
+  var linked = (card, hub) => Object.keys(card._ddLinks()[hub] || {});
+  var entityOf = (card, hub, dev) => card._ddLinks()[hub]?.[dev]?.entity || "";
+  var devStep = {
+    type: "dev",
+    icon: "mdi:television-play",
+    create: () => ({ type: "dev", device: "", op: "on" }),
+    valid: (s) => !!s.device && (s.op === "on" || s.op === "off" || s.op === "volume" && Number.isFinite(s.value) || s.op === "mute" && typeof s.value === "boolean" || s.op === "source" && !!s.value),
+    label(s, t) {
+      if (!s.device) return t.stepPickDevice;
+      const what = { on: t.devOn, off: t.devOff, volume: fmtText(t.devVolume, [String(s.value ?? "")]), mute: s.value === false ? t.devUnmute : t.devMute, source: fmtText(t.devSource, [String(s.value ?? "")]) }[s.op] || s.op;
+      return `${s.device} · ${what}`;
+    },
+    editor(s, { card, h, t }) {
+      card._ddLoad();
+      const devs = linked(card, h.id);
+      if (!s.device || !devs.includes(s.device)) {
+        return devs.length ? `<div class="esub">${t.stepPickDevice}</div><div class="pchips">${devs.map((d) => `<button type="button" class="pchip" data-devpick="${esc(d)}"><ha-icon icon="${card._deviceIcon(d, h.id)}"></ha-icon><span>${esc(d)}</span></button>`).join("")}</div><div class="ehint">${t.devHint}</div>` : `<div class="ehint">${t.devNoDevices}</div>`;
+      }
+      const entity = entityOf(card, h.id, s.device);
+      const caps = card._dd?.hubs?.[h.id]?.[s.device]?.caps;
+      const ops = OPS.filter((o) => !caps || caps.includes(NEED[o]) || o === s.op);
+      const opRow = `<label class="erow"><span>${t.actOp}</span><select data-devop>${ops.map((o) => `<option value="${o}" ${s.op === o ? "selected" : ""}>${esc(t.devOps[o])}</option>`).join("")}</select></label>`;
+      let value = "";
+      if (s.op === "volume") {
+        const cap = volumeCap(card);
+        value = `${rangeHtml({ attr: "devvol", value: Math.min(s.value ?? 20, cap), min: 0, max: cap, step: 1, fmt: (v) => `${v} %` })}<div class="ehint">${fmtText(t.devVolCap, [String(cap)])}</div>`;
+      } else if (s.op === "mute") {
+        value = `<label class="erow"><span>${t.devOps.mute}</span><select data-devmute><option value="true" ${s.value !== false ? "selected" : ""}>${t.devMute}</option><option value="false" ${s.value === false ? "selected" : ""}>${t.devUnmute}</option></select></label>`;
+      } else if (s.op === "source") {
+        const list = card._hass.states?.[entity]?.attributes?.source_list;
+        value = Array.isArray(list) && list.length ? `<label class="erow"><span>${t.devOps.source}</span><select data-devsrc><option value="">${t.devPickSource}</option>${list.map((x) => `<option ${s.value === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : `<label class="erow"><span>${t.devOps.source}</span><input type="text" data-devsrc value="${esc(s.value || "")}"></label><div class="ehint">${t.devSourceUnknown}</div>`;
+      }
+      return `<div class="erow"><span><ha-icon icon="${card._deviceIcon(s.device, h.id)}"></ha-icon>${esc(s.device)}</span><button type="button" class="mini txt" data-devpick="">${t.stepChange}</button></div>${opRow}${value}`;
+    },
+    bind(box, s, update) {
+      box.querySelectorAll("[data-devpick]").forEach((b) => b.addEventListener("click", () => update({ device: b.dataset.devpick, op: "on", value: void 0 })));
+      box.querySelector("[data-devop]")?.addEventListener("change", (e) => {
+        const op = e.target.value;
+        update({ op, value: op === "volume" ? 20 : op === "mute" ? true : void 0 });
+      });
+      bindRange(box, "devvol", (v) => `${v} %`, (v) => update({ value: v }));
+      box.querySelector("select[data-devmute]")?.addEventListener("change", (e) => update({ value: e.target.value === "true" }));
+      box.querySelector("[data-devsrc]")?.addEventListener("change", (e) => update({ value: e.target.value.trim() || void 0 }));
+    }
+  };
+
   // src/deck/steps/recent.js
   var KEY = "harmony-deck-recent";
   var MAX = 12;
@@ -459,7 +508,7 @@
 
   // src/deck/steps/cond.js
   var HIDDEN_ATTRS = /* @__PURE__ */ new Set(["friendly_name", "icon", "entity_picture", "supported_features", "supported_color_modes", "attribution", "restored", "editable", "assumed_state", "entity_picture_local"]);
-  var OPS = ["is", "not", "gt", "lt", "ge", "le"];
+  var OPS2 = ["is", "not", "gt", "lt", "ge", "le"];
   var NUMERIC = ["gt", "lt", "ge", "le"];
   var SHOWN2 = 60;
   var states = (card) => card?._hass?.states || {};
@@ -493,7 +542,7 @@
     const chips = [...new Set([cur, ...c.attr ? [] : ["on", "off"]].filter((x) => x !== null && x !== ""))];
     return `<div class="erow"><span><b>${esc(nameOf(card, c.entity))}</b><small class="pid">${esc(c.entity)} · ${esc(st?.state ?? t.unavailable)}</small></span><button type="button" class="mini txt" data-cpick="">${t.stepChange}</button></div>
     <label class="erow"><span>${t.cWhat}</span><select data-cattr><option value="" ${c.attr ? "" : "selected"}>${esc(t.cState)}</option>${attrs.map((a) => `<option value="${esc(a)}" ${a === c.attr ? "selected" : ""}>${esc(a)}</option>`).join("")}</select></label>
-    <label class="erow"><span>${t.cCompare}</span><select data-cop>${OPS.map((o) => `<option value="${o}" ${o === c.op ? "selected" : ""}>${esc(ops[o])}</option>`).join("")}</select></label>
+    <label class="erow"><span>${t.cCompare}</span><select data-cop>${OPS2.map((o) => `<option value="${o}" ${o === c.op ? "selected" : ""}>${esc(ops[o])}</option>`).join("")}</select></label>
     <label class="erow"><span>${t.cValue}</span><input type="${NUMERIC.includes(c.op) ? "number" : "text"}" step="any" data-cval value="${esc(c.value)}"></label>
     ${chips.length ? `<div class="pchips">${chips.map((x, i) => `<button type="button" class="pchip ${String(c.value) === x ? "sel" : ""}" data-cchip="${esc(x)}">${esc(x)}${i === 0 && cur === x ? ` · ${esc(t.cNow)}` : ""}</button>`).join("")}</div>` : ""}`;
   }
@@ -930,7 +979,7 @@
   };
 
   // src/deck/steps/index.js
-  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep, wait: waitStep, if: ifStep };
+  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep, wait: waitStep, if: ifStep, dev: devStep };
   var stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t, card) || s.type;
   function normalizeAction(a) {
     if (!a || typeof a !== "object") return null;
@@ -1486,6 +1535,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindHelp(root);
       this._bindFire(root);
       this._bindFireEditor(root);
+      this._bindDirectDev(root);
       this._bindKeyboard(root);
       this._bindDevices(root);
       this._bindFavorites(root);
@@ -1956,6 +2006,72 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._expandHub = hub;
         this._rerender();
       }));
+    }
+  };
+
+  // src/deck/direct-editor.js
+  var directEditorMixin = {
+    // Overview of the integration, loaded when the tab (or a step "Device") needs it; the card redraws when it arrives.
+    async _ddLoad(force = false) {
+      if (this._ddBusy || this._dd && !force) return;
+      this._ddBusy = true;
+      try {
+        this._dd = await this._hass.callWS({ type: "harmony_deck/direct/overview" });
+      } catch (e) {
+        this._dd = { hubs: {}, candidates: [], extensions: [] };
+      }
+      this._ddBusy = false;
+      this._rerender();
+    },
+    _ddLinks() {
+      return this._settings().directDevices || {};
+    },
+    async _ddSave(hubId, device, patch) {
+      const all = JSON.parse(JSON.stringify(this._ddLinks()));
+      all[hubId] = { ...all[hubId] || {} };
+      if (patch === null) delete all[hubId][device];
+      else all[hubId][device] = { ...all[hubId][device] || {}, ...patch };
+      await this._saveSettings({ directDevices: all });
+      this._ddLoad(true);
+    },
+    _ddStateText(st, t) {
+      if (!st) return "";
+      const on = st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown;
+      return [on, st.volume != null ? fmtText(t.ddVolume, [String(st.volume)]) : "", st.source || "", st.app || ""].filter(Boolean).join(" · ");
+    },
+    _directDevHtml(h, t) {
+      const devs = Object.keys(this._devicesOf(h.id));
+      if (!this._dd) {
+        this._ddLoad();
+        return `<div class="esec" data-t="dd"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddLoading}</div></div>`;
+      }
+      const info = this._dd.hubs?.[h.id] || {};
+      const links = this._ddLinks()[h.id] || {};
+      const name2 = (id) => this._hass.states?.[id]?.attributes?.friendly_name || id;
+      const cands = this._dd.candidates || [];
+      const rows = devs.map((d) => {
+        const cur = links[d]?.entity || "";
+        const item = info[d] || {};
+        const ids = cands.map((c) => c.entity);
+        if (cur && !ids.includes(cur)) ids.push(cur);
+        const opts = [`<option value="">${t.ddNone}</option>`, ...ids.map((id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name2(id))} · ${esc(id)}</option>`)].join("");
+        const suggest = !cur && item.suggest ? `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name2(item.suggest))])}</span> <button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button></div>` : "";
+        let detail = "";
+        if (cur) {
+          const caps = item.caps || [];
+          detail = item.known === false ? `<div class="ehint">${t.ddGone}</div>` : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
+            <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
+            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` : ""}`;
+        }
+        return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
+        <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;
+      });
+      return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
+    },
+    _bindDirectDev(root) {
+      root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
+      root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
+      root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
     }
   };
 
@@ -4160,6 +4276,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
+      ${this._directDevHtml(h, t)}
       ${this._directEdit(h, t)}
       ${this._legendHtml(t)}
       <details class="esec raw" data-t="info"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
@@ -4691,7 +4808,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .adbrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; } .adbrow small { color: var(--hr-muted); } .adbdot { width: 9px; height: 9px; border-radius: 50%; background: #43a047; flex: none; } .adbdot.bad { background: #e53935; }
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
-      .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
+      .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-dd [data-t]:not([data-t="dd"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
       .krow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -5028,7 +5145,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

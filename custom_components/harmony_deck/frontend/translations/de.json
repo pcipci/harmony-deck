@@ -116,6 +116,7 @@
     "behave": "Bedienung",
     "devs": "Geräte",
     "acts": "Aktivitäten",
+    "dd": "Direktgeräte",
     "fire": "Fire TV",
     "misc": "Hub",
     "info": "Info"
@@ -719,7 +720,8 @@
     "acts": "Symbole der Aktivitäten, welche als Kachel sichtbar sind, Favoriten pro Aktivität und die Verknüpfung mit einer anderen Entität.",
     "fire": "Fire TV direkt per ADB: Verknüpfung, Apps, Farbtasten und Tasten. Ohne Fire TV kannst du diesen Reiter ignorieren.",
     "misc": "Name und Sichtbarkeit dieses Hubs und das Verhalten beim Ausschalten.",
-    "info": "Technische Angaben zum Hub und die Erklärung der Symbole."
+    "info": "Technische Angaben zum Hub und die Erklärung der Symbole.",
+    "dd": "Verbindet ein Harmony-Gerät mit einem Mediaplayer in Home Assistant. Die Tasten bleiben bei Harmony, der Mediaplayer liefert dazu Zustand, Lautstärke-Wert und Quelle."
   },
   "adbHelp": "Fire TV nicht erreichbar. Prüfe: Fire TV eingeschaltet und im Netz? ADB-Debugging an (Einstellungen › Mein Fire TV › Entwickleroptionen)? In Home Assistant die Integration „Android TV“ neu laden. Danach „Verbindung testen“.",
   "groups": {
@@ -750,7 +752,8 @@
     "ha": "Home Assistant",
     "irvol": "Lautstärke (IR)",
     "wait": "Warten bis",
-    "if": "Wenn"
+    "if": "Wenn",
+    "dev": "Gerät"
   },
   "stepTypeHints": {
     "key": "Eine Taste eines Geräts senden",
@@ -758,7 +761,8 @@
     "ha": "Lampe, Szene, Skript … schalten",
     "irvol": "Infrarot-Gerät auf eine Lautstärke bringen",
     "wait": "Warten, bis etwas eintritt",
-    "if": "Etwas prüfen und verzweigen"
+    "if": "Etwas prüfen und verzweigen",
+    "dev": "Gerät direkt schalten, Lautstärke oder Quelle setzen"
   },
   "stepAdd": "Schritt hinzufügen",
   "actBack": "Zurück",
@@ -889,5 +893,50 @@
   "ifOptFail": "Fehler melden",
   "ifHowMany": "Wie viele Schritte",
   "ifMessage": "Meldung",
-  "ifMessagePh": "Zum Beispiel: Fernseher ist aus"
+  "ifMessagePh": "Zum Beispiel: Fernseher ist aus",
+  "ddLoading": "Lade …",
+  "ddHint": "Wähle zu jedem Gerät den passenden Mediaplayer. Ein Vorschlag erscheint, wenn Hersteller oder Name eindeutig passen.",
+  "ddNoPlayers": "Keine passenden Mediaplayer gefunden.",
+  "ddLink": "Direkt über",
+  "ddNone": "–",
+  "ddSuggest": "Vorschlag: {0}",
+  "ddTake": "Übernehmen",
+  "ddGone": "Diese Entität gibt es nicht mehr.",
+  "ddCan": "Kann: {0}",
+  "ddCanNot": "Meldet keine Fähigkeiten (aus oder nicht erreichbar).",
+  "ddNow": "Jetzt: {0}",
+  "ddOn": "an",
+  "ddOff": "aus",
+  "ddUnknown": "unbekannt",
+  "ddVolume": "Lautstärke {0} %",
+  "ddVolDirect": "Lautstärke direkt setzen statt per IR",
+  "ddVolDirectHint": "Der Schritt „Lautstärke (IR)“ setzt dann den Wert am Gerät, statt erst herunter und dann hochzuzählen.",
+  "ddCaps": {
+    "state": "Zustand lesen",
+    "power_on": "einschalten",
+    "power_off": "ausschalten",
+    "volume_set": "Lautstärke setzen",
+    "volume_read": "Lautstärke lesen",
+    "mute": "stumm",
+    "source_select": "Quelle wählen",
+    "source_read": "Quelle lesen"
+  },
+  "devHint": "Es erscheinen nur Geräte, die unter Einstellungen → Direktgeräte verbunden sind.",
+  "devNoDevices": "Noch kein Gerät verbunden. Das geht unter Einstellungen → Direktgeräte.",
+  "devOps": {
+    "on": "Einschalten",
+    "off": "Ausschalten",
+    "volume": "Lautstärke",
+    "mute": "Stumm",
+    "source": "Quelle"
+  },
+  "devOn": "einschalten",
+  "devOff": "ausschalten",
+  "devVolume": "Lautstärke {0} %",
+  "devMute": "stumm",
+  "devUnmute": "Ton an",
+  "devSource": "Quelle {0}",
+  "devPickSource": "Quelle wählen",
+  "devSourceUnknown": "Das Gerät meldet keine Quellenliste: Name genau eintippen.",
+  "devVolCap": "Höchstens {0} % (Einstellung Bedienung)."
 }

@@ -116,6 +116,7 @@
     "behave": "Behaviour",
     "devs": "Devices",
     "acts": "Activities",
+    "dd": "Direct devices",
     "fire": "Fire TV",
     "misc": "Hub",
     "info": "Info"
@@ -719,7 +720,8 @@
     "acts": "Symbols of the activities, which are shown as tiles, favourites per activity and the link to another entity.",
     "fire": "Fire TV directly over ADB: link, apps, colour keys and keys. Without a Fire TV you can ignore this tab.",
     "misc": "Name and visibility of this hub and what happens when switching off.",
-    "info": "Technical details of the hub and the meaning of the symbols."
+    "info": "Technical details of the hub and the meaning of the symbols.",
+    "dd": "Links a Harmony device to a media player in Home Assistant. The keys stay with Harmony; the media player adds state, volume level and source."
   },
   "adbHelp": "Fire TV not reachable. Check: Fire TV switched on and on the network? ADB debugging on (Settings › My Fire TV › Developer options)? Reload the “Android TV” integration in Home Assistant. Then “Test connection”.",
   "groups": {
@@ -750,7 +752,8 @@
     "ha": "Home Assistant",
     "irvol": "Volume (IR)",
     "wait": "Wait until",
-    "if": "If"
+    "if": "If",
+    "dev": "Device"
   },
   "stepTypeHints": {
     "key": "Send a key of a device",
@@ -758,7 +761,8 @@
     "ha": "Switch a light, scene, script …",
     "irvol": "Bring an infrared device to a volume",
     "wait": "Wait until something happens",
-    "if": "Check something and branch"
+    "if": "Check something and branch",
+    "dev": "Switch a device directly, set volume or source"
   },
   "stepAdd": "Add step",
   "actBack": "Back",
@@ -889,5 +893,50 @@
   "ifOptFail": "Report error",
   "ifHowMany": "How many steps",
   "ifMessage": "Message",
-  "ifMessagePh": "For example: TV is off"
+  "ifMessagePh": "For example: TV is off",
+  "ddLoading": "Loading …",
+  "ddHint": "Pick the matching media player for each device. A suggestion appears when maker or name clearly fit.",
+  "ddNoPlayers": "No suitable media players found.",
+  "ddLink": "Talk to it via",
+  "ddNone": "–",
+  "ddSuggest": "Suggestion: {0}",
+  "ddTake": "Use it",
+  "ddGone": "This entity no longer exists.",
+  "ddCan": "Can: {0}",
+  "ddCanNot": "Reports no capabilities (off or not reachable).",
+  "ddNow": "Now: {0}",
+  "ddOn": "on",
+  "ddOff": "off",
+  "ddUnknown": "unknown",
+  "ddVolume": "volume {0} %",
+  "ddVolDirect": "Set volume directly instead of via IR",
+  "ddVolDirectHint": "The step \"Volume (IR)\" then sets the value on the device instead of counting down first and then up.",
+  "ddCaps": {
+    "state": "read state",
+    "power_on": "switch on",
+    "power_off": "switch off",
+    "volume_set": "set volume",
+    "volume_read": "read volume",
+    "mute": "mute",
+    "source_select": "select source",
+    "source_read": "read source"
+  },
+  "devHint": "Only devices linked under Settings → Direct devices appear here.",
+  "devNoDevices": "No device linked yet. Do that under Settings → Direct devices.",
+  "devOps": {
+    "on": "Switch on",
+    "off": "Switch off",
+    "volume": "Volume",
+    "mute": "Mute",
+    "source": "Source"
+  },
+  "devOn": "switch on",
+  "devOff": "switch off",
+  "devVolume": "volume {0} %",
+  "devMute": "mute",
+  "devUnmute": "sound on",
+  "devSource": "source {0}",
+  "devPickSource": "Pick a source",
+  "devSourceUnknown": "The device reports no source list: type the name exactly.",
+  "devVolCap": "At most {0} % (Behaviour setting)."
 }

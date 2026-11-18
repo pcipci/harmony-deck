@@ -20,6 +20,7 @@ from .lockws import async_register_lock_websocket
 from .const import CARD_FILE, CARD_URL, DOMAIN, SETTING_KEYS, STORAGE_KEY, STORAGE_VERSION, TRANSLATIONS_URL
 from .profiles import migrate
 from .actionws import async_register_action_api
+from .directws import async_register_direct_websocket
 from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     domain_data["entry_id"] = entry.entry_id
     async_register_websocket(hass)
     async_register_action_api(hass)
+    async_register_direct_websocket(hass)
     if not domain_data.get("lock_ws_registered"):
         async_register_lock_websocket(hass)
         domain_data["lock_ws_registered"] = True

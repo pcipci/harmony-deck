@@ -380,3 +380,57 @@ async def test_action_wait_and_if(hass: HomeAssistant, hass_ws_client):
     await start("f")
     st = await finish()
     assert st.state == "error" and st.attributes["error"] == "TV not playing"
+
+
+async def test_direct_devices_overview_step_and_direct_volume(hass: HomeAssistant, hass_ws_client):
+    import asyncio
+
+    entry, _, _ = await _setup(hass)
+    sent = []
+
+    async def rec(call):
+        sent.append((call.service, {k: v for k, v in call.data.items() if k != "entity_id"}))
+
+    for srv in ("turn_on", "turn_off", "volume_set", "select_source", "volume_mute"):
+        hass.services.async_register("media_player", srv, rec)
+    hass.services.async_register("remote", "send_command", rec)
+    hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 128 | 256 | 2048, "volume_level": 0.2,
+                                                    "source": "HDMI 1", "source_list": ["HDMI 1", "HDMI 2"]})
+    hass.states.async_set("media_player.radio", "off", {"supported_features": 128})
+    hass.states.async_set("media_player.dumb", "on", {})
+    settings = hass.data[DOMAIN]["settings"]
+    settings["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv", "volumeDirect": True}}}
+    settings["irVolume"] = {REMOTE: {"LG": {"max": 50, "step": 1, "delay": 0.1}}}
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "harmony_deck/direct/overview"})
+    res = (await client.receive_json())["result"]
+    assert [c["entity"] for c in res["candidates"]] == ["media_player.radio", "media_player.tv"]   # "dumb" can do nothing
+    assert res["extensions"] == []
+
+    await _with_actions(hass, [
+        {"id": "d", "name": "Dev", "steps": [{"type": "dev", "device": "LG", "op": "source", "value": "HDMI 2"},
+                                              {"type": "dev", "device": "LG", "op": "volume", "value": 30},
+                                              {"type": "irvol", "device": "LG", "level": 10}]},
+        {"id": "x", "name": "None", "steps": [{"type": "dev", "device": "Panasonic", "op": "on"}]},
+        {"id": "bad", "name": "Bad", "steps": [{"type": "dev", "device": "LG", "op": "source", "value": "Tuner"}]},
+    ])
+    ent = _lock_entities(hass, entry)["sequence"].entity_id
+
+    async def run(action):
+        await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": action})
+        out = await client.receive_json()
+        for _ in range(100):
+            await hass.async_block_till_done()
+            if hass.states.get(ent).state != "running":
+                break
+            await asyncio.sleep(0.02)
+        return out
+
+    assert (await run("d"))["success"]
+    assert hass.states.get(ent).state == "done"
+    assert sent == [("select_source", {"source": "HDMI 2"}), ("volume_set", {"volume_level": 0.3}), ("volume_set", {"volume_level": 0.2})]
+    res = await run("x")
+    assert res["error"]["code"] == "invalid" and "no direct device" in res["error"]["message"]
+    assert (await run("bad"))["success"]
+    assert "unknown source" in hass.states.get(ent).attributes["error"]

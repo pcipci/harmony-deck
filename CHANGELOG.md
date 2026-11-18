@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.3
+
+Contains what was planned as 0.5.2 (values) and 0.5.3 (volume over infrared).
+
+### Added
+- **Values in Home Assistant steps:** brightness, light colour (white in Kelvin or a colour with quick colours, hue and saturation), media player volume, source and mute, cover position, climate temperature, fan speed, number value. Only what the entity reports it can do is offered; only switched-on values are sent. New operation "Only set values".
+- **Volume limit for actions** (Settings › Behaviour, 80 % by default), checked by the integration before a run.
+- **Step type "Volume (IR)":** down to 0, then up to the level, for infrared devices; per device highest volume, units per press and time between presses (stored for the whole installation). Sent in groups of ten presses, so Stop works quickly.
+- The integration checks values before a run (can the entity do it, is it within its limits) and before each call (for example a source the player does not offer).
+
 ## 0.5.1
 
 ### Added

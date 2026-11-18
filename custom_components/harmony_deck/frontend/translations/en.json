@@ -730,7 +730,8 @@
     "view": "View",
     "conn": "Connection",
     "fireAct": "In activities",
-    "colorKeys": "Colour keys"
+    "colorKeys": "Colour keys",
+    "actions": "Actions"
   },
   "hideKeys": "Hide keys",
   "hideEditHint": "Tap keys that should no longer appear for this device (eye). They disappear in the device view and in the remotes of the activities. This is not the lock: tap again to bring them back.",
@@ -746,12 +747,14 @@
   "stepTypes": {
     "key": "Harmony key",
     "pause": "Pause",
-    "ha": "Home Assistant"
+    "ha": "Home Assistant",
+    "irvol": "Volume (IR)"
   },
   "stepTypeHints": {
     "key": "Send a key of a device",
     "pause": "Wait a few seconds",
-    "ha": "Switch a light, scene, script …"
+    "ha": "Switch a light, scene, script …",
+    "irvol": "Bring an infrared device to a volume"
   },
   "stepAdd": "Add step",
   "actBack": "Back",
@@ -782,7 +785,11 @@
     "script": "Script",
     "scene": "Scene",
     "automation": "Automation",
-    "button": "Button"
+    "button": "Button",
+    "media": "Media",
+    "cover": "Cover",
+    "climate": "Climate/fan",
+    "number": "Number"
   },
   "stepMore": "More matches: please search more precisely.",
   "actHoldStop": "Hold to stop",
@@ -803,5 +810,48 @@
   "seqStart": "Start",
   "seqClose": "Close",
   "actFavTitle": "Favorites of the action",
-  "actFavHint": "Keys of any devices; they appear under the opened action."
+  "actFavHint": "Keys of any devices; they appear under the opened action.",
+  "opSet": "Only set values",
+  "valTitle": "Values (optional)",
+  "valHint": "Only switched-on values are sent; everything else stays as it is. What the device cannot do does not appear here.",
+  "valBrightness": "Brightness",
+  "valTone": "Light colour",
+  "valWhite": "White (Kelvin)",
+  "valColor": "Colour",
+  "valSat": "Saturation",
+  "valWhiteOrColor": "White or colour, not both – Home Assistant wants it that way.",
+  "valVolume": "Volume",
+  "valVolumeShort": "Vol.",
+  "valSource": "Source",
+  "valSourceNone": "The device reports no sources right now. The list appears when it is on.",
+  "valMute": "Mute",
+  "valMuteOn": "Muted",
+  "valMuteOff": "Sound on",
+  "valPosition": "Position",
+  "valTemperature": "Temperature",
+  "valSpeed": "Speed",
+  "valValue": "Value",
+  "valCapHint": "Limit {0} % (Settings › Behaviour).",
+  "hueNames": [
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "turquoise",
+    "blue",
+    "purple",
+    "pink",
+    "pastel"
+  ],
+  "irvLabel": "{0} · volume {1}",
+  "irvHint": "For devices controlled by infrared only. Harmony Deck first presses \"down\" until the device is surely at 0, then \"up\" to the level. If the device is muted, it may stay muted, depending on the device.",
+  "irvNoDevices": "No device of this hub has keys for volume up and down.",
+  "irvDuration": "Takes about {0} s ({1}× down, then {2}× up).",
+  "irvSetup": "Set up {0} (for all actions)",
+  "irvMax": "Highest volume",
+  "irvStep": "Units per press",
+  "irvDelay": "Time between presses",
+  "irvSetupHint": "If the device misses presses, make the time longer.",
+  "volumeCap": "Highest volume for actions",
+  "volumeCapHint": "For media players in actions: a step may not set it louder."
 }

@@ -190,6 +190,180 @@
   var RING_TILE = '<svg class="hring big" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27"/></svg>';
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
+  // src/shared/version.js
+  var VERSION = "0.5.3";
+
+  // src/shared/i18n.js
+  var TEXT_URL = "/harmony_deck/translations";
+  var TEXT_FUNCS = ["running", "starting", "linkMismatch"];
+  var TEXT_CACHE = {};
+  function fmtText(tpl, args) {
+    return String(tpl).replace(/\{(\d+)\}/g, (_, n) => args[+n] ?? "");
+  }
+  function mergeText(base, over) {
+    const out = { ...base };
+    for (const k of Object.keys(over || {})) {
+      out[k] = over[k] && typeof over[k] === "object" && !Array.isArray(over[k]) ? mergeText(base[k] || {}, over[k]) : over[k];
+    }
+    return out;
+  }
+  function loadText(lang) {
+    if (!TEXT_CACHE[lang]) {
+      const get = (code) => fetch(`${TEXT_URL}/${code}.json?v=${VERSION}`).then((r) => r.ok ? r.json() : null).catch(() => null);
+      TEXT_CACHE[lang] = Promise.all([get("en"), lang === "en" ? null : get(lang)]).then(([en, own]) => {
+        const t = mergeText(en || {}, own || {});
+        TEXT_FUNCS.forEach((k) => {
+          const tpl = t[k];
+          t[k] = (...a) => fmtText(tpl, a);
+        });
+        t.__ok = !!en;
+        return t;
+      });
+    }
+    return TEXT_CACHE[lang];
+  }
+
+  // src/deck/steps/range.js
+  function rangeHtml({ attr, value, min, max, step = 1, fmt = String, ends = true }) {
+    const v = Math.min(max, Math.max(min, Number(value)));
+    return `<div class="pslide vslide" data-range="${esc(attr)}" data-min="${min}" data-max="${max}" data-step="${step}">
+    <b class="pval" data-rval>${esc(fmt(v))}</b>
+    <div class="pbar"><button type="button" class="pnudge" data-rnudge="-1">−</button><div class="ptrack"><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-rin>${ends ? `<div class="pends"><span style="left:0">${esc(fmt(min))}</span><span style="left:100%">${esc(fmt(max))}</span></div>` : ""}</div><button type="button" class="pnudge" data-rnudge="1">+</button></div></div>`;
+  }
+  function bindRange(box, attr, fmt, onChange) {
+    const el = box.querySelector(`[data-range="${attr}"]`);
+    if (!el) return;
+    const input = el.querySelector("[data-rin]"), out = el.querySelector("[data-rval]");
+    const min = Number(el.dataset.min), max = Number(el.dataset.max), step = Number(el.dataset.step);
+    const round2 = (v) => Math.round(Math.min(max, Math.max(min, v)) / step) * step;
+    const clean = (v) => Number(round2(v).toFixed(String(step).split(".")[1]?.length || 0));
+    const head = el.closest(".vrow")?.querySelector(".vhead b");
+    input.addEventListener("input", () => {
+      out.textContent = fmt(clean(Number(input.value)));
+      if (head && attr !== "sat" && attr !== "hue") head.textContent = out.textContent;
+    });
+    input.addEventListener("change", () => onChange(clean(Number(input.value))));
+    el.querySelectorAll("[data-rnudge]").forEach((b) => b.addEventListener("click", () => onChange(clean(Number(input.value) + Number(b.dataset.rnudge) * step))));
+  }
+
+  // src/deck/steps/ha-values.js
+  var MP = { volume: 4, mute: 8, source: 2048 };
+  var COLOR = ["hs", "xy", "rgb", "rgbw", "rgbww"];
+  var SWATCHES = [[0, 100], [25, 100], [50, 100], [120, 80], [190, 90], [220, 100], [275, 80], [320, 90], [35, 40]];
+  var SET_ONLY = ["number", "input_number"];
+  var DEFAULT_CAP = 80;
+  var dom = (e) => (e || "").split(".")[0];
+  var feat = (a, bit) => !!((Number(a.supported_features) || 0) & bit);
+  var pct = (v) => `${Math.round(v)} %`;
+  var num = (v) => String(Math.round(v * 100) / 100);
+  var FIELDS = {
+    light: [
+      { key: "brightness", label: "valBrightness", ok: (a) => (a.supported_color_modes || []).some((m) => m !== "onoff"), range: () => ({ min: 1, max: 100, step: 1 }), fmt: pct, start: (a) => a.brightness ? Math.round(a.brightness / 255 * 100) : 60 },
+      { key: "tone", label: "valTone", ok: (a) => (a.supported_color_modes || []).some((m) => m === "color_temp" || COLOR.includes(m)) }
+    ],
+    media_player: [
+      { key: "volume", label: "valVolume", ok: (a) => feat(a, MP.volume), range: (a, cap) => ({ min: 0, max: cap, step: 1 }), fmt: pct, start: (a, cap) => Math.min(cap, Math.round((a.volume_level ?? 0.3) * 100)) },
+      { key: "source", label: "valSource", ok: (a) => feat(a, MP.source) },
+      { key: "mute", label: "valMute", ok: (a) => feat(a, MP.mute) }
+    ],
+    cover: [{ key: "position", label: "valPosition", ok: (a) => feat(a, 4), range: () => ({ min: 0, max: 100, step: 1 }), fmt: pct, start: (a) => a.current_position ?? 50 }],
+    climate: [{ key: "temperature", label: "valTemperature", ok: (a) => feat(a, 1), range: (a) => ({ min: a.min_temp ?? 7, max: a.max_temp ?? 35, step: a.target_temp_step || 0.5 }), fmt: (v) => `${num(v)} °`, start: (a) => a.temperature ?? 21 }],
+    fan: [{ key: "percentage", label: "valSpeed", ok: (a) => feat(a, 1), range: (a) => ({ min: 0, max: 100, step: a.percentage_step || 1 }), fmt: pct, start: (a) => a.percentage ?? 50 }],
+    number: [{ key: "value", label: "valValue", ok: () => true, range: (a) => ({ min: a.min ?? 0, max: a.max ?? 100, step: a.step || 1 }), fmt: num, start: (a, cap, st) => Number(st) || a.min || 0 }]
+  };
+  FIELDS.input_number = FIELDS.number;
+  var hasValues = (entity) => !!FIELDS[dom(entity)];
+  var attrsOf = (card, entity) => card?._hass?.states?.[entity]?.attributes || {};
+  var volumeCap = (card) => Number(card?._settings?.().volumeCap) || DEFAULT_CAP;
+  function fieldsFor(card, entity) {
+    const a = attrsOf(card, entity);
+    return (FIELDS[dom(entity)] || []).filter((f) => f.ok(a));
+  }
+  var hueName = (t, h, s) => s < 50 ? t.hueNames[8] : t.hueNames[Math.round(h % 360 / 360 * 8) % 8];
+  function valuesText(entity, v, t) {
+    if (!v) return "";
+    const parts = [];
+    if (v.brightness !== void 0) parts.push(pct(v.brightness));
+    if (v.kelvin !== void 0) parts.push(`${v.kelvin} K`);
+    if (v.color) parts.push(hueName(t, v.color[0], v.color[1]));
+    if (v.source) parts.push(v.source);
+    if (v.volume !== void 0) parts.push(`${t.valVolumeShort} ${pct(v.volume)}`);
+    if (v.mute !== void 0) parts.push(v.mute ? t.valMuteOn : t.valMuteOff);
+    if (v.position !== void 0) parts.push(pct(v.position));
+    if (v.temperature !== void 0) parts.push(`${num(v.temperature)} °`);
+    if (v.percentage !== void 0) parts.push(pct(v.percentage));
+    if (v.value !== void 0) parts.push(num(v.value));
+    return parts.join(" · ");
+  }
+  var isOn = (v, key) => key === "tone" ? v.kelvin !== void 0 || !!v.color : v[key] !== void 0;
+  function toneHtml(a, v, t) {
+    const modes = a.supported_color_modes || [];
+    const canK = modes.includes("color_temp"), canC = modes.some((m) => COLOR.includes(m));
+    const mode = v.color || !canK ? "color" : "white";
+    const seg = canK && canC ? `<div class="vseg"><button type="button" class="${mode === "white" ? "sel" : ""}" data-vtone="white">${t.valWhite}</button><button type="button" class="${mode === "color" ? "sel" : ""}" data-vtone="color">${t.valColor}</button></div>` : "";
+    if (mode === "white") {
+      const lo = a.min_color_temp_kelvin || 2e3, hi = a.max_color_temp_kelvin || 6500;
+      return seg + rangeHtml({ attr: "kelvin", value: v.kelvin ?? 2700, min: lo, max: hi, step: 50, fmt: (k) => `${k} K` });
+    }
+    const [h, s] = v.color || [25, 100];
+    const sw = SWATCHES.map(([sh, ss]) => `<button type="button" class="vdot ${sh === h && ss === s ? "sel" : ""}" style="background:hsl(${sh} ${ss}% ${100 - ss / 2}%)" data-vswatch="${sh},${ss}" title="${esc(hueName(t, sh, ss))}"></button>`).join("");
+    return `${seg}<div class="vdots">${sw}</div><div class="vhue">${rangeHtml({ attr: "hue", value: h, min: 0, max: 359, step: 1, fmt: (x) => hueName(t, x, s), ends: false })}</div><div class="vsub">${t.valSat}</div>${rangeHtml({ attr: "sat", value: s, min: 0, max: 100, step: 1, fmt: (x) => `${x} %` })}<div class="ehint">${t.valWhiteOrColor}</div>`;
+  }
+  function bodyHtml(f, card, entity, v, t) {
+    const a = attrsOf(card, entity);
+    const cap = volumeCap(card);
+    if (f.key === "tone") return toneHtml(a, v, t);
+    if (f.key === "source") {
+      const list = Array.isArray(a.source_list) ? a.source_list : [];
+      const all = v.source && !list.includes(v.source) ? [v.source, ...list] : list;
+      return all.length ? `<div class="pchips">${all.map((x) => `<button type="button" class="pchip ${x === v.source ? "sel" : ""}" data-vsource="${esc(x)}">${esc(x)}</button>`).join("")}</div>` : `<div class="ehint">${t.valSourceNone}</div>`;
+    }
+    if (f.key === "mute") return `<div class="vseg"><button type="button" class="${v.mute ? "sel" : ""}" data-vmute="1">${t.valMuteOn}</button><button type="button" class="${v.mute === false ? "sel" : ""}" data-vmute="0">${t.valMuteOff}</button></div>`;
+    const r = f.range(a, cap);
+    return rangeHtml({ attr: f.key, value: v[f.key], ...r, fmt: f.fmt }) + (f.key === "volume" ? `<div class="ehint">${fmtText(t.valCapHint, [cap])}</div>` : "");
+  }
+  function valuesHtml(s, card, t) {
+    const fields = fieldsFor(card, s.entity);
+    if (!fields.length) return "";
+    const v = s.values || {};
+    const rows = fields.map((f) => {
+      const on = isOn(v, f.key);
+      const shown = f.key === "tone" ? v.kelvin !== void 0 ? `${v.kelvin} K` : v.color ? hueName(t, v.color[0], v.color[1]) : "" : f.key === "source" ? v.source || "" : f.key === "mute" ? "" : on ? f.fmt(v[f.key]) : "";
+      return `<div class="vrow ${on ? "on" : ""}"><label class="vhead"><span class="sw"><input type="checkbox" data-von="${f.key}" ${on ? "checked" : ""}><i></i></span><span>${t[f.label]}</span>${on && shown ? `<b>${esc(shown)}</b>` : ""}</label>${on ? `<div class="vbody">${bodyHtml(f, card, s.entity, v, t)}</div>` : ""}</div>`;
+    }).join("");
+    return `<div class="esub">${t.valTitle}</div>${rows}<div class="ehint">${t.valHint}</div>`;
+  }
+  function bindValues(box, s, update, card) {
+    const set = (patch) => {
+      const v = { ...s.values || {}, ...patch };
+      Object.keys(v).forEach((k) => v[k] === void 0 && delete v[k]);
+      update({ values: v });
+    };
+    const a = attrsOf(card, s.entity);
+    const cap = volumeCap(card);
+    box.querySelectorAll("input[data-von]").forEach((i) => i.addEventListener("change", () => {
+      const f = fieldsFor(card, s.entity).find((x) => x.key === i.dataset.von);
+      if (!f) return;
+      if (!i.checked) return set(f.key === "tone" ? { kelvin: void 0, color: void 0 } : { [f.key]: void 0 });
+      if (f.key === "tone") {
+        const canK = (a.supported_color_modes || []).includes("color_temp");
+        return set(canK ? { kelvin: a.color_temp_kelvin || 2700 } : { color: a.hs_color ? a.hs_color.map(Math.round) : [25, 100] });
+      }
+      if (f.key === "source") return set({ source: a.source || (a.source_list || [])[0] || "" });
+      if (f.key === "mute") return set({ mute: true });
+      return set({ [f.key]: f.start(a, cap, card?._hass?.states?.[s.entity]?.state) });
+    }));
+    fieldsFor(card, s.entity).filter((f) => f.range).forEach((f) => bindRange(box, f.key, f.fmt, (x) => set({ [f.key]: x })));
+    bindRange(box, "kelvin", (k) => `${k} K`, (k) => set({ kelvin: k, color: void 0 }));
+    const [h, sat] = s.values?.color || [25, 100];
+    bindRange(box, "hue", (x) => String(x), (x) => set({ color: [x, sat], kelvin: void 0 }));
+    bindRange(box, "sat", (x) => `${x} %`, (x) => set({ color: [h, x], kelvin: void 0 }));
+    box.querySelectorAll("[data-vtone]").forEach((b) => b.addEventListener("click", () => set(b.dataset.vtone === "white" ? { kelvin: a.color_temp_kelvin || 2700, color: void 0 } : { color: [h, sat], kelvin: void 0 })));
+    box.querySelectorAll("[data-vswatch]").forEach((b) => b.addEventListener("click", () => set({ color: b.dataset.vswatch.split(",").map(Number), kelvin: void 0 })));
+    box.querySelectorAll("[data-vsource]").forEach((b) => b.addEventListener("click", () => set({ source: b.dataset.vsource })));
+    box.querySelectorAll("[data-vmute]").forEach((b) => b.addEventListener("click", () => set({ mute: b.dataset.vmute === "1" })));
+  }
+
   // src/deck/steps/recent.js
   var KEY = "harmony-deck-recent";
   var MAX = 12;
@@ -216,26 +390,29 @@
   }
 
   // src/deck/steps/ha.js
-  var HA_DOMAINS = ["light", "switch", "scene", "script", "automation", "button", "input_button", "input_boolean", "cover", "fan", "lock", "media_player"];
-  var KINDS = { light: ["light"], switch: ["switch", "input_boolean"], script: ["script"], scene: ["scene"], automation: ["automation"], button: ["button", "input_button"] };
+  var HA_DOMAINS = ["light", "switch", "scene", "script", "automation", "button", "input_button", "input_boolean", "cover", "fan", "lock", "media_player", "climate", "number", "input_number"];
+  var KINDS = { light: ["light"], switch: ["switch", "input_boolean"], script: ["script"], scene: ["scene"], automation: ["automation"], button: ["button", "input_button"], media: ["media_player"], cover: ["cover"], climate: ["climate", "fan"], number: ["number", "input_number"] };
   var SHOWN = 60;
   var name = (card, id) => card?._hass?.states?.[id]?.attributes?.friendly_name || id;
   var haStep = {
     type: "ha",
     icon: "mdi:home-assistant",
     create: () => ({ type: "ha", entity: "", op: "toggle" }),
-    valid: (s) => /^[a-z_]+\.[a-z0-9_]+$/.test(s.entity || ""),
+    valid: (s) => /^[a-z_]+\.[a-z0-9_]+$/.test(s.entity || "") && (s.op !== "set" || Object.keys(s.values || {}).length > 0),
     label(s, t, card) {
       if (!s.entity) return t.stepPickEntity;
-      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate };
-      return `${name(card, s.entity)} · ${ops[s.op] || s.op}`;
+      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate, set: "" };
+      const vals = valuesText(s.entity, s.values, t);
+      return [name(card, s.entity), [ops[s.op] ?? s.op, vals].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
     },
     editor(s, { card, t }) {
       const st = card._hass.states || {};
-      const ops = { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate };
+      const dom2 = (s.entity || "").split(".")[0];
+      const ops = SET_ONLY.includes(dom2) ? { set: t.opSet } : { toggle: t.opToggle, on: t.opOn, off: t.opOff, run: t.opActivate, ...hasValues(s.entity) ? { set: t.opSet } : {} };
+      const vals = s.op === "on" || s.op === "set" ? valuesHtml(s, card, t) : "";
       const opRow = `<label class="erow"><span>${t.actOp}</span><select data-hop>${Object.entries(ops).map(([k, v]) => `<option value="${k}" ${s.op === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
       if (s.entity) {
-        return `<div class="erow"><span><b>${esc(name(card, s.entity))}</b><small class="pid">${esc(s.entity)} · ${esc(st[s.entity]?.state ?? t.unavailable)}</small></span><button type="button" class="mini txt" data-hpick="">${t.stepChange}</button></div>${opRow}`;
+        return `<div class="erow"><span><b>${esc(name(card, s.entity))}</b><small class="pid">${esc(s.entity)} · ${esc(st[s.entity]?.state ?? t.unavailable)}</small></span><button type="button" class="mini txt" data-hpick="">${t.stepChange}</button></div>${opRow}${vals}`;
       }
       const ids = Object.keys(st).filter((id) => HA_DOMAINS.includes(id.split(".")[0])).sort((a, b) => name(card, a).localeCompare(name(card, b), void 0, { sensitivity: "base" }));
       const item = (id) => `<button type="button" class="pent" data-hpick="${esc(id)}" data-dom="${esc(id.split(".")[0])}" data-q="${esc(`${name(card, id)} ${id}`.toLowerCase())}"><span>${esc(name(card, id))}</span><small>${esc(id)} · ${esc(st[id]?.state ?? "")}</small></button>`;
@@ -245,12 +422,14 @@
       ${rec.length ? `<div class="pgroup prec"><div class="esub">${t.stepRecent}</div><div class="plist">${rec.map(item).join("")}</div></div>` : ""}
       <div class="plist" data-hlist>${ids.map(item).join("")}</div><div class="ehint" data-hmore hidden>${t.stepMore}</div>`;
     },
-    bind(box, s, update) {
+    bind(box, s, update, card) {
       box.querySelectorAll("[data-hpick]").forEach((b) => b.addEventListener("click", () => {
         if (b.dataset.hpick) remember("ha", b.dataset.hpick);
-        update({ entity: b.dataset.hpick });
+        const id = b.dataset.hpick;
+        update({ entity: id, values: void 0, op: SET_ONLY.includes(id.split(".")[0]) ? "set" : s.op === "set" ? "on" : s.op });
       }));
       box.querySelector("[data-hop]")?.addEventListener("change", (e) => update({ op: e.target.value }));
+      if (s.entity && (s.op === "on" || s.op === "set")) bindValues(box, s, update, card);
       const search = box.querySelector("[data-hsearch]");
       const list = box.querySelector("[data-hlist]");
       if (!search || !list) return;
@@ -275,6 +454,61 @@
         filter();
       }));
       filter();
+    }
+  };
+
+  // src/deck/steps/irvol.js
+  var UP = /^vol(ume)?[\s_-]*(up|\+)$/i;
+  var DOWN = /^vol(ume)?[\s_-]*(down|-)$/i;
+  var DEF = { max: 100, step: 1, delay: 0.4 };
+  var DELAYS = [0.2, 0.3, 0.4, 0.6, 0.8, 1];
+  var hasVolume = (cmds) => cmds.some((c) => UP.test(c)) && cmds.some((c) => DOWN.test(c));
+  var cfgOf = (card, hub, dev) => ({ ...DEF, ...card._settings().irVolume?.[hub]?.[dev] || {} });
+  function irPlan(cfg, level) {
+    const full = Math.ceil(cfg.max / cfg.step);
+    return [full + Math.max(2, Math.ceil(full * 0.1)), Math.round(Math.min(level, cfg.max) / cfg.step)];
+  }
+  var irvolStep = {
+    type: "irvol",
+    icon: "mdi:volume-source",
+    create: () => ({ type: "irvol", device: "", level: 20 }),
+    valid: (s) => !!s.device && s.level >= 0,
+    label: (s, t) => s.device ? fmtText(t.irvLabel, [s.device, String(s.level)]) : t.stepPickDevice,
+    editor(s, { card, h, t }) {
+      const devs = card._devicesOf(h.id);
+      const able = Object.keys(devs).filter((d) => hasVolume(devs[d] || []));
+      if (!s.device || !devs[s.device]) {
+        return able.length ? `<div class="esub">${t.stepPickDevice}</div><div class="pchips">${able.map((d) => `<button type="button" class="pchip" data-ivdev="${esc(d)}"><ha-icon icon="${card._deviceIcon(d, h.id)}"></ha-icon><span>${esc(d)}</span></button>`).join("")}</div><div class="ehint">${t.irvHint}</div>` : `<div class="ehint">${t.irvNoDevices}</div>`;
+      }
+      const cfg = cfgOf(card, h.id, s.device);
+      const [down, up] = irPlan(cfg, s.level);
+      const secs = Math.round((down + up) * cfg.delay);
+      const open = card._irSetupOpen ? "open" : "";
+      return `<div class="erow"><span><ha-icon icon="${card._deviceIcon(s.device, h.id)}"></ha-icon>${esc(s.device)}</span><button type="button" class="mini txt" data-ivdev="">${t.stepChange}</button></div>
+      ${rangeHtml({ attr: "irlevel", value: Math.min(s.level, cfg.max), min: 0, max: cfg.max, step: cfg.step, fmt: (v) => String(v) })}
+      <div class="ehint">${fmtText(t.irvDuration, [secs, down, up])}</div>
+      <details class="fdev irsetup" data-irsetup ${open}><summary>${fmtText(t.irvSetup, [s.device])}</summary>
+        <label class="erow"><span>${t.irvMax}</span><input type="number" min="1" max="200" step="1" value="${cfg.max}" data-ircfg="max"></label>
+        <label class="erow"><span>${t.irvStep}</span><input type="number" min="0.5" max="20" step="0.5" value="${cfg.step}" data-ircfg="step"></label>
+        <label class="erow"><span>${t.irvDelay}</span><select data-ircfg="delay">${DELAYS.map((d) => `<option value="${d}" ${d === cfg.delay ? "selected" : ""}>${d} s</option>`).join("")}</select></label>
+        <div class="ehint">${t.irvSetupHint}</div></details>`;
+    },
+    bind(box, s, update, card) {
+      box.querySelectorAll("[data-ivdev]").forEach((b) => b.addEventListener("click", () => update({ device: b.dataset.ivdev })));
+      bindRange(box, "irlevel", (v) => String(v), (v) => update({ level: v }));
+      box.querySelector("[data-irsetup]")?.addEventListener("toggle", (e) => {
+        card._irSetupOpen = e.target.open;
+      });
+      box.querySelectorAll("[data-ircfg]").forEach((i) => i.addEventListener("change", () => {
+        const hub = card._actHub;
+        const all = JSON.parse(JSON.stringify(card._settings().irVolume || {}));
+        const cur = { ...DEF, ...all[hub]?.[s.device] || {}, [i.dataset.ircfg]: Number(i.value) };
+        cur.max = Math.min(200, Math.max(1, Math.round(cur.max) || DEF.max));
+        cur.step = Math.min(20, Math.max(0.5, cur.step || DEF.step));
+        (all[hub] ||= {})[s.device] = cur;
+        card._irSetupOpen = true;
+        card._saveSettings({ irVolume: all }).then(() => update({ level: Math.min(s.level, cur.max) }));
+      }));
     }
   };
 
@@ -509,39 +743,6 @@
     }
   };
 
-  // src/shared/version.js
-  var VERSION = "0.5.1";
-
-  // src/shared/i18n.js
-  var TEXT_URL = "/harmony_deck/translations";
-  var TEXT_FUNCS = ["running", "starting", "linkMismatch"];
-  var TEXT_CACHE = {};
-  function fmtText(tpl, args) {
-    return String(tpl).replace(/\{(\d+)\}/g, (_, n) => args[+n] ?? "");
-  }
-  function mergeText(base, over) {
-    const out = { ...base };
-    for (const k of Object.keys(over || {})) {
-      out[k] = over[k] && typeof over[k] === "object" && !Array.isArray(over[k]) ? mergeText(base[k] || {}, over[k]) : over[k];
-    }
-    return out;
-  }
-  function loadText(lang) {
-    if (!TEXT_CACHE[lang]) {
-      const get = (code) => fetch(`${TEXT_URL}/${code}.json?v=${VERSION}`).then((r) => r.ok ? r.json() : null).catch(() => null);
-      TEXT_CACHE[lang] = Promise.all([get("en"), lang === "en" ? null : get(lang)]).then(([en, own]) => {
-        const t = mergeText(en || {}, own || {});
-        TEXT_FUNCS.forEach((k) => {
-          const tpl = t[k];
-          t[k] = (...a) => fmtText(tpl, a);
-        });
-        t.__ok = !!en;
-        return t;
-      });
-    }
-    return TEXT_CACHE[lang];
-  }
-
   // src/deck/steps/pause.js
   var MAX2 = 300;
   var STOPS = [
@@ -618,7 +819,7 @@
   };
 
   // src/deck/steps/index.js
-  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep };
+  var STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep };
   var stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t, card) || s.type;
   function normalizeAction(a) {
     if (!a || typeof a !== "object") return null;
@@ -939,9 +1140,9 @@
       const tip = state === "error" ? `${a.name} – ${seq.error || t.actFailed}` : running ? `${a.name} – ${stepName}` : a.steps.length > 1 ? `${a.name}
 ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.name;
       const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
-      const pct = running ? Math.round((step - 1) / total * 100) : 0;
+      const pct2 = running ? Math.round((step - 1) / total * 100) : 0;
       const icon = state === "error" ? "mdi:alert-circle-outline" : running ? "mdi:progress-clock" : done ? "mdi:check" : a.icon;
-      return `<button class="${cls}" style="--p:${pct}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${a.steps.length > 1 ? `<i class="actmore" role="button" data-actmore="${esc(a.id)}" data-hub="${esc(h.id)}" title="${esc(t.seqOpen)}"><ha-icon icon="mdi:chevron-down"></ha-icon></i>` : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
+      return `<button class="${cls}" style="--p:${pct2}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${a.steps.length > 1 ? `<i class="actmore" role="button" data-actmore="${esc(a.id)}" data-hub="${esc(h.id)}" title="${esc(t.seqOpen)}"><ha-icon icon="mdi:chevron-down"></ha-icon></i>` : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
     },
     _actionsBlock(h, cur, t) {
       const list = this._actionsOf(h.id, cur);
@@ -3704,9 +3905,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _actionDevices(h, a) {
       const info = this._info?.hubs?.[h.id];
       const by = /* @__PURE__ */ new Map();
-      a.steps.filter((s) => s.type === "key").forEach((s) => {
+      a.steps.filter((s) => s.type === "key" || s.type === "irvol").forEach((s) => {
         const it = by.get(s.device) || { device: s.device, input: null, inputRaw: null, manual: false };
-        if (!it.input && /^input/i.test(s.command)) it.input = s.command;
+        if (!it.input && /^input/i.test(s.command || "")) it.input = s.command;
         by.set(s.device, it);
       });
       return [...by.values()].map((it) => {
@@ -3842,7 +4043,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
-          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}</div>
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
+        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
@@ -4091,6 +4293,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._saveSettings({ hiddenHubs: [...hid] });
       });
       root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
+      root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
       root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
       root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
         if (b.dataset.goetab) this._etab = b.dataset.goetab;
@@ -4405,6 +4608,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .seqmark { flex: none; --mdc-icon-size: 20px; color: var(--hr-muted); } .seqrow.done .seqmark { color: var(--hr-accent); } .seqrow.current .seqmark { color: var(--hr-accent); animation: seqpulse 1.4s ease-in-out infinite; } .seqrow.error .seqmark { color: var(--hr-danger, #e55); } .seqrow.current { background: color-mix(in srgb, var(--hr-accent) 12%, transparent); border-radius: 10px; } @keyframes seqpulse { 50% { opacity: .35; } }
       .seqlab { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.9em; --mdc-icon-size: 18px; } .seqlab > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .seqerr { flex-basis: 100%; color: var(--hr-danger, #e55); }
       .seqtools { flex: none; display: flex; gap: 2px; } .seqtools .ib { width: 34px; height: 34px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .seqtools .ib:disabled { opacity: .3; }
+      .vrow { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 35%, transparent); }
+      .vhead { display: flex; align-items: center; gap: 10px; cursor: pointer; } .vhead > span:nth-child(2) { flex: 1; } .vhead b { font-size: 1.15em; } .vrow:not(.on) .vhead > span:nth-child(2) { color: var(--hr-muted); }
+      .vbody { display: flex; flex-direction: column; gap: 8px; } .vslide { padding: 0; } .vrow .vslide .pval { display: none; } .vsub { font-size: 0.8em; color: var(--hr-muted); }
+      .vseg { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--hr-card-bg, var(--card-background-color)); } .vseg button { flex: 1; border: none; border-radius: 8px; padding: 7px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; cursor: pointer; } .vseg button.sel { background: var(--hr-accent); color: var(--hr-on-accent); }
+      .vdots { display: flex; flex-wrap: wrap; gap: 6px; } .vdot { width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); } .vdot.sel { box-shadow: 0 0 0 2px var(--hr-bg, #1e2126), 0 0 0 4px var(--hr-accent); }
+      .vhue input[type=range] { appearance: none; -webkit-appearance: none; height: 12px; border-radius: 6px; background: linear-gradient(90deg, red, #ff0, lime, cyan, blue, #f0f, red); } .vhue .pval { display: none; }
+      .irsetup summary { font-weight: 500; }
       .stepmoves { flex: none; display: flex; gap: 4px; } .stepmoves .ib { width: 34px; height: 34px; border-radius: 10px; padding: 0; min-width: 0; --mdc-icon-size: 18px; background: none; color: var(--hr-muted); } .stepmoves .ib:disabled { opacity: .3; }
       .stephead.open { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .stepacts { display: flex; gap: 8px; padding-top: 10px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--divider-color, #888) 45%, transparent); } .stepacts .key { flex: 1; min-width: 0; } .stepacts .del { color: var(--hr-danger, #e55); }

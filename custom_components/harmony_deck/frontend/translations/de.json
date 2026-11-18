@@ -730,7 +730,8 @@
     "view": "Ansicht",
     "conn": "Verbindung",
     "fireAct": "In Aktivitäten",
-    "colorKeys": "Farbtasten"
+    "colorKeys": "Farbtasten",
+    "actions": "Aktionen"
   },
   "hideKeys": "Tasten ausblenden",
   "hideEditHint": "Tippe Tasten an, die für dieses Gerät nicht mehr erscheinen sollen (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten. Das ist keine Sperre: Mit erneutem Antippen kommen sie zurück.",
@@ -746,12 +747,14 @@
   "stepTypes": {
     "key": "Harmony-Taste",
     "pause": "Pause",
-    "ha": "Home Assistant"
+    "ha": "Home Assistant",
+    "irvol": "Lautstärke (IR)"
   },
   "stepTypeHints": {
     "key": "Eine Taste eines Geräts senden",
     "pause": "Ein paar Sekunden warten",
-    "ha": "Lampe, Szene, Skript … schalten"
+    "ha": "Lampe, Szene, Skript … schalten",
+    "irvol": "Infrarot-Gerät auf eine Lautstärke bringen"
   },
   "stepAdd": "Schritt hinzufügen",
   "actBack": "Zurück",
@@ -782,7 +785,11 @@
     "script": "Skript",
     "scene": "Szene",
     "automation": "Automation",
-    "button": "Taste"
+    "button": "Taste",
+    "media": "Medien",
+    "cover": "Rollladen",
+    "climate": "Klima/Lüfter",
+    "number": "Zahl"
   },
   "stepMore": "Weitere Treffer: bitte genauer suchen.",
   "actHoldStop": "Halten zum Abbrechen",
@@ -803,5 +810,48 @@
   "seqStart": "Starten",
   "seqClose": "Schließen",
   "actFavTitle": "Favoriten der Aktion",
-  "actFavHint": "Tasten beliebiger Geräte, die unter der geöffneten Aktion erscheinen."
+  "actFavHint": "Tasten beliebiger Geräte, die unter der geöffneten Aktion erscheinen.",
+  "opSet": "Nur Werte setzen",
+  "valTitle": "Werte (optional)",
+  "valHint": "Nur eingeschaltete Werte werden gesendet, der Rest bleibt, wie er ist. Was das Gerät nicht kann, erscheint hier nicht.",
+  "valBrightness": "Helligkeit",
+  "valTone": "Lichtfarbe",
+  "valWhite": "Weiß (Kelvin)",
+  "valColor": "Farbe",
+  "valSat": "Sättigung",
+  "valWhiteOrColor": "Weiß oder Farbe, nicht beides – so will es Home Assistant.",
+  "valVolume": "Lautstärke",
+  "valVolumeShort": "Lautst.",
+  "valSource": "Quelle",
+  "valSourceNone": "Das Gerät meldet gerade keine Quellen. Die Liste erscheint, wenn es an ist.",
+  "valMute": "Stumm",
+  "valMuteOn": "Stumm",
+  "valMuteOff": "Ton an",
+  "valPosition": "Position",
+  "valTemperature": "Temperatur",
+  "valSpeed": "Stufe",
+  "valValue": "Wert",
+  "valCapHint": "Obergrenze {0} % (Einstellungen › Verhalten).",
+  "hueNames": [
+    "Rot",
+    "Orange",
+    "Gelb",
+    "Grün",
+    "Türkis",
+    "Blau",
+    "Lila",
+    "Pink",
+    "Pastell"
+  ],
+  "irvLabel": "{0} · Lautstärke {1}",
+  "irvHint": "Für Geräte, die nur per Infrarot bedient werden. Harmony Deck drückt erst so oft „leiser“, bis das Gerät sicher bei 0 ist, dann so oft „lauter“ bis zum Wert. Ist das Gerät stumm, kann das je nach Gerät stumm bleiben.",
+  "irvNoDevices": "Kein Gerät dieses Hubs hat Tasten für lauter und leiser.",
+  "irvDuration": "Dauert etwa {0} s ({1}× leiser, dann {2}× lauter).",
+  "irvSetup": "{0} einrichten (gilt für alle Aktionen)",
+  "irvMax": "Höchste Lautstärke",
+  "irvStep": "Einheiten pro Tastendruck",
+  "irvDelay": "Abstand zwischen Tastendrücken",
+  "irvSetupHint": "Verschluckt das Gerät Tastendrücke, den Abstand vergrößern.",
+  "volumeCap": "Höchste Lautstärke für Aktionen",
+  "volumeCapHint": "Gilt für Mediaplayer in Aktionen: Ein Schritt darf nicht lauter stellen."
 }

@@ -12,6 +12,10 @@ from typing import Any
 
 from homeassistant.core import Context, HomeAssistant
 
+from . import irvolume
+from .const import DOMAIN
+from .values import DEFAULT_VOLUME_CAP, calls, out_of_range, unsupported
+
 _SERVICE_TIMEOUT = 30  # seconds, one service call
 _PRESS = ("button", "input_button")
 _RUN = ("scene", "script", "automation")
@@ -71,16 +75,76 @@ class PauseStep(StepType):
         await asyncio.sleep(step["secs"])
 
 
+def _settings(ctx: RunContext) -> dict[str, Any]:
+    return (ctx.hass.data.get(DOMAIN) or {}).get("settings") or {}
+
+
+def volume_cap(ctx: RunContext) -> int:
+    try:
+        return int(_settings(ctx).get("volumeCap") or DEFAULT_VOLUME_CAP)
+    except (TypeError, ValueError):
+        return DEFAULT_VOLUME_CAP
+
+
 class HaStep(StepType):
-    """Switch or start a Home Assistant entity."""
+    """Switch or start a Home Assistant entity, optionally with values (brightness, volume, source ...)."""
 
     def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
-        if ctx.hass.states.get(step["entity"]) is None:
+        state = ctx.hass.states.get(step["entity"])
+        if state is None:
             raise StepError(f"unknown entity: {step['entity']}")
+        values = step.get("values") or {}
+        if (key := unsupported(step["entity"], values, dict(state.attributes))) is not None:
+            raise StepError(f"{step['entity']} cannot set {key}")
+        if "volume" in values and values["volume"] > volume_cap(ctx):
+            raise StepError(f"volume above the limit ({volume_cap(ctx)} %)")
 
     async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
-        domain, service = ha_service(step["entity"], step["op"])
-        await _call(ctx, domain, service, {"entity_id": step["entity"]})
+        values = step.get("values")
+        if not values:
+            domain, service = ha_service(step["entity"], step["op"])
+            await _call(ctx, domain, service, {"entity_id": step["entity"]})
+            return
+        for domain, service, data in (calls(step["entity"], step["op"], values)):
+            # Checked right before each call: a player that was just switched on reports its sources only now.
+            state = ctx.hass.states.get(step["entity"])
+            if len(data) > 1 and state is not None:
+                problem = out_of_range(step["entity"], values, dict(state.attributes), volume_cap(ctx))
+                if problem:
+                    raise StepError(problem)
+            await _call(ctx, domain, service, data)
+
+
+class IrVolumeStep(StepType):
+    """Set the volume of an infrared device: down to 0, then up to the level (see irvolume.py)."""
+
+    def _cfg(self, ctx: RunContext, step: dict[str, Any]) -> dict[str, float]:
+        return irvolume.device_config(_settings(ctx).get("irVolume"), ctx.hub, step["device"])
+
+    def check(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        cfg = self._cfg(ctx, step)
+        if step["level"] > cfg["max"]:
+            raise StepError(f"level above the highest volume ({cfg['max']:g})")
+        if ctx.devices is None:
+            return
+        cmds = ctx.devices.get(step["device"])
+        if cmds is None:
+            raise StepError(f"unknown device: {step['device']}")
+        if None in irvolume.commands(cmds):
+            raise StepError(f"{step['device']} has no volume keys")
+
+    async def run(self, ctx: RunContext, step: dict[str, Any]) -> None:
+        state = ctx.hass.states.get(ctx.hub)
+        if state is None or state.state == "unavailable":
+            raise StepError("hub not available")
+        cfg = self._cfg(ctx, step)
+        up, down = irvolume.commands((ctx.devices or {}).get(step["device"]) or [])
+        up, down = up or "VolumeUp", down or "VolumeDown"
+        presses_down, presses_up = irvolume.plan(cfg, step["level"])
+        for command, presses in ((down, presses_down), (up, presses_up)):
+            for n in irvolume.chunks(presses):
+                data = {"entity_id": ctx.hub, "device": step["device"], "command": command, "num_repeats": n, "delay_secs": cfg["delay"]}
+                await _call(ctx, "remote", "send_command", data, timeout=n * cfg["delay"] + 15)
 
 
 def ha_service(entity: str, op: str) -> tuple[str, str]:
@@ -99,9 +163,9 @@ def ha_service(entity: str, op: str) -> tuple[str, str]:
     return "homeassistant", "toggle"
 
 
-async def _call(ctx: RunContext, domain: str, service: str, data: dict[str, Any]) -> None:
+async def _call(ctx: RunContext, domain: str, service: str, data: dict[str, Any], timeout: float = _SERVICE_TIMEOUT) -> None:
     try:
-        async with asyncio.timeout(_SERVICE_TIMEOUT):
+        async with asyncio.timeout(timeout):
             await ctx.hass.services.async_call(domain, service, data, blocking=True, context=ctx.context)
     except TimeoutError as err:
         raise StepError(f"{domain}.{service}: no answer") from err
@@ -113,4 +177,4 @@ async def _call(ctx: RunContext, domain: str, service: str, data: dict[str, Any]
         raise StepError(f"{domain}.{service}: {err}") from err
 
 
-STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep()}
+STEP_TYPES: dict[str, StepType] = {"key": KeyStep(), "pause": PauseStep(), "ha": HaStep(), "irvol": IrVolumeStep()}

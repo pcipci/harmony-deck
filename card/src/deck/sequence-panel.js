@@ -30,9 +30,9 @@ export const sequencePanelMixin = {
   _actionDevices(h, a) {
     const info = this._info?.hubs?.[h.id];
     const by = new Map();
-    a.steps.filter((s) => s.type === "key").forEach((s) => {
+    a.steps.filter((s) => s.type === "key" || s.type === "irvol").forEach((s) => {
       const it = by.get(s.device) || { device: s.device, input: null, inputRaw: null, manual: false };
-      if (!it.input && /^input/i.test(s.command)) it.input = s.command;
+      if (!it.input && /^input/i.test(s.command || "")) it.input = s.command;
       by.set(s.device, it);
     });
     return [...by.values()].map((it) => {

@@ -3,6 +3,7 @@ import { SKINS } from "../shared/skins.js";
 import { activityIcon, ACTION_ICONS, DEVICE_ICONS } from "../shared/icons.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
+import { volumeCap } from "./steps/ha-values.js";
 
 export const settingsEditorMixin = {
   _etabNow() { const k = this._etab || "look"; return (this._t().tabs || {})[k] ? k : "look"; },
@@ -61,7 +62,8 @@ export const settingsEditorMixin = {
           ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
-          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}</div>
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
+        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
@@ -242,6 +244,7 @@ export const settingsEditorMixin = {
       this._saveSettings({ hiddenHubs: [...hid] });
     });
     root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
+    root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
     root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
     root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { if (b.dataset.goetab) this._etab = b.dataset.goetab; this._onEdit(b.dataset.edit); }));
     root.querySelectorAll("input[data-vis]").forEach((i) => i.addEventListener("change", () => this._saveHidden(i.dataset.hub)));

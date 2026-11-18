@@ -271,3 +271,48 @@ async def test_action_errors_before_and_during(hass: HomeAssistant, hass_ws_clie
     ro = await hass_ws_client(hass, hass_read_only_access_token)
     await ro.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "draft": {"steps": [{"type": "pause", "secs": 1}]}})
     assert (await ro.receive_json())["error"]["code"] == "unauthorized"
+
+
+async def test_action_values_and_ir_volume(hass: HomeAssistant, hass_ws_client):
+    import asyncio
+
+    entry, _, _ = await _setup(hass)
+    sent = []
+
+    async def rec(call):
+        sent.append((call.domain, call.service, {k: v for k, v in call.data.items() if k != "entity_id"}))
+
+    for dom, srv in (("remote", "send_command"), ("media_player", "turn_on"), ("media_player", "volume_set"), ("media_player", "select_source")):
+        hass.services.async_register(dom, srv, rec)
+    hass.states.async_set("media_player.avr", "on", {"supported_features": 4 | 2048, "source_list": ["HDMI 1", "HDMI 2"]})
+    hass.data[DOMAIN]["settings"]["irVolume"] = {REMOTE: {"Panasonic": {"max": 12, "step": 1, "delay": 0.1}}}
+    await _with_actions(hass, [
+        {"id": "v", "name": "Vol", "steps": [{"type": "ha", "entity": "media_player.avr", "op": "on", "values": {"volume": 35, "source": "HDMI 2"}},
+                                              {"type": "irvol", "device": "Panasonic", "level": 5}]},
+        {"id": "loud", "name": "Loud", "steps": [{"type": "ha", "entity": "media_player.avr", "op": "set", "values": {"volume": 95}}]},
+        {"id": "src", "name": "Src", "steps": [{"type": "ha", "entity": "media_player.avr", "op": "set", "values": {"source": "Tuner"}}]},
+    ])
+    client = await hass_ws_client(hass)
+    ent = _lock_entities(hass, entry)["sequence"].entity_id
+
+    async def run(action):
+        await client.send_json_auto_id({"type": "harmony_deck/action/run", "hub": REMOTE, "action_id": action})
+        res = await client.receive_json()
+        for _ in range(100):
+            await hass.async_block_till_done()
+            if hass.states.get(ent).state != "running":
+                break
+            await asyncio.sleep(0.02)
+        return res
+
+    assert (await run("v"))["success"]
+    assert hass.states.get(ent).state == "done"
+    assert [s[1] for s in sent[:3]] == ["turn_on", "select_source", "volume_set"] and sent[2][2]["volume_level"] == 0.35
+    ir = [s[2] for s in sent if s[0] == "remote"]
+    assert ir[0]["command"] == "VolumeDown" and sum(c["num_repeats"] for c in ir if c["command"] == "VolumeDown") == 14
+    assert sum(c["num_repeats"] for c in ir if c["command"] == "VolumeUp") == 5 and all(c["num_repeats"] <= 10 for c in ir)
+    res = await run("loud")                       # above the volume limit (80 % by default): refused before anything is sent
+    assert res["error"]["code"] == "invalid" and "limit" in res["error"]["message"]
+    assert (await run("src"))["success"]          # unknown source: error in the step, nothing sent
+    st = hass.states.get(ent)
+    assert st.state == "error" and "unknown source" in st.attributes["error"]

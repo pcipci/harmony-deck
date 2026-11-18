@@ -17,6 +17,8 @@ from __future__ import annotations
 import re
 from typing import Any, Callable
 
+from .values import SET_ONLY, clean_values
+
 MAX_ACTIONS = 60          # per hub
 MAX_STEPS = 50            # per action
 MAX_PAUSE = 300.0         # seconds, one pause
@@ -24,7 +26,7 @@ MAX_RUNTIME = 600.0       # seconds, a whole run
 MAX_REPEAT = 10
 MAX_TEXT = 60
 MAX_FAVS = 40            # favourite keys per action
-HA_OPS = ("toggle", "on", "off", "run")
+HA_OPS = ("toggle", "on", "off", "run", "set")   # "set": only the values, nothing switched
 _ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 
@@ -61,10 +63,29 @@ def _ha(step: dict[str, Any]) -> dict[str, Any] | None:
     op = step.get("op") if step.get("op") in HA_OPS else "toggle"
     if op == "toggle" and step.get("op") == "activate":  # name used by 0.4
         op = "run"
-    return {"type": "ha", "entity": entity, "op": op}
+    values = clean_values(entity, step.get("values")) if op in ("on", "set") or entity.split(".", 1)[0] in SET_ONLY else {}
+    if entity.split(".", 1)[0] in SET_ONLY:
+        op = "set"
+    if op == "set" and not values:
+        return None
+    out = {"type": "ha", "entity": entity, "op": op}
+    if values:
+        out["values"] = values
+    return out
 
 
-STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha}
+def _irvol(step: dict[str, Any]) -> dict[str, Any] | None:
+    device = _text(step.get("device"), 120)
+    try:
+        level = float(step.get("level"))
+    except (TypeError, ValueError):
+        return None
+    if not device or level != level or level < 0:
+        return None
+    return {"type": "irvol", "device": device, "level": round(min(level, 200), 1)}
+
+
+STEP_CLEANERS: dict[str, Callable[[dict[str, Any]], dict[str, Any] | None]] = {"key": _key, "pause": _pause, "ha": _ha, "irvol": _irvol}
 
 
 def clean_step(step: Any) -> dict[str, Any] | None:

@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from .actionsmodel import clean_actions
+from .irvolume import clean_config
 from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS
 from . import profiles as prof
 from .hub import conf_commands, hub_info, match_conf, merge_conf_commands
@@ -193,6 +194,13 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
     settings = {k: v for k, v in msg["settings"].items() if k in SETTING_KEYS}
     if "actions" in settings:
         settings["actions"] = clean_actions(settings["actions"])
+    if "irVolume" in settings:
+        settings["irVolume"] = clean_config(settings["irVolume"])
+    if "volumeCap" in settings:
+        try:
+            settings["volumeCap"] = min(max(int(settings["volumeCap"]), 10), 100)
+        except (TypeError, ValueError):
+            settings.pop("volumeCap")
     prof.save(data, name, settings, SETTING_KEYS)
     await _commit(hass, data)
     connection.send_result(msg["id"], {"settings": prof.merged(data, name), "profile": name})

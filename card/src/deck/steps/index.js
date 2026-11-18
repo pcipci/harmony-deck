@@ -1,9 +1,10 @@
 // Step types of an action, as the card knows them. A new type is one module here (and one in the integration).
 import { haStep } from "./ha.js";
+import { irvolStep } from "./irvol.js";
 import { keyStep } from "./key.js";
 import { pauseStep } from "./pause.js";
 
-export const STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep };
+export const STEP_UI = { key: keyStep, pause: pauseStep, ha: haStep, irvol: irvolStep };
 
 export const stepLabel = (s, t, card) => s.label || STEP_UI[s.type]?.label(s, t, card) || s.type;
 

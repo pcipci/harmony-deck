@@ -82,6 +82,8 @@ Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei ge
 
 **Direktgeräte (0.7):** Unter Einstellungen › **Direktgeräte** verbindest du ein Harmony-Gerät mit einem Mediaplayer in Home Assistant (zum Beispiel deinen Fernseher). Die Tasten laufen weiter über den Hub; der Mediaplayer liefert zusätzlich den Zustand, einen echten Lautstärke-Wert und die Quelle. Pro Gerät siehst du, was der Mediaplayer kann und was er gerade meldet. Passen Hersteller/Modell oder Name eindeutig, erscheint ein Vorschlag mit „Übernehmen“, sonst wählst du den Mediaplayer selbst. Verbundene Geräte kannst du im Schritt **Gerät** nutzen (ein-/ausschalten, Lautstärke, Stumm, Quelle). Mit „Lautstärke direkt setzen statt per IR“ stellt der Schritt „Lautstärke (IR)“ den Wert am Gerät ein und zählt keine Tasten mehr. Die Lautstärke-Grenze gilt für beide.
 
+**Soll gegen Ist (0.8):** Tut ein verbundenes Gerät nicht, was die aktuelle Aktivität braucht (nach „Aus“ noch an, an soll aber aus sein, anderer Eingang), sagt das ein Kasten unter dem Status und bietet die Korrektur an („Einschalten“, „Ausschalten“, „Auf … umschalten“). Gemeldet wird erst, wenn der Zustand 4 Sekunden gleich blieb, und geschaltet wird nur auf deinen Tipp. Unter Einstellungen › Direktgeräte legst du bei „Eingänge der Aktivitäten“ fest, welche Quelle des Mediaplayers zu welchem Harmony-Eingang gehört; ohne Auswahl rät Harmony Deck anhand der Namen und schweigt, wenn es unsicher ist. Bei eingeschalteter Sperre darf die Korrektur nur ausschalten.
+
 Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle Profile.
 
 ## 8. Fire TV

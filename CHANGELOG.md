@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+### Added
+- **Target against actual state:** if a linked direct device does not do what the current activity needs (still on after "off", off although the activity switches it on, wrong input), a small box under the status says so and offers the fix: "Switch on", "Switch off" or "Switch to <source>". The fix is sent only when you tap it; nothing is switched by itself. The state must stay as it is for 4 seconds first, so a device that is still starting up is not reported. Devices the hub never switches (or switches by hand) are left alone.
+- **Inputs of the activities** (Settings › Direct devices): which source of the media player belongs to which Harmony input ("InputHdmi2" = "Fire TV"). Without a choice Harmony Deck guesses by the names; with no clear guess nothing is reported for that input.
+- Websocket `harmony_deck/direct/check` and `harmony_deck/direct/fix`. While the lock is on, a fix may only switch off (the lock decides, not the card).
+
 ## 0.7.0
 
 ### Added

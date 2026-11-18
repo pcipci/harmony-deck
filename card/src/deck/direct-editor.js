@@ -53,6 +53,7 @@ export const directEditorMixin = {
           ? `<div class="ehint">${t.ddGone}</div>`
           : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
             <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
+            ${this._ddInputsHtml(item, links[d], entityId => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
             ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` : ""}`;
       }
       return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
@@ -61,9 +62,28 @@ export const directEditorMixin = {
     return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
   },
 
+  // Which source of the player belongs to each Harmony input the activities use on this device.
+  _ddInputsHtml(item, link, sourcesOf, device, t) {
+    const list = item.inputList || [];
+    const sources = sourcesOf(link.entity);
+    if (!list.length || !Array.isArray(sources) || !sources.length) return "";
+    const rows = list.map((i) => {
+      const auto = i.guess ? fmtText(t.ddInputAuto, [i.guess]) : t.ddInputNone;
+      const opts = [`<option value="">${esc(auto)}</option>`, ...sources.map((s) => `<option ${i.source === s ? "selected" : ""}>${esc(s)}</option>`)].join("");
+      return `<label class="erow"><span>${esc(i.input)} <small>${esc(fmtText(t.ddInputUsed, [i.activities.join(", ")]))}</small></span><select data-ddinput="${esc(i.input)}" data-dev="${esc(device)}">${opts}</select></label>`;
+    }).join("");
+    return `<div class="dname">${t.ddInputs}</div>${rows}<div class="ehint">${t.ddInputsHint}</div>`;
+  },
+
   _bindDirectDev(root) {
     root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
     root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
+    root.querySelectorAll("select[data-ddinput]").forEach((s) => s.addEventListener("change", () => {
+      const hub = s.closest("[data-hub]").dataset.hub;
+      const inputs = { ...(this._ddLinks()[hub]?.[s.dataset.dev]?.inputs || {}) };
+      if (s.value) inputs[s.dataset.ddinput] = s.value; else delete inputs[s.dataset.ddinput];
+      this._ddSave(hub, s.dataset.dev, { inputs });
+    }));
     root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
   },
 };

@@ -434,3 +434,42 @@ async def test_direct_devices_overview_step_and_direct_volume(hass: HomeAssistan
     assert res["error"]["code"] == "invalid" and "no direct device" in res["error"]["message"]
     assert (await run("bad"))["success"]
     assert "unknown source" in hass.states.get(ent).attributes["error"]
+
+
+async def test_direct_check_and_fix_respects_lock(hass: HomeAssistant, hass_ws_client, monkeypatch):
+    from custom_components.harmony_deck import directws
+
+    await _setup(hass)
+    sent = []
+
+    async def rec(call):
+        sent.append((call.service, {k: v for k, v in call.data.items() if k != "entity_id"}))
+
+    for srv in ("turn_on", "turn_off", "select_source"):
+        hass.services.async_register("media_player", srv, rec)
+    setup = {"SAT": [{"device": "LG", "power": True, "input": "InputHdmi1"}], "XBOX": [{"device": "LG", "power": True, "input": "InputHdmi2"}]}
+    monkeypatch.setattr(directws, "collect_hubs", lambda hass, confs=None: ({REMOTE: {"devices": {"LG": []}, "setup": setup}}, {}))
+    hass.states.async_set("media_player.tv", "on", {"supported_features": 128 | 256 | 2048, "source": "HDMI 1", "source_list": ["HDMI 1", "HDMI 2"]})
+    hass.data[DOMAIN]["settings"]["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv"}}}
+    hass.states.async_set(REMOTE, "on", {"activity_list": ["PowerOff", "SAT", "XBOX"], "current_activity": "XBOX"})
+    client = await hass_ws_client(hass)
+
+    async def call(**msg):
+        await client.send_json_auto_id(msg)
+        return await client.receive_json()
+
+    res = await call(type="harmony_deck/direct/check", hub=REMOTE)
+    assert res["result"]["items"] == [{"device": "LG", "kind": "input", "input": "InputHdmi2", "source": "HDMI 1", "want": "HDMI 2", "fix": "source", "value": "HDMI 2", "can": True}]
+    res = await call(type="harmony_deck/direct/overview")
+    assert res["result"]["hubs"][REMOTE]["LG"]["inputList"] == [
+        {"input": "InputHdmi1", "activities": ["SAT"], "guess": "HDMI 1", "source": None},
+        {"input": "InputHdmi2", "activities": ["XBOX"], "guess": "HDMI 2", "source": None}]
+    assert (await call(type="harmony_deck/direct/fix", hub=REMOTE, device="LG", op="source", value="HDMI 2"))["success"]
+    assert sent == [("select_source", {"source": "HDMI 2"})]
+    assert (await call(type="harmony_deck/direct/fix", hub=REMOTE, device="Nope", op="off"))["error"]["code"] == "invalid"
+
+    await call(type="harmony_deck/lock/set", hub=REMOTE, mode="always")
+    res = await call(type="harmony_deck/direct/fix", hub=REMOTE, device="LG", op="on")
+    assert res["error"]["code"] == "locked"
+    assert (await call(type="harmony_deck/direct/fix", hub=REMOTE, device="LG", op="off"))["success"]
+    assert sent[-1] == ("turn_off", {})

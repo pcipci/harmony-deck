@@ -13,7 +13,7 @@ from typing import Any, Protocol
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
-from . import directdev
+from . import directdev, mismatch
 from .const import DOMAIN
 
 _TIMEOUT = 30
@@ -116,8 +116,46 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
             if label in linked:
                 entity = linked[label]["entity"]
                 item.update(linked[label], caps=caps(hass, entity), state=snapshot(hass, entity), known=hass.states.get(entity) is not None)
+                item["inputList"] = _inputs(hass, info, label, linked[label])
             elif (pick := directdev.suggest({**item, "label": label}, free)) is not None:
                 item["suggest"] = pick
             devices[label] = item
         out[hub] = devices
     return {"hubs": out, "candidates": cands, "extensions": [ext.name for ext in EXTENSIONS]}
+
+
+def _sources(hass: HomeAssistant, entity: str) -> list[str]:
+    state = hass.states.get(entity)
+    found = state.attributes.get("source_list") if state else None
+    return [str(s) for s in found] if isinstance(found, list) else []
+
+
+def _inputs(hass: HomeAssistant, info: dict[str, Any], device: str, link: dict[str, Any]) -> list[dict[str, Any]]:
+    """Harmony inputs the activities use on a device, each with the chosen source, a guess and the player's sources."""
+    sources = _sources(hass, link["entity"])
+    out: dict[str, dict[str, Any]] = {}
+    for activity, items in (info.get("setup") or {}).items():
+        for item in items:
+            if item.get("device") != device or not item.get("input"):
+                continue
+            entry = out.setdefault(item["input"], {"input": item["input"], "activities": []})
+            entry["activities"].append(activity)
+            others = [i["device"] for i in items if i.get("power") and i.get("device") != device]
+            entry.setdefault("guess", mismatch.guess_source(item["input"], sources, others))
+    chosen = link.get("inputs") or {}
+    for entry in out.values():
+        entry["source"] = chosen.get(entry["input"])
+    return list(out.values())
+
+
+def check(hass: HomeAssistant, hub: str, info: dict[str, Any]) -> list[dict[str, Any]]:
+    """Differences between what the current activity needs and what the linked devices report."""
+    links = config(hass).get(hub) or {}
+    remote = hass.states.get(hub)
+    activity = remote.attributes.get("current_activity") if remote else None
+    states = {d: snapshot(hass, l["entity"]) for d, l in links.items()}
+    sources = {d: _sources(hass, l["entity"]) for d, l in links.items()}
+    found = mismatch.check(activity, info.get("setup") or {}, links, states, sources)
+    for item in found:
+        item["can"] = directdev.OPS[item["fix"]] in caps(hass, links[item["device"]]["entity"])
+    return found

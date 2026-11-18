@@ -4,7 +4,10 @@ A direct device is a Home Assistant entity that belongs to a Harmony device and 
 without the hub, for example the TV as a ``media_player``. The hub keeps sending the keys; the direct device adds
 what infrared cannot do (read the state, set a volume level, pick a source). Stored globally as::
 
-    {"remote.living_room": {"LG TV": {"entity": "media_player.tv", "volumeDirect": false}}}
+    {"remote.living_room": {"LG TV": {"entity": "media_player.tv", "volumeDirect": false,
+                                      "inputs": {"InputHdmi2": "Fire TV"}}}}
+
+"inputs" says which source of the player belongs to a Harmony input (for the input check in mismatch.py).
 
 Everything else in Harmony Deck (card, step "Device", infrared volume) asks only for capabilities (CAPS) and
 never for a kind of device. Which capabilities an entity has is read here from what Home Assistant reports;
@@ -18,6 +21,8 @@ import re
 from typing import Any
 
 CAPS = ("state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read")
+
+MAX_INPUTS = 20         # Harmony inputs mapped to sources, per device
 
 # What a step "Device" can do and which capability it needs.
 OPS: dict[str, str] = {"on": "power_on", "off": "power_off", "volume": "volume_set", "mute": "mute", "source": "source_select"}
@@ -72,11 +77,18 @@ def clean_device(raw: Any) -> dict[str, Any] | None:
     entity = str(raw.get("entity") or "").strip()
     if not _ENTITY.match(entity):
         return None
-    return {"entity": entity, "volumeDirect": raw.get("volumeDirect") is True}
+    out: dict[str, Any] = {"entity": entity, "volumeDirect": raw.get("volumeDirect") is True}
+    inputs = raw.get("inputs")
+    if isinstance(inputs, dict):
+        kept = {k[:60]: " ".join(v.split())[:80] for k, v in list(inputs.items())[:MAX_INPUTS]
+                if isinstance(k, str) and k and isinstance(v, str) and v.strip()}
+        if kept:
+            out["inputs"] = kept
+    return out
 
 
 def clean_config(raw: Any) -> dict[str, dict[str, dict[str, Any]]]:
-    """{hub: {device label: {"entity", "volumeDirect"}}}; invalid entries dropped."""
+    """{hub: {device label: {"entity", "volumeDirect", "inputs"?}}}; invalid entries dropped."""
     out: dict[str, dict[str, dict[str, Any]]] = {}
     for hub, devices in (raw.items() if isinstance(raw, dict) else []):
         if not isinstance(hub, str) or not isinstance(devices, dict):

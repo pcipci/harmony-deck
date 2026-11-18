@@ -39,6 +39,7 @@ import { infoMixin } from "./info.js";
 import { keyboardMixin } from "./keyboard.js";
 import { loadText } from "../shared/i18n.js";
 import { lockMarkMixin } from "./lock-mark.js";
+import { mismatchMixin } from "./mismatch.js";
 import { optionsMixin } from "./options.js";
 import { panelMixin } from "./panel.js";
 import { physicalKeyboardMixin } from "./physical-keyboard.js";
@@ -74,7 +75,8 @@ export class HarmonyDeckCard extends HTMLElement {
     }
     if (!this._text) return;
     const hubs = this._hubs();
-    const key = JSON.stringify([hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]), this._info, this._editMode, this._modeState, this._device, this._hubSel, this._infoOpen, this._actPanel, this._actPanelOff, hubs.map((h) => this._links(h).map((l) => this._hass.states?.[l.entity]?.state)), hubs.map((h) => { const f = this._fireInfo(h.id); return f && [f.mode, f.app]; }),
+    this._mmWatch(hubs);
+    const key = JSON.stringify([this._mm, hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]), this._info, this._editMode, this._modeState, this._device, this._hubSel, this._infoOpen, this._actPanel, this._actPanelOff, hubs.map((h) => this._links(h).map((l) => this._hass.states?.[l.entity]?.state)), hubs.map((h) => { const f = this._fireInfo(h.id); return f && [f.mode, f.app]; }),
       hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])]);
     // While a running action is held to stop it, a new step must not redraw the button under the finger.
     if (key === this._key || this._holdingAct) return;
@@ -98,6 +100,6 @@ export class HarmonyDeckCard extends HTMLElement {
 }
 
 // The functions of the card live in one module per area; here they are attached to the class.
-for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
   Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
 }

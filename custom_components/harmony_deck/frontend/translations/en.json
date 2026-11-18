@@ -938,5 +938,16 @@
   "devSource": "source {0}",
   "devPickSource": "Pick a source",
   "devSourceUnknown": "The device reports no source list: type the name exactly.",
-  "devVolCap": "At most {0} % (Behaviour setting)."
+  "devVolCap": "At most {0} % (Behaviour setting).",
+  "mmInput": "{0}: is on \"{1}\", the activity expects \"{2}\".",
+  "mmShouldOn": "{0}: should be on but is off.",
+  "mmShouldOff": "{0}: should be off but is on.",
+  "mmOn": "Switch on",
+  "mmOff": "Switch off",
+  "mmSwitch": "Switch to \"{0}\"",
+  "ddInputs": "Inputs of the activities",
+  "ddInputAuto": "Automatic: {0}",
+  "ddInputNone": "Automatic (no suggestion)",
+  "ddInputUsed": "in {0}",
+  "ddInputsHint": "Which source of the media player belongs to which Harmony input? Without a choice Harmony Deck guesses by the names. After that the card tells you when the TV is on a different input."
 }

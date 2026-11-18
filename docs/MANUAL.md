@@ -82,6 +82,8 @@ The integration carries out the steps, so a sequence also finishes when the page
 
 **Direct devices (0.7):** under Settings › **Direct devices** you link a Harmony device to a Home Assistant media player (for example your TV). The keys keep going through the hub; the player adds the state, a real volume level and the source. Per device you see what the player can do and what it reports now. If maker/model or name fit clearly, a suggestion with "Use it" appears; otherwise you pick the player yourself. Linked devices can be used in the step **Device** (switch on/off, volume, mute, source). With "Set volume directly instead of via IR" the step "Volume (IR)" sets the level on the device and no longer counts keys. The volume limit applies to both.
 
+**Target against actual state (0.8):** if a linked device does not do what the current activity needs (still on after "off", off although the activity switches it on, on another input), a box under the status says so with a button for the fix ("Switch on", "Switch off", "Switch to …"). It reports only after the state stayed the same for 4 seconds, and it switches only when you tap. Under Settings › Direct devices, "Inputs of the activities" lets you say which source of the player belongs to which Harmony input; without a choice Harmony Deck guesses by name and stays silent when unsure. While the lock is on, the fix can only switch off.
+
 Actions of 0.4 are converted to a single step by themselves. Actions are the same for all profiles.
 
 ## 8. Fire TV

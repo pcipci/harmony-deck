@@ -938,5 +938,16 @@
   "devSource": "Quelle {0}",
   "devPickSource": "Quelle wählen",
   "devSourceUnknown": "Das Gerät meldet keine Quellenliste: Name genau eintippen.",
-  "devVolCap": "Höchstens {0} % (Einstellung Bedienung)."
+  "devVolCap": "Höchstens {0} % (Einstellung Bedienung).",
+  "mmInput": "{0}: steht auf „{1}“, die Aktivität erwartet „{2}“.",
+  "mmShouldOn": "{0}: sollte an sein, ist aber aus.",
+  "mmShouldOff": "{0}: sollte aus sein, ist aber an.",
+  "mmOn": "Einschalten",
+  "mmOff": "Ausschalten",
+  "mmSwitch": "Auf „{0}“ umschalten",
+  "ddInputs": "Eingänge der Aktivitäten",
+  "ddInputAuto": "Automatisch: {0}",
+  "ddInputNone": "Automatisch (kein Vorschlag)",
+  "ddInputUsed": "in {0}",
+  "ddInputsHint": "Welche Quelle des Mediaplayers gehört zu welchem Harmony-Eingang? Ohne Auswahl rät Harmony Deck anhand der Namen. Danach meldet die Karte, wenn der Fernseher auf einem anderen Eingang steht."
 }

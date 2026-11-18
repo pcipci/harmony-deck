@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.7.0";
+  var VERSION = "0.8.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1536,6 +1536,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindFire(root);
       this._bindFireEditor(root);
       this._bindDirectDev(root);
+      this._bindMismatch(root);
       this._bindKeyboard(root);
       this._bindDevices(root);
       this._bindFavorites(root);
@@ -2061,6 +2062,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           const caps = item.caps || [];
           detail = item.known === false ? `<div class="ehint">${t.ddGone}</div>` : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
             <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
+            ${this._ddInputsHtml(item, links[d], (entityId) => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
             ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` : ""}`;
         }
         return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
@@ -2068,9 +2070,28 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       });
       return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
     },
+    // Which source of the player belongs to each Harmony input the activities use on this device.
+    _ddInputsHtml(item, link, sourcesOf, device, t) {
+      const list = item.inputList || [];
+      const sources = sourcesOf(link.entity);
+      if (!list.length || !Array.isArray(sources) || !sources.length) return "";
+      const rows = list.map((i) => {
+        const auto = i.guess ? fmtText(t.ddInputAuto, [i.guess]) : t.ddInputNone;
+        const opts = [`<option value="">${esc(auto)}</option>`, ...sources.map((s) => `<option ${i.source === s ? "selected" : ""}>${esc(s)}</option>`)].join("");
+        return `<label class="erow"><span>${esc(i.input)} <small>${esc(fmtText(t.ddInputUsed, [i.activities.join(", ")]))}</small></span><select data-ddinput="${esc(i.input)}" data-dev="${esc(device)}">${opts}</select></label>`;
+      }).join("");
+      return `<div class="dname">${t.ddInputs}</div>${rows}<div class="ehint">${t.ddInputsHint}</div>`;
+    },
     _bindDirectDev(root) {
       root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
       root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
+      root.querySelectorAll("select[data-ddinput]").forEach((s) => s.addEventListener("change", () => {
+        const hub = s.closest("[data-hub]").dataset.hub;
+        const inputs = { ...this._ddLinks()[hub]?.[s.dataset.dev]?.inputs || {} };
+        if (s.value) inputs[s.dataset.ddinput] = s.value;
+        else delete inputs[s.dataset.ddinput];
+        this._ddSave(hub, s.dataset.dev, { inputs });
+      }));
       root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
     }
   };
@@ -3119,6 +3140,70 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
   };
 
+  // src/deck/mismatch.js
+  var WAIT = 4e3;
+  var mismatchMixin = {
+    _mmHubs() {
+      return Object.keys(this._settings().directDevices || {}).filter((h) => Object.keys(this._settings().directDevices[h] || {}).length);
+    },
+    // Part of the redraw key: what the check depends on (activity and the states of the linked entities).
+    _mmKey(hubs) {
+      return hubs.map((h) => {
+        const links = this._settings().directDevices?.[h.id];
+        return links ? [h.current, Object.values(links).map((l) => {
+          const s = this._hass.states?.[l.entity];
+          return [l.entity, s?.state, s?.attributes?.source];
+        })] : null;
+      });
+    },
+    // Called with every hass update; asks the integration only after the key stayed the same for a moment.
+    _mmWatch(hubs) {
+      const now = JSON.stringify(this._mmKey(hubs));
+      if (now === this._mmSeen) return;
+      this._mmSeen = now;
+      clearTimeout(this._mmTimer);
+      this._mmTimer = setTimeout(() => this._mmLoad(hubs.map((h) => h.id)), WAIT);
+    },
+    async _mmLoad(ids) {
+      const next = {};
+      for (const id of ids.filter((h) => this._mmHubs().includes(h))) {
+        try {
+          next[id] = (await this._hass.callWS({ type: "harmony_deck/direct/check", hub: id })).items || [];
+        } catch (e) {
+          next[id] = [];
+        }
+      }
+      if (JSON.stringify(next) !== JSON.stringify(this._mm || {})) {
+        this._mm = next;
+        this._key = "";
+        this.hass = this._hass;
+      }
+    },
+    _mmHtml(h, t) {
+      const items = this._edit ? [] : this._mm?.[h.id] || [];
+      if (!items.length) return "";
+      const rows = items.map((it, i) => {
+        const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
+        const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
+        return `<div class="mmrow"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" class="mini txt" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
+      }).join("");
+      return `<div class="mmbox">${rows}</div>`;
+    },
+    _bindMismatch(root) {
+      root.querySelectorAll("[data-mmfix]").forEach((b) => b.addEventListener("click", async () => {
+        const hub = b.dataset.hub;
+        const it = (this._mm?.[hub] || [])[Number(b.dataset.mmfix)];
+        if (!it) return;
+        b.disabled = true;
+        try {
+          await this._hass.callWS({ type: "harmony_deck/direct/fix", hub, device: it.device, op: it.fix, ...it.value ? { value: it.value } : {} });
+        } catch (e) {
+        }
+        setTimeout(() => this._mmLoad([hub]), 3e3);
+      }));
+    }
+  };
+
   // src/shared/skins.js
   var SKINS = {
     homebase: {},
@@ -3993,7 +4078,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         body = `<div class="pager" data-pager data-p="${p}"><div class="track" style="transform: translateX(${-p * 100}%)">
           <div class="pane" data-pane="0">${this._activitiesView(h, cur, busy, t, index, "grid")}</div>
           <div class="pane" data-pane="1">${this._devicesView(h, cur, t, "list")}</div></div></div>
-        <div class="below">${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
+        <div class="below">${this._mmHtml(h, t)}${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
       }
       if (this._edit) return `<section class="editview"><div class="hdr">${tabs}</div>${this._editBody(h, t, body)}</section>`;
       const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";
@@ -4808,6 +4893,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .adbrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; } .adbrow small { color: var(--hr-muted); } .adbdot { width: 9px; height: 9px; border-radius: 50%; background: #43a047; flex: none; } .adbdot.bad { background: #e53935; }
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
+      .mmbox { display: grid; gap: 6px; margin: 8px 0; } .mmrow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warning-color, #f5a623) 16%, transparent); font-size: 13px; } .mmrow span { flex: 1; } .mmrow ha-icon { color: var(--warning-color, #f5a623); --mdc-icon-size: 20px; }
       .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-dd [data-t]:not([data-t="dd"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
@@ -5109,7 +5195,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       if (!this._text) return;
       const hubs = this._hubs();
+      this._mmWatch(hubs);
       const key = JSON.stringify([
+        this._mm,
         hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]),
         this._info,
         this._editMode,
@@ -5145,7 +5233,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

@@ -140,7 +140,7 @@ export const renderMixin = {
       body = `<div class="pager" data-pager data-p="${p}"><div class="track" style="transform: translateX(${-p * 100}%)">
           <div class="pane" data-pane="0">${this._activitiesView(h, cur, busy, t, index, "grid")}</div>
           <div class="pane" data-pane="1">${this._devicesView(h, cur, t, "list")}</div></div></div>
-        <div class="below">${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
+        <div class="below">${this._mmHtml(h, t)}${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
     }
     if (this._edit) return `<section class="editview"><div class="hdr">${tabs}</div>${this._editBody(h, t, body)}</section>`;
     const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";

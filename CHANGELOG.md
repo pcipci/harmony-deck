@@ -7,6 +7,8 @@
 - **Better suggestions:** the matching media player is now rated by room (same area as the hub), kind (TV, receiver, speaker, player, from Harmony's device type, the names and the player's device class), model, maker and name. A Blu-ray player of the same maker no longer competes with the TV, and two TVs in two rooms are told apart by their rooms. The list in the tab shows the players that fit first ("Matching"), the rest below ("Others").
 - **Mute is only sent when needed.** Players that only know "toggle mute" (LG Netcast) would otherwise unmute a muted TV when a step says "mute".
 
+- **Hint where the volume really goes:** in the step "Network command" (volume, mute) and next to "Set volume directly instead of via IR", a note says if an activity sends the volume through another device ("In Fire TV the volume goes through "Yamaha receiver", not through this device."). Read from the activities of the hub; it is only a hint, nothing is blocked. Matters in rooms where a soundbar or receiver does the sound.
+
 ### Notes
 - LG Netcast needs no extension: Home Assistant's own integration already reads and sets the volume, so the generic adapter covers it. For Netcast the source list in Home Assistant is the channel list, not the HDMI inputs, so the input check stays silent there.
 

@@ -37,9 +37,9 @@ export const devStep = {
     let value = "";
     if (s.op === "volume") {
       const cap = volumeCap(card);
-      value = `${rangeHtml({ attr: "devvol", value: Math.min(s.value ?? 20, cap), min: 0, max: cap, step: 1, fmt: (v) => `${v} %` })}<div class="ehint">${fmtText(t.devVolCap, [String(cap)])}</div>`;
+      value = `${rangeHtml({ attr: "devvol", value: Math.min(s.value ?? 20, cap), min: 0, max: cap, step: 1, fmt: (v) => `${v} %` })}<div class="ehint">${fmtText(t.devVolCap, [String(cap)])}</div>${card._ddVolHint(h.id, s.device, t)}`;
     } else if (s.op === "mute") {
-      value = `<label class="erow"><span>${t.devOps.mute}</span><select data-devmute><option value="true" ${s.value !== false ? "selected" : ""}>${t.devMute}</option><option value="false" ${s.value === false ? "selected" : ""}>${t.devUnmute}</option></select></label>`;
+      value = `${card._ddVolHint(h.id, s.device, t)}<label class="erow"><span>${t.devOps.mute}</span><select data-devmute><option value="true" ${s.value !== false ? "selected" : ""}>${t.devMute}</option><option value="false" ${s.value === false ? "selected" : ""}>${t.devUnmute}</option></select></label>`;
     } else if (s.op === "source") {
       const list = card._hass.states?.[entity]?.attributes?.source_list;
       value = Array.isArray(list) && list.length

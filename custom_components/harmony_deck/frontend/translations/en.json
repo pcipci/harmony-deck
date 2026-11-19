@@ -951,5 +951,6 @@
   "ddInputUsed": "in {0}",
   "ddInputsHint": "Which source of the media player belongs to which Harmony input? Without a choice Harmony Deck guesses by the names. After that the card tells you when the TV is on a different input.",
   "ddFits": "Matching",
-  "ddOthers": "Others"
+  "ddOthers": "Others",
+  "ddVolVia": "In {0} the volume goes through \"{1}\", not through this device."
 }

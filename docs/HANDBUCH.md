@@ -84,6 +84,8 @@ Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei ge
 
 **Soll gegen Ist (0.8):** Tut ein verbundenes Gerät nicht, was die aktuelle Aktivität braucht (nach „Aus“ noch an, an soll aber aus sein, anderer Eingang), sagt das ein Kasten unter dem Status und bietet die Korrektur an („Einschalten“, „Ausschalten“, „Auf … umschalten“). Gemeldet wird erst, wenn der Zustand 4 Sekunden gleich blieb, und geschaltet wird nur auf deinen Tipp. Unter Einstellungen › Direktgeräte legst du bei „Eingänge der Aktivitäten“ fest, welche Quelle des Mediaplayers zu welchem Harmony-Eingang gehört; ohne Auswahl rät Harmony Deck anhand der Namen und schweigt, wenn es unsicher ist. Bei eingeschalteter Sperre darf die Korrektur nur ausschalten.
 
+**Lautstärke und Soundbar (0.9):** Die Lautstärke-Tasten der Karte gehen immer dorthin, wohin der Hub sie in der aktuellen Aktivität schickt (zum Beispiel an die Soundbar). Das ändert die Verbindung des Fernsehers nicht. Ein Netzwerk-Befehl für den Fernseher wirkt nur auf den Fernseher. Schickt eine Aktivität die Lautstärke über ein anderes Gerät, sagt das ein Hinweis unter der Lautstärke-Einstellung im Schritt und im Reiter.
+
 Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle Profile.
 
 ## 8. Fire TV

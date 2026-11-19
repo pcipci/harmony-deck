@@ -392,9 +392,9 @@
       let value = "";
       if (s.op === "volume") {
         const cap = volumeCap(card);
-        value = `${rangeHtml({ attr: "devvol", value: Math.min(s.value ?? 20, cap), min: 0, max: cap, step: 1, fmt: (v) => `${v} %` })}<div class="ehint">${fmtText(t.devVolCap, [String(cap)])}</div>`;
+        value = `${rangeHtml({ attr: "devvol", value: Math.min(s.value ?? 20, cap), min: 0, max: cap, step: 1, fmt: (v) => `${v} %` })}<div class="ehint">${fmtText(t.devVolCap, [String(cap)])}</div>${card._ddVolHint(h.id, s.device, t)}`;
       } else if (s.op === "mute") {
-        value = `<label class="erow"><span>${t.devOps.mute}</span><select data-devmute><option value="true" ${s.value !== false ? "selected" : ""}>${t.devMute}</option><option value="false" ${s.value === false ? "selected" : ""}>${t.devUnmute}</option></select></label>`;
+        value = `${card._ddVolHint(h.id, s.device, t)}<label class="erow"><span>${t.devOps.mute}</span><select data-devmute><option value="true" ${s.value !== false ? "selected" : ""}>${t.devMute}</option><option value="false" ${s.value === false ? "selected" : ""}>${t.devUnmute}</option></select></label>`;
       } else if (s.op === "source") {
         const list = card._hass.states?.[entity]?.attributes?.source_list;
         value = Array.isArray(list) && list.length ? `<label class="erow"><span>${t.devOps.source}</span><select data-devsrc><option value="">${t.devPickSource}</option>${list.map((x) => `<option ${s.value === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : `<label class="erow"><span>${t.devOps.source}</span><input type="text" data-devsrc value="${esc(s.value || "")}"></label><div class="ehint">${t.devSourceUnknown}</div>`;
@@ -2024,6 +2024,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._ddBusy = false;
       this._rerender();
     },
+    // Where the hub sends the volume keys: activities whose volume goes to another device than this one.
+    _ddVolHint(hubId, device, t) {
+      const acts = this._info?.hubs?.[hubId]?.activities || {};
+      const via = {};
+      for (const [act, roles] of Object.entries(acts)) {
+        if (roles.volume && roles.volume !== device) (via[roles.volume] ||= []).push(act);
+      }
+      const text = Object.entries(via).map(([dev, list]) => fmtText(t.ddVolVia, [list.join(", "), dev]));
+      return text.length ? `<div class="ehint ddvia"><ha-icon icon="mdi:information-outline"></ha-icon> ${esc(text.join(" "))}</div>` : "";
+    },
     _ddLinks() {
       return this._settings().directDevices || {};
     },
@@ -2066,7 +2076,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           detail = item.known === false ? `<div class="ehint">${t.ddGone}</div>` : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
             <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
             ${this._ddInputsHtml(item, links[d], (entityId) => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
-            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` : ""}`;
+            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}`;
         }
         return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
         <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;

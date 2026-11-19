@@ -16,6 +16,17 @@ export const directEditorMixin = {
     this._rerender();
   },
 
+  // Where the hub sends the volume keys: activities whose volume goes to another device than this one.
+  _ddVolHint(hubId, device, t) {
+    const acts = this._info?.hubs?.[hubId]?.activities || {};
+    const via = {};
+    for (const [act, roles] of Object.entries(acts)) {
+      if (roles.volume && roles.volume !== device) (via[roles.volume] ||= []).push(act);
+    }
+    const text = Object.entries(via).map(([dev, list]) => fmtText(t.ddVolVia, [list.join(", "), dev]));
+    return text.length ? `<div class="ehint ddvia"><ha-icon icon="mdi:information-outline"></ha-icon> ${esc(text.join(" "))}</div>` : "";
+  },
+
   _ddLinks() { return this._settings().directDevices || {}; },
 
   async _ddSave(hubId, device, patch) {
@@ -58,7 +69,7 @@ export const directEditorMixin = {
           : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
             <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
             ${this._ddInputsHtml(item, links[d], entityId => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
-            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` : ""}`;
+            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}`;
       }
       return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
         <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;

@@ -951,5 +951,6 @@
   "ddInputUsed": "in {0}",
   "ddInputsHint": "Welche Quelle des Mediaplayers gehört zu welchem Harmony-Eingang? Ohne Auswahl rät Harmony Deck anhand der Namen. Danach meldet die Karte, wenn der Fernseher auf einem anderen Eingang steht.",
   "ddFits": "Passend",
-  "ddOthers": "Weitere"
+  "ddOthers": "Weitere",
+  "ddVolVia": "In {0} läuft die Lautstärke über „{1}“, nicht über dieses Gerät."
 }

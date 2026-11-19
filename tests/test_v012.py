@@ -66,9 +66,10 @@ async def test_fire_tv_becomes_network_device(hass: HomeAssistant, hass_ws_clien
     monkeypatch.setattr(direct_watch, "QUIET", 0.01)
     entry, harmony, _ = await _fire_setup(hass, True, hass_storage)
     settings = hass.data[DOMAIN]["settings"]
-    assert settings["directDevices"] == {REMOTE: {"Amazon Fire TV Cube": {"entity": "media_player.fire", "volumeDirect": False}}}
-    assert settings["fireLinked"] is True
-    assert settings["direct"][REMOTE]["entity"] == "media_player.fire"            # the Fire TV settings stay where they are
+    # 0.12 links the Fire TV, 0.13 moves its settings onto that link
+    assert settings["directDevices"] == {REMOTE: {"Amazon Fire TV Cube": {"entity": "media_player.fire", "volumeDirect": False, "fire": {}}}}
+    assert settings["fireLinked"] is True and settings["fireMoved"] is True
+    assert REMOTE not in settings["direct"]
 
     client = await hass_ws_client(hass)
     await client.send_json_auto_id({"type": "harmony_deck/direct/overview"})

@@ -22,9 +22,35 @@ export const fireMixin = {
     return { entity: a.entity, code, prefer: a.prefer };
   },
 
+  // The Fire TV of a hub: since 0.13 on the link of its Harmony device ({entity, device, ...settings}); older settings "direct" as fallback.
+  _fireCfg(hubId) {
+    const links = this._settings().directDevices?.[hubId] || {};
+    const label = Object.keys(links).sort().find((l) => links[l].fire);
+    if (label) return { ...links[label].fire, entity: links[label].entity, device: label };
+    return this._settings().direct?.[hubId] || null;
+  },
+
+  // Save the Fire TV settings of a hub (null = unlink the Fire TV settings); where they live is decided here.
+  async _fireSave(hubId, cfg) {
+    const all = JSON.parse(JSON.stringify(this._settings().directDevices || {}));
+    const links = all[hubId] || {};
+    let label = Object.keys(links).sort().find((l) => links[l].fire) || (cfg?.device && links[cfg.device] ? cfg.device : null);
+    const rest = { ...(this._settings().direct || {}) };
+    if (!label || (cfg && links[label].entity !== cfg.entity && !links[cfg.device])) {
+      // no link carries it (a device not linked yet): keep it in the old place, it still works there
+      if (cfg) rest[hubId] = cfg; else delete rest[hubId];
+      await this._saveSettings({ direct: rest });
+      return;
+    }
+    if (cfg) { const { entity, device, ...fire } = cfg; links[label] = { ...links[label], fire }; } else delete links[label].fire;
+    all[hubId] = links;
+    delete rest[hubId];
+    await this._saveSettings({ directDevices: all, direct: rest });
+  },
+
   // Fire TV apps of a hub: built-in list, package overrides and own apps, each with its check status.
   _appsOf(hubId) {
-    const d = this._settings().direct?.[hubId] || {};
+    const d = this._fireCfg(hubId) || {};
     const base = this._config.direct_apps || FIRE_APPS.concat(this._config.direct_apps_extra || []);
     const inst = this._pkgs?.[d.entity];
     const statusOf = (pkg) => (!inst || !pkg ? "" : inst.has(pkg) ? "ok" : pkg.startsWith("com.amazon.") ? "" : "missing");
@@ -42,7 +68,7 @@ export const fireMixin = {
   // Name, brand colour and symbol for what the Fire TV reports as running (package name or app name).
   _appInfo(raw, hubId, t) {
     if (!raw) return null;
-    const own = this._settings().direct?.[hubId] || {};
+    const own = this._fireCfg(hubId) || {};
     const apps = this._appsOf(hubId);
     let hit = apps.find((a) => a.pkg === raw);
     if (!hit) { const alias = APP_ALIASES[raw] || (own.pkgs ? Object.keys(own.pkgs).find((n) => own.pkgs[n] === raw) : null); if (alias) hit = apps.find((a) => a.name === alias); }
@@ -63,7 +89,7 @@ export const fireMixin = {
 
   // The Fire TV of a room as the card sees it, independent of Harmony: its entity, state and running app.
   _fireInfo(hubId) {
-    const cfg = this._config.direct?.[hubId] ?? this._settings().direct?.[hubId];
+    const cfg = this._config.direct?.[hubId] ?? this._fireCfg(hubId);
     if (!cfg?.entity) return null;
     const st = this._hass.states?.[cfg.entity];
     const raw = st?.state;
@@ -132,7 +158,7 @@ export const fireMixin = {
 
   // Which Fire TV entity belongs to a Harmony device: explicit setting, else the only Fire-TV-like media_player.
   _directFor(hubId, dev, activity = "") {
-    const cfg = this._config.direct?.[hubId] ?? this._settings().direct?.[hubId];
+    const cfg = this._config.direct?.[hubId] ?? this._fireCfg(hubId);
     const isFire = (x) => /fire/i.test(x || "");
     if (cfg?.entity) {
       const match = cfg.device ? cfg.device === dev : isFire(dev);

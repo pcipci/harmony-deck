@@ -84,11 +84,70 @@ def clean_device(raw: Any) -> dict[str, Any] | None:
                 if isinstance(k, str) and k and isinstance(v, str) and v.strip()}
         if kept:
             out["inputs"] = kept
+    fire = clean_fire(raw.get("fire"))
+    if fire is not None:
+        out["fire"] = fire
     return out
 
 
+# Settings of a Fire TV page (apps, keys, connection), kept on its link since 0.13 (before: settings "direct").
+FIRE_KEYS = ("model", "prefer", "irVolume", "keymap", "hiddenApps", "hiddenKeys", "inActivities", "lockOffline", "pkgs", "customApps")
+_FIRE_LIMIT = 20000  # characters of JSON; a page holds a few dozen apps
+
+
+def clean_fire(raw: Any) -> dict[str, Any] | None:
+    """The Fire TV settings of a link: only the known keys, plain JSON values, bounded size; None if there are none."""
+    if not isinstance(raw, dict):
+        return None
+    import json
+
+    out = {k: raw[k] for k in FIRE_KEYS if k in raw and isinstance(raw[k], (str, bool, list, dict))}
+    try:
+        if len(json.dumps(out)) > _FIRE_LIMIT:
+            return None
+    except (TypeError, ValueError):
+        return None
+    return out
+
+
+def fire_configs(direct: Any, links: Any) -> dict[str, dict[str, Any]]:
+    """{hub: {"entity", "device", ...Fire TV settings}} for every hub with a Fire TV, in the shape used up to 0.12.
+
+    The link that carries Fire TV settings wins (0.13); a hub without one keeps its old entry of settings "direct".
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for hub, cfg in (direct.items() if isinstance(direct, dict) else []):
+        if isinstance(hub, str) and isinstance(cfg, dict) and _ENTITY.match(str(cfg.get("entity") or "")):
+            out[hub] = dict(cfg)
+    for hub, devices in clean_config(links).items():
+        for label in sorted(devices):
+            link = devices[label]
+            if "fire" in link:
+                out[hub] = {**link["fire"], "entity": link["entity"], "device": label}
+                break
+    return out
+
+
+def move_fire_settings(direct: Any, links: Any) -> tuple[dict[str, Any], dict[str, dict[str, dict[str, Any]]]]:
+    """0.13: the Fire TV settings of a hub move onto the link of its Harmony device (once, at start).
+
+    Only where that device is linked to the same player; anything else stays in "direct" and keeps working.
+    Returns (rest of "direct", links).
+    """
+    rest = dict(direct) if isinstance(direct, dict) else {}
+    out = clean_config(links)
+    for hub, cfg in list(rest.items()):
+        if not isinstance(cfg, dict):
+            continue
+        link = (out.get(hub) or {}).get(str(cfg.get("device") or ""))
+        if link and link["entity"] == cfg.get("entity") and "fire" not in link:
+            link["fire"] = clean_fire(cfg) or {}
+            del rest[hub]
+    return rest, out
+
+
 def clean_config(raw: Any) -> dict[str, dict[str, dict[str, Any]]]:
-    """{hub: {device label: {"entity", "volumeDirect", "inputs"?}}}; invalid entries dropped."""
+    """{hub: {device label: {"entity", "volumeDirect", "inputs"?, "fire"?}}}; invalid entries dropped."""
     out: dict[str, dict[str, dict[str, Any]]] = {}
     for hub, devices in (raw.items() if isinstance(raw, dict) else []):
         if not isinstance(hub, str) or not isinstance(devices, dict):

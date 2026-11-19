@@ -17,7 +17,7 @@ from .fireapps import FireApps
 from .lock import LockManager
 from .lockent import remove_legacy_entities
 from .lockws import async_register_lock_websocket
-from .directdev import link_fire_tvs
+from .directdev import link_fire_tvs, move_fire_settings
 from .const import CARD_FILE, CARD_URL, DOMAIN, SETTING_KEYS, STORAGE_KEY, STORAGE_VERSION, TRANSLATIONS_URL
 from .profiles import migrate
 from .actionws import async_register_action_api
@@ -42,6 +42,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if linked := link_fire_tvs(glob.get("direct"), glob.get("directDevices")):
             glob["directDevices"] = linked
         glob["fireLinked"] = True
+    if not glob.get("fireMoved"):
+        # 0.13: the Fire TV settings live on the link of the Fire TV (once; what cannot move stays and still works).
+        glob["direct"], glob["directDevices"] = move_fire_settings(glob.get("direct"), glob.get("directDevices"))
+        glob["fireMoved"] = True
     domain_data["settings"] = stored["global"]  # hardware related part (read by the coordinator)
     domain_data["profiles"] = stored["profiles"]
     domain_data["assign"] = stored["assign"]

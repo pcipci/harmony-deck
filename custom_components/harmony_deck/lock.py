@@ -130,9 +130,14 @@ class LockManager:
         return is_effective(entry["mode"], entry["schedule"], self._time(hub_id, "released_until"), now, dt_util.as_local(now))
 
     def _direct(self, hub_id: str) -> dict[str, Any]:
-        """Fire TV link of the hub from the card settings ({entity, ...})."""
+        """Fire TV of the hub ({entity, device, ...}): on its link since 0.13, before in the settings "direct"."""
+        from .direct import fire_all
+
         remote = self.remote(hub_id)
-        cfg = (self.hass.data.get(DOMAIN, {}).get("settings", {}).get("direct") or {}).get(remote) if remote else None
+        try:
+            cfg = fire_all(self.hass).get(remote) if remote else None
+        except (AttributeError, KeyError):  # registries not loaded (early start, tests): no Fire TV known yet
+            cfg = None
         return cfg if isinstance(cfg, dict) else {}
 
     def fire_entity(self, hub_id: str) -> str | None:

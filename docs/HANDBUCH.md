@@ -88,6 +88,8 @@ Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei ge
 
 **Geräteseite, seit 0.12.1:** Zustand, Lautstärke, Stumm und Quelle folgen dem Player live. Ein ausgeschalteter Player meldet Home Assistant keine Quellenliste; die Knöpfe zeigen dann die zuletzt gesehene Liste ausgegraut mit dem Hinweis „Zuletzt gesehen“. Der Sensor „Fähigkeiten“ des Geräts zeigt z. B. „6 von 10“; die Attribute nennen jede Fähigkeit mit ja/nein.
 
+**Wo die Fire-TV-Einstellungen liegen (0.13):** an der Verknüpfung des Fire TV (Einstellungen › Netzwerksteuerung › Zahnrad). Bestehende Einstellungen wurden einmal dorthin verschoben; die Sperre liest die erlaubten Apps von derselben Stelle, pro Gerät.
+
 **Erkannte Plattform und Sensoren (0.10):** Der Reiter Netzwerksteuerung zeigt unter jedem verbundenen Mediaplayer, was erkannt wurde („Erkannt: LG Netcast“) und was man darüber wissen sollte. In Home Assistant zeigen die Sensoren **Netzwerksteuerung** (alle verbundenen Geräte mit Plattform, Fähigkeiten und Zustand in den Attributen) und **Abweichungen** (einer pro Hub, Anzahl der Abweichungen mit der Liste in den Attributen) dasselbe ohne die Karte. Du kannst sie für Automationen und Benachrichtigungen nutzen.
 
 **Lautstärke und Soundbar (0.9):** Die Lautstärke-Tasten der Karte gehen immer dorthin, wohin der Hub sie in der aktuellen Aktivität schickt (zum Beispiel an die Soundbar). Das ändert die Verbindung des Fernsehers nicht. Ein Netzwerk-Befehl für den Fernseher wirkt nur auf den Fernseher. Schickt eine Aktivität die Lautstärke über ein anderes Gerät, sagt das ein Hinweis unter der Lautstärke-Einstellung im Schritt und im Reiter.

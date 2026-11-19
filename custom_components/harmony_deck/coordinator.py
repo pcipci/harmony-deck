@@ -49,7 +49,9 @@ class DeckCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for hub_id, hub in status["hubs"].items():
             if not hub["readable"]:
                 wanted[f"hub_unreadable_{hub_id}"] = {"hub": hub["title"]}
-        direct = self.hass.data.get(DOMAIN, {}).get("settings", {}).get("direct")
+        from .direct import fire_all
+
+        direct = fire_all(self.hass)
         entities = [cfg["entity"] for cfg in (direct or {}).values() if isinstance(cfg, dict) and cfg.get("entity")]
         self._watch_fire(entities)
         down = unreachable_fire_tvs(direct, {e: s for e in entities if (s := self.hass.states.get(e))})

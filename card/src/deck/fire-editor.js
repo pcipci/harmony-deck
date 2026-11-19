@@ -7,9 +7,9 @@ export const fireEditorMixin = {
   async _saveDirect(box) {
     const hub = box.dataset.hub;
     const val = (n) => box.querySelector(`[data-direct="${n}"]`)?.value || "";
-    const all = { ...(this._settings().direct || {}) };
+    const all = { ...(this._fireCfg(hub) ? { [hub]: this._fireCfg(hub) } : {}) };
     if (val("entity")) all[hub] = { entity: val("entity").trim(), device: val("device"), model: val("model"), prefer: val("prefer"), ...(val("irvol") ? { irVolume: val("irvol") } : {}), keymap: Object.fromEntries(["red", "green", "yellow", "blue"].map((c) => [c, val("km_" + c)]).filter((x) => x[1])), hiddenApps: [...box.querySelectorAll('input[data-hide-app]:not(:checked)')].map((i) => i.dataset.hideApp), hiddenKeys: [...box.querySelectorAll('input[data-hide-key]:not(:checked)')].map((i) => i.dataset.hideKey), inActivities: box.querySelector('[data-direct="inact"]')?.checked || false, ...(box.querySelector('[data-direct="offlock"]')?.checked ? { lockOffline: true } : {}), ...(all[hub]?.pkgs ? { pkgs: all[hub].pkgs } : {}), ...(all[hub]?.customApps ? { customApps: all[hub].customApps } : {}) }; else delete all[hub];
-    await this._saveSettings({ direct: all });
+    await this._fireSave(hub, all[hub] || null);
   },
 
   _adbStatus(cur, t, own) {
@@ -50,11 +50,9 @@ export const fireEditorMixin = {
   },
 
   async _patchDirect(hubId, fn) {
-    const all = { ...(this._settings().direct || {}) };
-    const cur = { ...(all[hubId] || {}) };
+    const cur = { ...(this._fireCfg(hubId) || {}) };
     fn(cur);
-    all[hubId] = cur;
-    await this._saveSettings({ direct: all });
+    await this._fireSave(hubId, cur);
   },
 
   // The installed apps are read by the integration (one reader for both cards); the card only keeps the answer.
@@ -79,7 +77,7 @@ export const fireEditorMixin = {
   },
 
   _directEdit(h, t, own) {
-    const cur = this._settings().direct?.[h.id] || {};
+    const cur = this._fireCfg(h.id) || {};
     const allApps = this._appsOf(h.id);
     const devs = Object.keys(this._devicesOf(h.id));
     const g = t.groups || {};

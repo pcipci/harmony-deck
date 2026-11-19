@@ -33,6 +33,8 @@ export const directEditorMixin = {
   async _ddSave(hubId, device, patch) {
     const all = JSON.parse(JSON.stringify(this._ddLinks()));
     all[hubId] = { ...(all[hubId] || {}) };
+    const cand = patch?.entity ? (this._dd?.candidates || []).find((c) => c.entity === patch.entity) : null;
+    if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) patch = { ...patch, fire: {} };
     if (patch === null) delete all[hubId][device]; else all[hubId][device] = { ...(all[hubId][device] || {}), ...patch };
     await this._saveSettings({ directDevices: all });
     this._ddLoad(true);

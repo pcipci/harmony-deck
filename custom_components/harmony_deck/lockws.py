@@ -94,7 +94,7 @@ def lock_overview(hass: HomeAssistant) -> dict[str, Any]:
             "fire_entity": manager.fire_entity(hub_id),
             "power_devices": _power_devices(hass, hub_id),
             "activity_icons": (data.get("settings", {}).get("activityIcons") or {}).get(remote) or {},
-            "app_names": _app_names((data.get("settings", {}).get("direct") or {}).get(remote)),
+            "app_names": _app_names(manager._direct(hub_id)),
             "entities": lock_entity_ids(hass, entry_id, hub_id) if entry_id else {},
         }
     return out

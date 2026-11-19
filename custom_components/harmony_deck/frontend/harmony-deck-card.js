@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.12.1";
+  var VERSION = "0.13.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2041,6 +2041,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     async _ddSave(hubId, device, patch) {
       const all = JSON.parse(JSON.stringify(this._ddLinks()));
       all[hubId] = { ...all[hubId] || {} };
+      const cand = patch?.entity ? (this._dd?.candidates || []).find((c) => c.entity === patch.entity) : null;
+      if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) patch = { ...patch, fire: {} };
       if (patch === null) delete all[hubId][device];
       else all[hubId][device] = { ...all[hubId][device] || {}, ...patch };
       await this._saveSettings({ directDevices: all });
@@ -2396,10 +2398,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     async _saveDirect(box) {
       const hub = box.dataset.hub;
       const val = (n) => box.querySelector(`[data-direct="${n}"]`)?.value || "";
-      const all = { ...this._settings().direct || {} };
+      const all = { ...this._fireCfg(hub) ? { [hub]: this._fireCfg(hub) } : {} };
       if (val("entity")) all[hub] = { entity: val("entity").trim(), device: val("device"), model: val("model"), prefer: val("prefer"), ...val("irvol") ? { irVolume: val("irvol") } : {}, keymap: Object.fromEntries(["red", "green", "yellow", "blue"].map((c) => [c, val("km_" + c)]).filter((x) => x[1])), hiddenApps: [...box.querySelectorAll("input[data-hide-app]:not(:checked)")].map((i) => i.dataset.hideApp), hiddenKeys: [...box.querySelectorAll("input[data-hide-key]:not(:checked)")].map((i) => i.dataset.hideKey), inActivities: box.querySelector('[data-direct="inact"]')?.checked || false, ...box.querySelector('[data-direct="offlock"]')?.checked ? { lockOffline: true } : {}, ...all[hub]?.pkgs ? { pkgs: all[hub].pkgs } : {}, ...all[hub]?.customApps ? { customApps: all[hub].customApps } : {} };
       else delete all[hub];
-      await this._saveSettings({ direct: all });
+      await this._fireSave(hub, all[hub] || null);
     },
     _adbStatus(cur, t, own) {
       const st = this._hass.states;
@@ -2436,11 +2438,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     </div>`;
     },
     async _patchDirect(hubId, fn) {
-      const all = { ...this._settings().direct || {} };
-      const cur = { ...all[hubId] || {} };
+      const cur = { ...this._fireCfg(hubId) || {} };
       fn(cur);
-      all[hubId] = cur;
-      await this._saveSettings({ direct: all });
+      await this._fireSave(hubId, cur);
     },
     // The installed apps are read by the integration (one reader for both cards); the card only keeps the answer.
     async _readPackages(ent) {
@@ -2466,7 +2466,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
     },
     _directEdit(h, t, own) {
-      const cur = this._settings().direct?.[h.id] || {};
+      const cur = this._fireCfg(h.id) || {};
       const allApps = this._appsOf(h.id);
       const devs = Object.keys(this._devicesOf(h.id));
       const g = t.groups || {};
@@ -2554,9 +2554,36 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (/^channel/.test(action) && (a.model === "stick" || a.model === "lite")) return null;
       return { entity: a.entity, code, prefer: a.prefer };
     },
+    // The Fire TV of a hub: since 0.13 on the link of its Harmony device ({entity, device, ...settings}); older settings "direct" as fallback.
+    _fireCfg(hubId) {
+      const links = this._settings().directDevices?.[hubId] || {};
+      const label = Object.keys(links).sort().find((l) => links[l].fire);
+      if (label) return { ...links[label].fire, entity: links[label].entity, device: label };
+      return this._settings().direct?.[hubId] || null;
+    },
+    // Save the Fire TV settings of a hub (null = unlink the Fire TV settings); where they live is decided here.
+    async _fireSave(hubId, cfg) {
+      const all = JSON.parse(JSON.stringify(this._settings().directDevices || {}));
+      const links = all[hubId] || {};
+      let label = Object.keys(links).sort().find((l) => links[l].fire) || (cfg?.device && links[cfg.device] ? cfg.device : null);
+      const rest = { ...this._settings().direct || {} };
+      if (!label || cfg && links[label].entity !== cfg.entity && !links[cfg.device]) {
+        if (cfg) rest[hubId] = cfg;
+        else delete rest[hubId];
+        await this._saveSettings({ direct: rest });
+        return;
+      }
+      if (cfg) {
+        const { entity, device, ...fire } = cfg;
+        links[label] = { ...links[label], fire };
+      } else delete links[label].fire;
+      all[hubId] = links;
+      delete rest[hubId];
+      await this._saveSettings({ directDevices: all, direct: rest });
+    },
     // Fire TV apps of a hub: built-in list, package overrides and own apps, each with its check status.
     _appsOf(hubId) {
-      const d = this._settings().direct?.[hubId] || {};
+      const d = this._fireCfg(hubId) || {};
       const base = this._config.direct_apps || FIRE_APPS.concat(this._config.direct_apps_extra || []);
       const inst = this._pkgs?.[d.entity];
       const statusOf = (pkg) => !inst || !pkg ? "" : inst.has(pkg) ? "ok" : pkg.startsWith("com.amazon.") ? "" : "missing";
@@ -2573,7 +2600,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     // Name, brand colour and symbol for what the Fire TV reports as running (package name or app name).
     _appInfo(raw, hubId, t) {
       if (!raw) return null;
-      const own = this._settings().direct?.[hubId] || {};
+      const own = this._fireCfg(hubId) || {};
       const apps = this._appsOf(hubId);
       let hit = apps.find((a) => a.pkg === raw);
       if (!hit) {
@@ -2595,7 +2622,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // The Fire TV of a room as the card sees it, independent of Harmony: its entity, state and running app.
     _fireInfo(hubId) {
-      const cfg = this._config.direct?.[hubId] ?? this._settings().direct?.[hubId];
+      const cfg = this._config.direct?.[hubId] ?? this._fireCfg(hubId);
       if (!cfg?.entity) return null;
       const st = this._hass.states?.[cfg.entity];
       const raw = st?.state;
@@ -2658,7 +2685,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // Which Fire TV entity belongs to a Harmony device: explicit setting, else the only Fire-TV-like media_player.
     _directFor(hubId, dev, activity = "") {
-      const cfg = this._config.direct?.[hubId] ?? this._settings().direct?.[hubId];
+      const cfg = this._config.direct?.[hubId] ?? this._fireCfg(hubId);
       const isFire = (x) => /fire/i.test(x || "");
       if (cfg?.entity) {
         const match = cfg.device ? cfg.device === dev : isFire(dev);

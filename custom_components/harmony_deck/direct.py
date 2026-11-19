@@ -73,6 +73,24 @@ def config(hass: HomeAssistant) -> dict[str, dict[str, dict[str, Any]]]:
     return directdev.clean_config(((hass.data.get(DOMAIN) or {}).get("settings") or {}).get("directDevices"))
 
 
+def fire_all(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
+    """{hub remote: {"entity", "device", ...Fire TV settings}}: the Fire TV of every hub.
+
+    From the link that carries Fire TV settings, else the old settings "direct", else a linked Android TV player
+    whose page was never saved (then without settings, i.e. defaults).
+    """
+    settings = (hass.data.get(DOMAIN) or {}).get("settings") or {}
+    out = directdev.fire_configs(settings.get("direct"), settings.get("directDevices"))
+    for hub, devices in config(hass).items():
+        if hub in out:
+            continue
+        for label in sorted(devices):
+            if PAGES.get(platform(hass, devices[label]["entity"]) or "") == "firetv":
+                out[hub] = {"entity": devices[label]["entity"], "device": label}
+                break
+    return out
+
+
 def device_of(hass: HomeAssistant, hub: str, device: str) -> dict[str, Any] | None:
     return directdev.device_of(config(hass), hub, device)
 

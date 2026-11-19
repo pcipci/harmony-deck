@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.0
+
+### Changed
+- **The Fire TV settings belong to the device.** Apps, keys, packages, colour keys and the lock-when-offline switch are now stored on the link of the Fire TV in Settings › Network control, not per hub. Existing settings move there once at start; anything that cannot move (the Harmony device is not linked to that player) stays where it was and keeps working.
+- **The lock and the repair "Fire TV not reachable" read the Fire TV from its link.** The lock asks for the device that reports the running app; allowed apps are stored per device. A linked Android TV player counts as the hub's Fire TV even before its page was saved.
+- Linking an Android TV / Fire TV player gives it its (empty) Fire TV settings right away, so the status bar, the lock and the repair know it without opening the page.
+
+### Notes
+- Not yet tested on real hardware, above all the lock after the move. The tests cover the migration, the lock reading from the link, the repair and the card's reading and saving.
+- Downgrading to 0.12 after the move: the Fire TV settings would not be found (they stay on the link). Keep a backup of `.storage/harmony_deck.settings` if you want to go back.
+
 ## 0.12.1
 
 ### Fixed

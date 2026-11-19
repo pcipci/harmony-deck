@@ -27,6 +27,8 @@ def test_maker_alone_is_no_suggestion():
     cands[0]["area"] = "Wohnzimmer"
     assert dd.suggest({"label": "LG Blu-ray", "manufacturer": "LG"}, cands, "Wohnzimmer") is None
     cands[0]["caps"].append("power_off")
+    assert dd.suggest({"label": "LG Blu-ray", "manufacturer": "LG"}, cands, "Wohnzimmer") is None      # room + maker: not enough (0.12)
+    cands[0]["kind"] = "player"
     assert dd.suggest({"label": "LG Blu-ray", "manufacturer": "LG"}, cands, "Wohnzimmer") == "media_player.lg_airplay"
 
 

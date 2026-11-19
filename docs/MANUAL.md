@@ -25,7 +25,7 @@ type: custom:harmony-deck-card
 Every hub becomes a tab (room). At the top you see what is running, below the activities as tiles, below them the remote of the running activity.
 
 **ⓘ** opens the hub info and the three ways to edit:
-- **Settings**: look, behaviour, symbols, hub, Fire TV, info. Every tab starts with one sentence about what it is for. Each option is one row: tap anywhere on the row to switch it.
+- **Settings**: look, behaviour, devices, activities, network control (with the Fire TV), hub, info. Every tab starts with one sentence about what it is for. Each option is one row: tap anywhere on the row to switch it.
 - **Favorites**: mark keys with a star, per device or per activity. The third button, **Hide keys**, hides keys you never use (see section 6).
 - **Actions**: own buttons and sequences of Harmony keys, pauses and Home Assistant entities, in an edit mode of their own.
 
@@ -80,9 +80,11 @@ In the editor, every step is one row: tap it to open it, the arrows at its right
 
 The integration carries out the steps, so a sequence also finishes when the page is closed. For automations there are the services `harmony_deck.run_action` (hub, action name or id) and `harmony_deck.stop_action`, and per hub the sensor **Sequence** (idle, running, done, stopped, error, with step and progress as attributes). Anyone who is logged in can start a stored action; testing an unsaved draft is for administrators.
 
-**Network control (0.7, renamed in 0.9):** under Settings › **Network control** you link a Harmony device to a Home Assistant media player (for example your TV). The keys keep going through the hub; the player adds the state, a real volume level and the source. Per device you see what the player can do and what it reports now. A suggestion with "Use it" appears when room, kind, maker/model or name fit clearly (two TVs in two rooms are told apart by their rooms); the list shows the matching players first. Otherwise you pick the player yourself. Linked devices can be used in the step **Network command** (switch on/off, volume, mute, source). With "Set volume directly instead of via IR" the step "Volume (IR)" sets the level on the device and no longer counts keys. The volume limit applies to both.
+**Network control (0.7, renamed in 0.9):** under Settings › **Network control** you link a Harmony device to a Home Assistant media player (for example your TV). The keys keep going through the hub; the player adds the state, a real volume level and the source. Per device you see what the player can do and what it reports now. A suggestion appears when kind, model or a name word fit (the room and the maker only add points: a player named after the room, such as "Living room", is never suggested for a single device); the list shows the matching players first. The suggestion line has two small buttons: ✓ use it, ✕ do not suggest again for this device. Otherwise you pick the player yourself. Linked devices can be used in the step **Network command** (switch on/off, volume, mute, source). With "Set volume directly instead of via IR" the step "Volume (IR)" sets the level on the device and no longer counts keys. The volume limit applies to both.
 
 **Target against actual state (0.8):** if a linked device does not do what the current activity needs (still on after "off", off although the activity switches it on, on another input), a box under the status says so with a button for the fix ("Switch on", "Switch off", "Switch to …"). It reports only after the state stayed the same for 4 seconds, and it switches only when you tap. Under Settings › Direct devices, "Inputs of the activities" lets you say which source of the player belongs to which Harmony input; without a choice Harmony Deck guesses by name and stays silent when unsure. While the lock is on, the fix can only switch off.
+
+**The device page (0.12):** in the tab Network control every linked device has a cog (and a dot: green = the player answers). The cog opens the device's page. For all players except the Fire TV it shows what the player can do, one row per capability with the buttons for it: state, on/off, volume (slider, held to the limit of Settings › Behaviour), mute and the sources as buttons (HDMI 1, HDMI 2 …). The buttons switch the real device (administrators only) and so double as a test. Below are "Inputs of the activities" and "Set volume directly instead of via IR". The player's integration is named in the page header. For LG Netcast the source list in Home Assistant is the channel list; Harmony Deck shows and compares only the entries that look like inputs (HDMI, AV, Component, SCART …) and ignores the channels.
 
 **Detected platform and sensors (0.10):** the tab Network control shows under each linked player what was detected ("Detected: LG Netcast") and what to know about it. In Home Assistant, the sensors **Network control** (all linked devices with platform, capabilities and state in the attributes) and **Differences** (one per hub, number of differences with the list in the attributes) show the same without the card; use them for automations and notifications.
 
@@ -96,13 +98,17 @@ Actions of 0.4 are converted to a single step by themselves. Actions are the sam
 
 ## 8. Fire TV
 
-Settings › **Fire TV**:
-1. Choose the entity (the `media_player` of the Android TV integration) and the Harmony device it belongs to.
+Since 0.12 the Fire TV is a device of Settings › **Network control** like any other: choose its `media_player` (Android TV integration) next to the Harmony device it belongs to, then tap the cog. The cog opens the **page of the Fire TV** (the former tab "Fire TV"); **Back** returns to the list. A Fire TV set up before 0.12 is linked automatically, once, and keeps all its settings.
+
+On the page:
+1. The entity and the Harmony device (as before).
 2. **Test connection**. If the Fire TV is not reachable, a hint below says what to check.
 3. **Read installed apps** fetches the apps from the device. Choose which apps appear as buttons, assign the colour keys, add own apps by package name. Tap and hold (or hover over) an app name to see its package. A wrong package assignment is removed with the small chain button next to the app.
 4. Optional: **Model** (for example Cube), **Volume without an activity via** the IR sender (Cube only), **Also show in activities** and **Lock activity when not reachable** (both switches).
 
 The Fire TV has its own status line with play/pause and standby, even when Harmony knows nothing about it.
+
+In Home Assistant a linked Fire TV is **one** device, "Name (Network)": its "ADB reachable" sensor sits there together with Platform, Capabilities and State (before 0.12 there were two devices, "(ADB)" and "(Network)").
 
 Tested with a Fire TV Cube (3rd generation). Other models may differ.
 
@@ -129,7 +135,7 @@ Best on a dashboard page only adults see. Only administrators can change it.
 2. **Check the lock now:** shows what the lock would switch off right now, without doing it.
 3. **Release:** pauses the lock for the chosen time.
 4. **Allowed activities:** ticked = may run. Activities that are not allowed show a lock in the main card and cannot be started there. If they are started another way (original remote), the integration switches them off after 3 seconds.
-5. **Allowed apps (Fire TV):** the home screen is allowed by default; without it no other app can be allowed. Newly installed apps are blocked. Apps that ran once appear in the list by themselves.
+5. **Allowed apps (device that reports apps):** since 0.12 the lock asks for the capability "reads the running app" instead of for "Fire TV"; today only the Fire TV reports it, and the section is named after the device. The home screen is allowed by default; without it no other app can be allowed. the home screen is allowed by default; without it no other app can be allowed. Newly installed apps are blocked. Apps that ran once appear in the list by themselves.
 6. **Switch off as well:** devices that also go off when the lock acts on the Fire TV (for example TV and amplifier).
 7. **Interventions:** the last 100, with **Allow** right in the list.
 8. **Debug: package names** (administrators): the real package name of the running app and of all packages, to copy.

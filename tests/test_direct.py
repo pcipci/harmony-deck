@@ -14,7 +14,7 @@ WEBOS = {"supported_features": 4 | 8 | 128 | 256 | 2048, "volume_level": 0.19, "
 
 
 def test_caps_from_features_and_attributes():
-    assert dd.media_caps("on", WEBOS) == list(dd.CAPS)
+    assert dd.media_caps("on", WEBOS) == list(dd.CAPS[:8])      # app_read, app_list come from an adapter
     assert dd.media_caps("off", {"supported_features": 128}) == ["state", "power_on"]
     assert dd.media_caps("unavailable", {}) == []
     assert dd.media_caps(None, WEBOS) == []

@@ -78,6 +78,15 @@ class AdbEntity(CoordinatorEntity[DeckCoordinator]):
         self._attr_unique_id = f"{entry.entry_id}_adb_{adb_id}_{key}"
         self._attr_translation_key = key
         title = (coordinator.data or {}).get("adb", {}).get(adb_id, {}).get("title") or "Fire TV"
+        from .netent import link_of_entity, network_device_info
+        from .lock import lock_hubs
+
+        link = link_of_entity(coordinator.hass, (coordinator.data or {}).get("adb", {}).get(adb_id, {}).get("entity"))
+        if link:
+            # 0.12: a Fire TV linked in the network control is one device, "Name (Network)".
+            hub_ids = {i["remote"]: h for h, i in lock_hubs(coordinator.hass).items()}
+            self._attr_device_info = network_device_info(entry.entry_id, link[0], link[1], hub_ids.get(link[0]))
+            return
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_adb_{adb_id}")},
             name=f"{title} (ADB)",

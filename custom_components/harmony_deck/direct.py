@@ -34,7 +34,38 @@ class Extension(Protocol):
         """Carry out the op if the extension handles it (True), else leave it to the generic adapter (False)."""
 
 
-EXTENSIONS: list[Extension] = []
+class FireTvAdapter:
+    """Fire TV (and other Android TV devices) over ADB: knows the running app and can list the installed apps.
+
+    The apps, text input and extra keys themselves stay in the Fire TV part (fireapps.py, settings "direct"); this
+    adapter only tells the network control what such a device can do, so the lock and the card can ask for the
+    capability instead of for "Fire TV".
+    """
+
+    name = "androidtv"
+
+    def applies(self, hass: HomeAssistant, entity: str) -> bool:
+        return platform(hass, entity) == "androidtv"
+
+    def caps(self, hass: HomeAssistant, entity: str) -> list[str]:
+        state = hass.states.get(entity)
+        if state is None or state.state in ("unavailable", "unknown"):
+            return ["app_list"]
+        return ["app_read", "app_list"]
+
+    def snapshot(self, hass: HomeAssistant, entity: str) -> dict[str, Any]:
+        state = hass.states.get(entity)
+        app = (state.attributes.get("app_name") or state.attributes.get("app_id")) if state else None
+        return {"app": app if isinstance(app, str) else None}
+
+    async def run(self, hass: HomeAssistant, entity: str, op: str, value: Any) -> bool:
+        return False
+
+
+EXTENSIONS: list[Extension] = [FireTvAdapter()]
+
+# Settings page the card opens for a linked device, by platform ("generic" for all others).
+PAGES = {"androidtv": "firetv"}
 
 
 def config(hass: HomeAssistant) -> dict[str, dict[str, dict[str, Any]]]:
@@ -159,7 +190,8 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                 found = caps(hass, entity)
                 plat = platform(hass, entity)
                 item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
-                            platform=plat, quirks=directdev.quirks(plat, found))
+                            platform=plat, quirks=directdev.quirks(plat, found), page=PAGES.get(plat or "", "generic"),
+                            sources=_sources(hass, entity))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
             elif label in (prefs["never"].get(hub) or []):
                 item["noSuggest"] = True
@@ -173,9 +205,10 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _sources(hass: HomeAssistant, entity: str) -> list[str]:
+    """Sources of a player worth showing and comparing (only the inputs where the list is a channel list)."""
     state = hass.states.get(entity)
     found = state.attributes.get("source_list") if state else None
-    return [str(s) for s in found] if isinstance(found, list) else []
+    return directdev.usable_sources(platform(hass, entity), [str(s) for s in found] if isinstance(found, list) else [])
 
 
 def _inputs(hass: HomeAssistant, info: dict[str, Any], device: str, link: dict[str, Any]) -> list[dict[str, Any]]:

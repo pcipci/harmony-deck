@@ -40,6 +40,32 @@ def link_id(entry_id: str, hub: str, device: str) -> str:
     return f"{entry_id}_net_{hub}_{device}"
 
 
+def network_device_info(entry_id: str, hub: str, device: str, hub_id: str | None) -> DeviceInfo:
+    """The Home Assistant device of one linked network device (also home of a linked Fire TV's ADB entities)."""
+    via = (DOMAIN, f"{entry_id}_{hub_id}") if hub_id else (DOMAIN, entry_id)
+    return DeviceInfo(
+        identifiers={(DOMAIN, link_id(entry_id, hub, device))},
+        translation_key="network_device",
+        translation_placeholders={"name": device},
+        name=f"{device} (Network)",
+        manufacturer="Harmony Deck",
+        model="Network device",
+        via_device=via,
+        entry_type=DeviceEntryType.SERVICE,
+    )
+
+
+def link_of_entity(hass: HomeAssistant, entity: str | None) -> tuple[str, str] | None:
+    """(hub, device) of the first link to this player, or None."""
+    from . import direct
+
+    for hub, devices in direct.config(hass).items():
+        for device, link in devices.items():
+            if link["entity"] == entity:
+                return hub, device
+    return None
+
+
 def _lang(hass: HomeAssistant) -> str:
     lang = (hass.config.language or "en").split("-")[0]
     return lang if lang in CAP_WORDS else "en"
@@ -57,17 +83,7 @@ class NetEntity(SensorEntity):
         base = link_id(entry.entry_id, hub, device)
         self._attr_unique_id = f"{base}{_SEP}{key}"
         self._attr_translation_key = key
-        via = (DOMAIN, f"{entry.entry_id}_{hub_id}") if hub_id else (DOMAIN, entry.entry_id)
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, base)},
-            translation_key="network_device",
-            translation_placeholders={"name": device},
-            name=f"{device} (Network)",
-            manufacturer="Harmony Deck",
-            model="Network device",
-            via_device=via,
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = network_device_info(entry.entry_id, hub, device, hub_id)
 
     @property
     def _item(self) -> dict[str, Any]:
@@ -156,6 +172,7 @@ async def async_setup_network_devices(hass: HomeAssistant, entry: ConfigEntry, a
             if ent.unique_id.startswith(prefix) and ent.unique_id.split(_SEP, 1)[0] not in wanted:
                 ents.async_remove(ent.entity_id)
         devs = dr.async_get(hass)
+        _merge_adb(hass, entry, ents, devs, hubs)
         for dev in dr.async_entries_for_config_entry(devs, entry.entry_id):
             ids = [i for d, i in dev.identifiers if d == DOMAIN]
             if ids and all(i.startswith(prefix) and i not in wanted for i in ids):
@@ -164,3 +181,27 @@ async def async_setup_network_devices(hass: HomeAssistant, entry: ConfigEntry, a
 
     entry.async_on_unload(watch.add_listener(_sync))
     watch.refresh()
+
+
+def _merge_adb(hass: HomeAssistant, entry: ConfigEntry, ents: er.EntityRegistry, devs: dr.DeviceRegistry,
+               hubs: dict[str, str]) -> None:
+    """A linked Fire TV has one device: its ADB entities move onto "Name (Network)", the empty "(ADB)" device goes.
+
+    Unlinked again, they move back to their own "(ADB)" device (created on the next start; until then they keep
+    their entities and history either way: only the device they are shown under changes).
+    """
+    coordinator = getattr(entry, "runtime_data", None)
+    adb = ((coordinator.data or {}).get("adb") or {}) if coordinator else {}
+    for adb_id, info in adb.items():
+        link = link_of_entity(hass, info.get("entity"))
+        if link is None:
+            continue
+        hub, device = link
+        target = devs.async_get_or_create(config_entry_id=entry.entry_id,
+                                          **network_device_info(entry.entry_id, hub, device, hubs.get(hub)))
+        for ent in er.async_entries_for_config_entry(ents, entry.entry_id):
+            if ent.unique_id.startswith(f"{entry.entry_id}_adb_{adb_id}_") and ent.device_id != target.id:
+                ents.async_update_entity(ent.entity_id, device_id=target.id)
+        old = devs.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_adb_{adb_id}")})
+        if old and not er.async_entries_for_device(ents, old.id, include_disabled_entities=True):
+            devs.async_remove_device(old.id)

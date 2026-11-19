@@ -52,16 +52,25 @@ def _locked(hass: HomeAssistant, hub: str) -> bool:
 
 @websocket_api.websocket_command(
     {vol.Required("type"): f"{DOMAIN}/direct/fix", vol.Required("hub"): str, vol.Required("device"): str,
-     vol.Required("op"): vol.In(["on", "off", "source"]), vol.Optional("value"): str}
+     vol.Required("op"): vol.In(["on", "off", "source", "volume", "mute"]), vol.Optional("value"): vol.Any(str, int, float, bool)}
 )
 @websocket_api.async_response
 async def ws_fix(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
-    """Carry out one fix the user tapped. While the lock is on, only switching off is allowed."""
+    """Carry out one fix the user tapped, or a control of the device page (volume, mute: administrators only).
+
+    While the lock is on, only switching off is allowed. The volume is held to the limit of the settings.
+    """
     linked = direct.device_of(hass, msg["hub"], msg["device"])
     op = clean_op(msg["op"], msg.get("value"))
     if linked is None or op is None:
         connection.send_error(msg["id"], "invalid", "no direct device or no valid fix")
         return
+    if op[0] in ("volume", "mute") and not (connection.user and connection.user.is_admin):
+        connection.send_error(msg["id"], "unauthorized", "administrators only")
+        return
+    if op[0] == "volume":
+        cap = (hass.data[DOMAIN].get("settings") or {}).get("volumeCap") or 80
+        op = ("volume", min(op[1], int(cap)))
     if op[0] != "off" and _locked(hass, msg["hub"]):
         connection.send_error(msg["id"], "locked", "the lock is on")
         return

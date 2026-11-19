@@ -86,7 +86,7 @@ The cards are served by the integration. You do not need to copy files to `www` 
    ```
    All hubs appear as tabs. Tap an activity to start it.
 2. Tap **ⓘ** in the card and then **Settings**, **Favorites** or **Actions**. Every settings tab starts with a short explanation.
-3. Fire TV (optional): Settings → **Fire TV** → choose the `media_player` of the Android TV integration and the Harmony device it belongs to, then **Test connection**.
+3. Fire TV (optional): Settings → **Network control** → choose the `media_player` of the Android TV integration next to the Fire TV, tap the cog, then **Test connection**.
 4. Lock (optional): add the security card on a page only adults use:
    ```yaml
    type: custom:harmony-deck-security
@@ -105,15 +105,16 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
 
 **Actions** are your own buttons: one step ("toggle the candles") or a sequence of Harmony keys, pauses, Home Assistant actions, "wait until" and "if". They run in the integration, so they finish when the page is closed. Every action is also a **button entity** on the hub's device (press = start; refused while another action runs), and the sensor **Actions** lists them.
 
-**Network control** links a Harmony device to its Home Assistant media player. The keys keep going over infrared; the player adds what infrared cannot: is it really on, which input, the exact volume. When an activity left a device in the wrong state, a box under the status offers the fix. Each linked device gets its own device in Home Assistant ("LG TV (Network)") with platform, capabilities and state.
+**Network control** links a Harmony device to its Home Assistant media player. The keys keep going over infrared; the player adds what infrared cannot: is it really on, which input, the exact volume. When an activity left a device in the wrong state, a box under the status offers the fix. Each linked device gets its own device in Home Assistant ("LG TV (Network)") with platform, capabilities and state; a linked Fire TV is the same device and carries its "ADB reachable" sensor. A cog next to each device opens its page: what the player can do as rows with buttons (on/off, volume, mute, sources), or for the Fire TV its apps, text input and keys.
 
 <p align="center">
-  <img src="docs/images/network.png" width="32%" alt="Network control">
-  <img src="docs/images/mismatch.png" width="32%" alt="Target against actual state">
-  <img src="docs/images/netstep.png" width="32%" alt="Network command step">
+  <img src="docs/images/network.png" width="24%" alt="Network control">
+  <img src="docs/images/mismatch.png" width="24%" alt="Target against actual state">
+  <img src="docs/images/netstep.png" width="24%" alt="Network command step">
+  <img src="docs/images/devicepage.png" width="24%" alt="Device page">
 </p>
 
-Suggestions in the tab are deliberately careful: a player is only suggested when room, model or kind of device fit, never for the maker alone, and pure playback targets (AirPlay, DLNA, music servers) are not offered. Suggestions can be switched off for all devices or per device.
+Suggestions in the tab are deliberately careful: a player is only suggested when kind, model or a name word fit, never for the maker or the room alone, and pure playback targets (AirPlay, DLNA, music servers) are not offered. Suggestions can be switched off for all devices or per device.
 
 ## The lock
 

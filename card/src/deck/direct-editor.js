@@ -61,9 +61,11 @@ export const directEditorMixin = {
     return [on, st.volume != null ? fmtText(t.ddVolume, [String(st.volume)]) : "", st.source || "", st.app || ""].filter(Boolean).join(" · ");
   },
 
+  // The tab: one line per Harmony device (player, state dot, button to its page) and, if there is one, a suggestion.
   _directDevHtml(h, t) {
     const devs = Object.keys(this._devicesOf(h.id));
     if (!this._dd) { this._ddLoad(); return `<div class="esec" data-t="dd"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddLoading}</div></div>`; }
+    if (this._ddPage?.hub === h.id) return this._ddPageHtml(h, t);
     const info = this._dd.hubs?.[h.id] || {};
     const links = this._ddLinks()[h.id] || {};
     const name = (id) => this._hass.states?.[id]?.attributes?.friendly_name || id;
@@ -80,27 +82,63 @@ export const directEditorMixin = {
       const opts = `<option value="">${t.ddNone}</option>${fits.length ? `<optgroup label="${esc(t.ddFits)}">${fits.map(option).join("")}</optgroup><optgroup label="${esc(t.ddOthers)}">${rest.map(option).join("")}</optgroup>` : rest.map(option).join("")}`;
       let suggest = "";
       if (!cur && item.suggest) {
-        suggest = `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name(item.suggest))])}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button><button type="button" class="mini txt" data-ddnever data-dev="${esc(d)}">${t.ddNever}</button></span></div>`;
+        suggest = `<div class="ddsug"><span class="ddsugtx" title="${esc(item.suggest)}">${fmtText(t.ddSuggest, [esc(name(item.suggest))])}</span><button type="button" class="mini ic" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}" title="${esc(t.ddTake)}" aria-label="${esc(t.ddTake)}"><ha-icon icon="mdi:check"></ha-icon></button><button type="button" class="mini ic" data-ddnever data-dev="${esc(d)}" title="${esc(t.ddNever)}" aria-label="${esc(t.ddNever)}"><ha-icon icon="mdi:close"></ha-icon></button></div>`;
       } else if (!cur && item.noSuggest && !this._dd.suggestOff) {
-        suggest = `<div class="ehint ddsug"><span>${t.ddNeverSet}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddagain data-dev="${esc(d)}">${t.ddAgain}</button></span></div>`;
+        suggest = `<div class="ddsug"><span class="ddsugtx">${esc(t.ddNeverSet)}</span><button type="button" class="mini ic" data-ddagain data-dev="${esc(d)}" title="${esc(t.ddAgain)}" aria-label="${esc(t.ddAgain)}"><ha-icon icon="mdi:lightbulb-on-outline"></ha-icon></button></div>`;
       }
-      let detail = "";
+      let dot = `<span class="ddslot"></span>`, page = `<span class="ddslot cog"></span>`;
       if (cur) {
-        const caps = item.caps || [];
-        detail = item.known === false
-          ? `<div class="ehint">${t.ddGone}</div>`
-          : `<div class="ehint ddplat"><ha-icon icon="mdi:lan-connect"></ha-icon> ${esc(item.platform ? fmtText(t.ddFound, [PLATFORMS[item.platform] || item.platform]) : t.ddFoundNone)}</div>
-            ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
-            <div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
-            <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
-            ${this._ddInputsHtml(item, links[d], entityId => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
-            ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}`;
+        const live = this._hass.states?.[cur];
+        const ok = item.known !== false && live && !["unavailable", "unknown"].includes(live.state);
+        dot = `<span class="adbdot ${ok ? "ok" : "bad"}" title="${esc(ok ? t.adbOk : t.adbDown)}"></span>`;
+        page = `<button type="button" class="mini ic" data-ddpage data-dev="${esc(d)}" title="${esc(t.ddSettings)}" aria-label="${esc(t.ddSettings)}"><ha-icon icon="mdi:cog-outline"></ha-icon></button>`;
       }
-      return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
-        <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;
+      return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="ddline"><span class="ddname"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon><span>${esc(d)}</span></span>${dot}<select data-ddent data-dev="${esc(d)}" title="${esc(cur ? name(cur) : "")}">${opts}</select>${page}</div>${suggest}${cur && item.known === false ? `<div class="ehint">${t.ddGone}</div>` : ""}</div>`;
     });
-    const sugSw = this._swRow(t.ddSuggestShow, "data-ddsugon", !this._ddSuggest().off) + `<div class="ehint">${t.ddSuggestShowHint}</div>`;
+    const sugSw = this._swRow(t.ddSuggestShow, "data-ddsugon", !this._ddSuggest().off);
     return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${sugSw}${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
+  },
+
+  // The page of one linked device: Fire TV = its own settings (apps, keys, connection), everything else = what the player can do.
+  _ddPageHtml(h, t) {
+    const d = this._ddPage.device;
+    const item = this._dd.hubs?.[h.id]?.[d] || {};
+    const link = this._ddLinks()[h.id]?.[d];
+    const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
+    if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
+    if (item.page === "firetv") {
+      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+    }
+    const caps = item.caps || [];
+    const has = (c) => caps.includes(c);
+    const st = item.state || {};
+    const cap = this._settings().volumeCap || 80;
+    const row = (label, ctl) => `<div class="erow ddctl"><span>${label}</span><span class="ddctls">${ctl}</span></div>`;
+    const btn = (attrs, text, icon) => `<button type="button" class="mini txt" ${attrs} data-dev="${esc(d)}">${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(text)}</span></button>`;
+    const rowsHtml = [
+      has("state") ? row(t.ddCtlState, `<span class="ddnow">${esc(st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown)}</span>`) : "",
+      has("power_on") || has("power_off") ? row(t.ddCtlPower, (has("power_on") ? btn('data-ddctl="on"', t.ddCtlOn, "mdi:power") : "") + (has("power_off") ? btn('data-ddctl="off"', t.ddCtlOff, "mdi:power-off") : "")) : "",
+      has("volume_set") ? row(t.ddCtlVolume, `<input type="range" min="0" max="${cap}" value="${Math.min(st.volume ?? 0, cap)}" data-ddctl="volume" data-dev="${esc(d)}"><span class="ddnow" data-ddvolval>${st.volume != null ? st.volume + " %" : ""}</span>`) : (has("volume_read") ? row(t.ddCtlVolume, `<span class="ddnow">${st.volume != null ? st.volume + " %" : t.ddUnknown}</span>`) : ""),
+      has("mute") ? row(t.ddCtlMute, btn(`data-ddctl="mute" data-val="${st.muted ? "0" : "1"}"`, st.muted ? t.ddCtlUnmute : t.ddCtlMute, st.muted ? "mdi:volume-high" : "mdi:volume-off")) : "",
+      has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : "",
+    ].join("");
+    const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
+    return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}
+      ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
+      <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
+      ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
+      ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
+  },
+
+  async _ddControl(hub, device, op, value, box) {
+    const msg = box?.querySelector("[data-ddmsg]");
+    try {
+      await this._hass.callWS({ type: "harmony_deck/direct/fix", hub, device, op, ...(value !== undefined ? { value } : {}) });
+      if (msg) msg.textContent = "";
+    } catch (e) {
+      if (msg) msg.textContent = e?.message || String(e);
+    }
+    setTimeout(() => this._ddLoad(true), 1200);
   },
 
   // Which source of the player belongs to each Harmony input the activities use on this device.
@@ -117,6 +155,20 @@ export const directEditorMixin = {
   },
 
   _bindDirectDev(root) {
+    root.querySelectorAll("[data-ddpage]").forEach((b) => b.addEventListener("click", () => { this._ddPage = { hub: b.closest("[data-hub]").dataset.hub, device: b.dataset.dev }; this._rerender(); }));
+    root.querySelectorAll("[data-ddback]").forEach((b) => b.addEventListener("click", () => { this._ddPage = null; this._ddLoad(true); this._rerender(); }));
+    root.querySelectorAll("[data-ddctl]").forEach((el) => {
+      const hub = () => el.closest("[data-hub]").dataset.hub, box = () => el.closest("[data-hub]");
+      if (el.type === "range") {
+        el.addEventListener("input", () => { const v = box().querySelector("[data-ddvolval]"); if (v) v.textContent = `${el.value} %`; });
+        el.addEventListener("change", () => this._ddControl(hub(), el.dataset.dev, "volume", Number(el.value), box()));
+      } else {
+        el.addEventListener("click", () => {
+          const op = el.dataset.ddctl;
+          this._ddControl(hub(), el.dataset.dev, op, op === "mute" ? el.dataset.val === "1" : op === "source" ? el.dataset.val : undefined, box());
+        });
+      }
+    });
     root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
     root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
     root.querySelectorAll("[data-ddnever]").forEach((b) => b.addEventListener("click", () => this._ddNever(b.closest("[data-hub]").dataset.hub, b.dataset.dev, true)));

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.0
+
+### Changed
+- **The Fire TV is a device of the network control.** In Settings › Network control it is linked like any other device. The former tab "Fire TV" is now the **page of the Fire TV**, opened with the cog next to the device (apps, text input, keys, connection and test as before). A Fire TV set up before 0.12 is linked once automatically; its settings stay.
+- **One device in Home Assistant.** A linked Fire TV has one device, "Name (Network)", that also holds its "ADB reachable" sensor. The separate "(ADB)" device goes (empty only; entities and history are kept). Unlinked, the Fire TV is shown as before.
+- **The tab Network control is one line per device:** name, player, a dot for "answers" and the cog. Suggestions are one quiet line with two small icon buttons (use it, don't suggest again). The long texts under every device moved to the device's page.
+- **Stricter suggestions, again:** the room alone is no longer evidence (it only adds points), and a player named only after a room ("Living room") is never suggested for a single device. Kind, model or a name word that is not the maker or the room are needed.
+- **The lock asks for capabilities, not for "Fire TV".** New capabilities "reads the running app" and "lists the apps"; today only the Fire TV reports them. The security card names the device in the section "Allowed apps". Lock behaviour for the Fire TV is unchanged.
+
+### Added
+- **Device page for every player** (cog): one row per capability with the buttons for it: state, on/off, volume (slider, held to the volume limit), mute and the sources as buttons. The buttons control the real device (administrators only). Plus "Inputs of the activities" and "Set volume directly instead of via IR", moved here.
+- **LG Netcast: inputs among the channels.** The source list of Netcast is the channel list; entries that look like inputs (HDMI, AV, Component, SCART, USB …) are now shown and compared, the channels are ignored.
+
+### Notes
+- Not yet tested on real hardware, above all the lock and the Fire TV after the move. The tests cover the lock rules, the move of the entities and the settings migration.
+- If an automation used the "(ADB)" device of a linked Fire TV, it now sits on "(Network)"; entity ids do not change.
+
 ## 0.11.0
 
 ### Changed

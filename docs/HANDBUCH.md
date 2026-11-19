@@ -25,7 +25,7 @@ type: custom:harmony-deck-card
 Jeder Hub erscheint als Reiter (Raum). Oben steht, was gerade läuft, darunter die Aktivitäten als Kacheln, darunter die Fernbedienung der laufenden Aktivität.
 
 Über **ⓘ** öffnest du die Infos zum Hub und die drei Bearbeitungswege:
-- **Einstellungen**: Darstellung, Bedienung, Symbole, Hub, Fire TV, Info. Jeder Reiter beginnt mit einem Satz, wofür er da ist. Jede Option ist eine Zeile: Du kannst irgendwo auf die Zeile tippen, um sie umzuschalten.
+- **Einstellungen**: Darstellung, Bedienung, Geräte, Aktivitäten, Netzwerksteuerung (mit dem Fire TV), Hub, Info. Jeder Reiter beginnt mit einem Satz, wofür er da ist. Jede Option ist eine Zeile: Du kannst irgendwo auf die Zeile tippen, um sie umzuschalten.
 - **Favoriten**: Tasten mit Stern markieren, pro Gerät oder pro Aktivität. Mit dem dritten Knopf **Tasten ausblenden** versteckst du Tasten, die du nie brauchst (siehe Abschnitt 6).
 - **Aktionen**: eigene Tasten und Sequenzen aus Harmony-Tasten, Pausen und Home-Assistant-Entitäten, als eigener Bearbeitungsmodus.
 
@@ -80,9 +80,11 @@ Im Editor ist jeder Schritt eine Zeile: antippen öffnet ihn, die Pfeile rechts 
 
 Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei geschlossener Seite zu Ende. Für Automationen gibt es die Dienste `harmony_deck.run_action` (Hub, Name oder Id der Aktion) und `harmony_deck.stop_action`, dazu pro Hub den Sensor **Sequenz** (bereit, läuft, fertig, abgebrochen, Fehler, mit Schritt und Fortschritt als Attribute). Jeder angemeldete Benutzer darf eine gespeicherte Aktion starten, einen ungespeicherten Entwurf testen nur Administratoren.
 
-**Netzwerksteuerung (0.7, in 0.9 umbenannt):** Unter Einstellungen › **Netzwerksteuerung** verbindest du ein Harmony-Gerät mit einem Mediaplayer in Home Assistant (zum Beispiel deinen Fernseher). Die Tasten laufen weiter über den Hub; der Mediaplayer liefert zusätzlich den Zustand, einen echten Lautstärke-Wert und die Quelle. Pro Gerät siehst du, was der Mediaplayer kann und was er gerade meldet. Passen Raum, Art, Hersteller/Modell oder Name eindeutig, erscheint ein Vorschlag mit „Übernehmen“ (zwei Fernseher in zwei Räumen werden an ihren Räumen unterschieden), und die passenden Mediaplayer stehen oben in der Liste. Sonst wählst du den Mediaplayer selbst. Verbundene Geräte kannst du im Schritt **Netzwerk-Befehl** nutzen (ein-/ausschalten, Lautstärke, Stumm, Quelle). Mit „Lautstärke direkt setzen statt per IR“ stellt der Schritt „Lautstärke (IR)“ den Wert am Gerät ein und zählt keine Tasten mehr. Die Lautstärke-Grenze gilt für beide.
+**Netzwerksteuerung (0.7, in 0.9 umbenannt):** Unter Einstellungen › **Netzwerksteuerung** verbindest du ein Harmony-Gerät mit einem Mediaplayer in Home Assistant (zum Beispiel deinen Fernseher). Die Tasten laufen weiter über den Hub; der Mediaplayer liefert zusätzlich den Zustand, einen echten Lautstärke-Wert und die Quelle. Pro Gerät siehst du, was der Mediaplayer kann und was er gerade meldet. Passen Geräteart, Modell oder ein Namenswort, erscheint ein Vorschlag (Raum und Hersteller bringen nur Punkte dazu; ein nach dem Raum benannter Player wie „Wohnzimmer“ wird nie für ein einzelnes Gerät vorgeschlagen) mit zwei kleinen Knöpfen: ✓ übernehmen, ✕ für dieses Gerät nicht mehr vorschlagen. Die passenden Mediaplayer stehen oben in der Liste. Sonst wählst du den Mediaplayer selbst. Verbundene Geräte kannst du im Schritt **Netzwerk-Befehl** nutzen (ein-/ausschalten, Lautstärke, Stumm, Quelle). Mit „Lautstärke direkt setzen statt per IR“ stellt der Schritt „Lautstärke (IR)“ den Wert am Gerät ein und zählt keine Tasten mehr. Die Lautstärke-Grenze gilt für beide.
 
 **Soll gegen Ist (0.8):** Tut ein verbundenes Gerät nicht, was die aktuelle Aktivität braucht (nach „Aus“ noch an, an soll aber aus sein, anderer Eingang), sagt das ein Kasten unter dem Status und bietet die Korrektur an („Einschalten“, „Ausschalten“, „Auf … umschalten“). Gemeldet wird erst, wenn der Zustand 4 Sekunden gleich blieb, und geschaltet wird nur auf deinen Tipp. Unter Einstellungen › Direktgeräte legst du bei „Eingänge der Aktivitäten“ fest, welche Quelle des Mediaplayers zu welchem Harmony-Eingang gehört; ohne Auswahl rät Harmony Deck anhand der Namen und schweigt, wenn es unsicher ist. Bei eingeschalteter Sperre darf die Korrektur nur ausschalten.
+
+**Die Geräteseite (0.12):** Im Reiter Netzwerksteuerung hat jedes verbundene Gerät ein Zahnrad (und einen Punkt: grün = der Player antwortet). Das Zahnrad öffnet die Seite des Geräts. Bei allen Playern außer dem Fire TV zeigt sie, was der Player kann, eine Zeile pro Fähigkeit mit den passenden Knöpfen: Zustand, Ein/Aus, Lautstärke (Regler, begrenzt auf die Grenze aus Einstellungen › Bedienung), Stumm und die Quellen als Knöpfe (HDMI 1, HDMI 2 …). Die Knöpfe schalten das echte Gerät (nur Administratoren) und taugen so auch zum Ausprobieren. Darunter stehen „Eingänge der Aktivitäten“ und „Lautstärke direkt setzen statt per IR“. Die Integration des Players steht im Kopf der Seite. Bei LG Netcast ist die Quellenliste in Home Assistant die Senderliste; Harmony Deck zeigt und vergleicht nur Einträge, die wie Eingänge aussehen (HDMI, AV, Component, SCART …), und ignoriert die Sender.
 
 **Erkannte Plattform und Sensoren (0.10):** Der Reiter Netzwerksteuerung zeigt unter jedem verbundenen Mediaplayer, was erkannt wurde („Erkannt: LG Netcast“) und was man darüber wissen sollte. In Home Assistant zeigen die Sensoren **Netzwerksteuerung** (alle verbundenen Geräte mit Plattform, Fähigkeiten und Zustand in den Attributen) und **Abweichungen** (einer pro Hub, Anzahl der Abweichungen mit der Liste in den Attributen) dasselbe ohne die Karte. Du kannst sie für Automationen und Benachrichtigungen nutzen.
 
@@ -96,13 +98,17 @@ Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle P
 
 ## 8. Fire TV
 
-Einstellungen › **Fire TV**:
-1. Entität wählen (der `media_player` der Android-TV-Integration) und das Harmony-Gerät, zu dem er gehört.
+Seit 0.12 ist der Fire TV ein Gerät der **Netzwerksteuerung** wie jedes andere: Den `media_player` (Android-TV-Integration) neben dem Harmony-Gerät wählen, dann das Zahnrad antippen. Das Zahnrad öffnet die **Seite des Fire TV** (der frühere Reiter „Fire TV“); **Zurück** führt zur Liste. Ein vor 0.12 eingerichteter Fire TV wird einmal automatisch verbunden und behält alle Einstellungen.
+
+Auf der Seite:
+1. Entität und Harmony-Gerät (wie bisher).
 2. **Verbindung testen**. Ist der Fire TV nicht erreichbar, steht darunter, was zu prüfen ist.
 3. **Installierte Apps lesen** holt die Apps vom Gerät. Auswählen, welche Apps als Tasten erscheinen, Farbtasten belegen, eigene Apps mit Paketnamen ergänzen. Den Paketnamen einer App zeigt ein langer Druck (oder Darüberfahren) auf ihren Namen. Eine falsche Paketzuordnung entfernst du mit dem kleinen Ketten-Knopf neben der App.
 4. Optional: **Modell** (zum Beispiel Cube), **Lautstärke ohne Aktivität über den IR-Sender** (nur Cube), **Auch in Aktivitäten anzeigen** und **Aktivität sperren, wenn nicht erreichbar** (beides Schalter).
 
 Der Fire TV hat eine eigene Statuszeile mit Wiedergabe/Pause und Standby, auch wenn Harmony nichts davon weiß.
+
+In Home Assistant ist ein verbundener Fire TV **ein** Gerät „Name (Netzwerk)“: Dort sitzt sein Sensor „ADB erreichbar“ zusammen mit Plattform, Fähigkeiten und Zustand (vor 0.12 gab es zwei Geräte, „(ADB)“ und „(Netzwerk)“).
 
 Getestet ist das mit einem Fire TV Cube (3. Generation). Andere Modelle können abweichen.
 
@@ -129,7 +135,7 @@ Am besten auf eine Dashboard-Seite, die nur Erwachsene sehen. Nur Administratore
 2. **Sperre jetzt prüfen:** zeigt, was die Sperre in diesem Moment ausschalten würde, ohne etwas zu tun.
 3. **Freigeben:** pausiert die Sperre für die gewählte Dauer.
 4. **Erlaubte Aktivitäten:** angehakt = darf laufen. Nicht erlaubte Aktivitäten zeigen in der Hauptkarte ein Schloss und lassen sich nicht starten. Werden sie anders gestartet (Original-Fernbedienung), schaltet die Integration sie nach 3 Sekunden aus.
-5. **Erlaubte Apps (Fire TV):** Der Startbildschirm ist standardmäßig erlaubt; ohne ihn lassen sich keine anderen Apps erlauben. Neu installierte Apps sind gesperrt. Apps, die einmal liefen, erscheinen automatisch in der Liste.
+5. **Erlaubte Apps (Gerät, das Apps meldet):** Seit 0.12 fragt die Sperre nach der Fähigkeit „liest die laufende App“ statt nach „Fire TV“; heute meldet sie nur der Fire TV, und der Abschnitt heißt nach dem Gerät.  Der Startbildschirm ist standardmäßig erlaubt; ohne ihn lassen sich keine anderen Apps erlauben. Neu installierte Apps sind gesperrt. Apps, die einmal liefen, erscheinen automatisch in der Liste.
 6. **Mit ausschalten:** Geräte, die beim Eingriff am Fire TV zusätzlich ausgehen (zum Beispiel Fernseher und Verstärker).
 7. **Eingriffe:** die letzten 100 Eingriffe, mit **Erlauben** direkt aus der Liste.
 8. **Debug: Paketnamen** (nur Administratoren): echter Paketname der laufenden App und aller Pakete, zum Kopieren.

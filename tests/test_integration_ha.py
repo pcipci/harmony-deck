@@ -406,7 +406,7 @@ async def test_direct_devices_overview_step_and_direct_volume(hass: HomeAssistan
     await client.send_json_auto_id({"type": "harmony_deck/direct/overview"})
     res = (await client.receive_json())["result"]
     assert [c["entity"] for c in res["candidates"]] == ["media_player.radio", "media_player.tv"]   # "dumb" can do nothing
-    assert res["extensions"] == []
+    assert res["extensions"] == ["androidtv"]
 
     await _with_actions(hass, [
         {"id": "d", "name": "Dev", "steps": [{"type": "dev", "device": "LG", "op": "source", "value": "HDMI 2"},

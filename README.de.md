@@ -86,7 +86,7 @@ Die Karten liefert die Integration selbst aus. Nichts muss nach `www` kopiert od
    ```
    Alle Hubs erscheinen als Reiter. Eine Aktivität antippen startet sie.
 2. In der Karte **ⓘ** antippen, dann **Einstellungen**, **Favoriten** oder **Aktionen**. Jeder Reiter beginnt mit einer kurzen Erklärung.
-3. Fire TV (optional): Einstellungen → **Fire TV** → den `media_player` der Android-TV-Integration und das zugehörige Harmony-Gerät wählen, dann **Verbindung testen**.
+3. Fire TV (optional): Einstellungen → **Netzwerksteuerung** → den `media_player` der Android-TV-Integration neben dem Fire TV wählen, das Zahnrad antippen, dann **Verbindung testen**.
 4. Sperre (optional): die Sicherheitskarte auf eine Seite nur für Erwachsene legen:
    ```yaml
    type: custom:harmony-deck-security
@@ -105,15 +105,16 @@ Die ausführliche Anleitung steht im [Handbuch](docs/HANDBUCH.md) (englisch: [Ma
 
 **Aktionen** sind eigene Tasten: ein Schritt („Kerzen umschalten“) oder eine Sequenz aus Harmony-Tasten, Pausen, Home-Assistant-Aktionen, „Warten bis“ und „Wenn“. Sie laufen in der Integration und werden auch bei geschlossener Seite fertig. Jede Aktion ist zusätzlich eine **Taste** (button-Entität) am Gerät des Hubs (Drücken = Start; abgelehnt, solange eine andere Aktion läuft), der Sensor **Aktionen** listet sie auf.
 
-**Netzwerksteuerung** verbindet ein Harmony-Gerät mit seinem Mediaplayer in Home Assistant. Die Tasten gehen weiter per Infrarot; der Player ergänzt, was Infrarot nicht kann: ist er wirklich an, welcher Eingang, welche Lautstärke genau. Steht ein Gerät nach dem Aktivitätsstart falsch, bietet ein Hinweis unter dem Status die Korrektur an. Jedes verbundene Gerät bekommt ein eigenes Gerät in Home Assistant („LG TV (Netzwerk)“) mit Plattform, Fähigkeiten und Zustand.
+**Netzwerksteuerung** verbindet ein Harmony-Gerät mit seinem Mediaplayer in Home Assistant. Die Tasten gehen weiter per Infrarot; der Player ergänzt, was Infrarot nicht kann: ist er wirklich an, welcher Eingang, welche Lautstärke genau. Steht ein Gerät nach dem Aktivitätsstart falsch, bietet ein Hinweis unter dem Status die Korrektur an. Jedes verbundene Gerät bekommt ein eigenes Gerät in Home Assistant („LG TV (Netzwerk)“) mit Plattform, Fähigkeiten und Zustand; ein verbundener Fire TV ist dasselbe Gerät und trägt den Sensor „ADB erreichbar“. Ein Zahnrad neben jedem Gerät öffnet seine Seite: was der Player kann als Zeilen mit Knöpfen (Ein/Aus, Lautstärke, Stumm, Quellen) oder beim Fire TV seine Apps, Texteingabe und Tasten.
 
 <p align="center">
-  <img src="docs/images/network.png" width="32%" alt="Netzwerksteuerung">
-  <img src="docs/images/mismatch.png" width="32%" alt="Soll und Ist">
-  <img src="docs/images/netstep.png" width="32%" alt="Schritt Netzwerk-Befehl">
+  <img src="docs/images/network.png" width="24%" alt="Netzwerksteuerung">
+  <img src="docs/images/mismatch.png" width="24%" alt="Soll und Ist">
+  <img src="docs/images/netstep.png" width="24%" alt="Schritt Netzwerk-Befehl">
+  <img src="docs/images/devicepage.png" width="24%" alt="Geräteseite">
 </p>
 
-Vorschläge sind bewusst vorsichtig: Ein Player wird nur vorgeschlagen, wenn Raum, Modell oder Geräteart passen, nie wegen des Herstellers allein; reine Abspielziele (AirPlay, DLNA, Musikserver) werden nicht angeboten. Vorschläge lassen sich für alle Geräte oder pro Gerät abschalten.
+Vorschläge sind bewusst vorsichtig: Ein Player wird nur vorgeschlagen, wenn Geräteart, Modell oder ein Namenswort passen, nie wegen des Herstellers oder des Raums allein; reine Abspielziele (AirPlay, DLNA, Musikserver) werden nicht angeboten. Vorschläge lassen sich für alle Geräte oder pro Gerät abschalten.
 
 ## Die Sperre
 

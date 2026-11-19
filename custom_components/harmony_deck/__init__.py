@@ -17,6 +17,7 @@ from .fireapps import FireApps
 from .lock import LockManager
 from .lockent import remove_legacy_entities
 from .lockws import async_register_lock_websocket
+from .directdev import link_fire_tvs
 from .const import CARD_FILE, CARD_URL, DOMAIN, SETTING_KEYS, STORAGE_KEY, STORAGE_VERSION, TRANSLATIONS_URL
 from .profiles import migrate
 from .actionws import async_register_action_api
@@ -35,6 +36,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     store: Store[dict] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
     domain_data["store"] = store
     stored = migrate(await store.async_load(), SETTING_KEYS)
+    glob = stored["global"]
+    if not glob.get("fireLinked"):
+        # 0.12: the Fire TV of a hub becomes a device of the network control (once; later the card keeps both in step).
+        if linked := link_fire_tvs(glob.get("direct"), glob.get("directDevices")):
+            glob["directDevices"] = linked
+        glob["fireLinked"] = True
     domain_data["settings"] = stored["global"]  # hardware related part (read by the coordinator)
     domain_data["profiles"] = stored["profiles"]
     domain_data["assign"] = stored["assign"]

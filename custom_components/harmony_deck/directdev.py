@@ -20,7 +20,7 @@ import math
 import re
 from typing import Any
 
-CAPS = ("state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read")
+CAPS = ("state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list")
 
 MAX_INPUTS = 20         # Harmony inputs mapped to sources, per device
 
@@ -54,7 +54,7 @@ def media_caps(state: str | None, attrs: dict[str, Any] | None) -> list[str]:
         "source_select": bool(feats & _SELECT_SOURCE),
         "source_read": isinstance(attrs.get("source"), str),
     }
-    return [c for c in CAPS if found[c]]
+    return [c for c in CAPS if found.get(c)]
 
 
 def snapshot(state: str | None, attrs: dict[str, Any] | None) -> dict[str, Any]:
@@ -158,7 +158,7 @@ def _score_parts(meta: dict[str, Any], cand: dict[str, Any], area: str | None = 
     shared = _words(meta.get("label")) & names
     if shared:
         parts["name"] = len(shared)
-        if shared - _words(meta.get("manufacturer")) - _words(cand.get("manufacturer")):
+        if shared - _words(meta.get("manufacturer")) - _words(cand.get("manufacturer")) - _words(area) - _words(cand.get("area")):
             parts["named"] = 0      # a shared word that is not the maker (e.g. the room in the name): evidence, no points
     return parts
 
@@ -177,27 +177,35 @@ def ranked(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | N
     return sorted(((match_score(meta, c, area), c["entity"]) for c in candidates), key=lambda x: -x[0])
 
 
-# Evidence a suggestion needs besides the maker: the same room, model or kind, or a shared name word that is not the maker.
-_EVIDENCE = ("room", "model", "named")
 
 
 def _evident(parts: dict[str, int]) -> bool:
-    return any(k in parts for k in _EVIDENCE) or parts.get("kind", 0) > 0
+    """Real evidence: the same model or kind, or a shared name word that is not the maker or the room.
+
+    The room alone is not enough (nearly everything in a living room is in the living room); it only adds points.
+    """
+    return "model" in parts or "named" in parts or parts.get("kind", 0) > 0
+
+
+def room_player(cand: dict[str, Any], area: str | None) -> bool:
+    """A player named only after a room ("Wohnzimmer", "Living room speaker" is not): stands for a room, not a device."""
+    name = _alnum(cand.get("name"))
+    return bool(name) and (name == _alnum(cand.get("area")) or (area is not None and name == _alnum(area)))
 
 
 def suggest(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | None = None) -> str | None:
     """Entity that fits a Harmony device clearly better than all others, else None (the user picks).
 
     The best one needs at least 3 points, real evidence (room, model or kind; a maker alone is not enough,
-    many makers build TVs, players and speakers), must be able to switch or pick a source (not only play),
-    and must be ahead of the second.
+    many makers build TVs, players and speakers; the room alone neither), must not be a player named only after the
+    room, must be able to switch or pick a source (not only play), and must be ahead of the second.
     """
     scored = sorted(((_score_parts(meta, c, area), c) for c in candidates), key=lambda x: -sum(x[0].values()))
     if not scored:
         return None
     parts, best = scored[0]
     top = sum(parts.values())
-    if top < 3 or not _evident(parts) or ("caps" in best and only_plays(best["caps"])):
+    if top < 3 or not _evident(parts) or room_player(best, area) or ("caps" in best and only_plays(best["caps"])):
         return None
     if len(scored) > 1 and sum(scored[1][0].values()) == top:
         return None
@@ -278,4 +286,46 @@ def quirks(platform: str | None, caps: list[str]) -> list[str]:
     out = list(PLATFORM_QUIRKS.get(platform or "", ()))
     if "state" in caps and "power_on" not in caps:
         out.append("no_power_on")
+    return out
+
+
+# Names in a source list that are inputs of the device, not channels or apps (for players whose source list is
+# mostly a channel list, e.g. LG Netcast: "HDMI1" among 65 satellite channels).
+_INPUT_NAME = re.compile(
+    r"^(?:input|eingang|вход)?\s*(?:hdmi|av|component|komponente|scart|rgb|pc|vga|dvi|usb|ext|optical|optisch|toslink|"
+    r"coax|koax|aux|line|tv|antenna|antenne|dtv|atv|sat|cable|kabel)(?:\s*[-_]?\s*\d{0,2})$",
+    re.IGNORECASE,
+)
+
+
+def input_like(name: Any) -> bool:
+    """True for a source name that looks like an input ("HDMI 1", "AV2", "Component", "Eingang HDMI2")."""
+    text = " ".join(str(name or "").replace("_", " ").split())
+    if text.casefold().startswith(("input ", "eingang ", "вход ")):
+        text = text.split(" ", 1)[1]
+    return bool(_INPUT_NAME.match(text))
+
+
+def usable_sources(platform: str | None, sources: list[str]) -> list[str]:
+    """Sources worth showing and comparing: all of them, but only the inputs where the list is a channel list."""
+    if "source_is_channel_list" in PLATFORM_QUIRKS.get(platform or "", ()):
+        return [s for s in sources if input_like(s)]
+    return list(sources)
+
+
+def link_fire_tvs(direct: Any, links: Any) -> dict[str, dict[str, dict[str, Any]]]:
+    """Network control links with the Fire TV of each hub added (0.12: the Fire TV is a linked device like any other).
+
+    Up to 0.11 the Fire TV was set up apart from the network control (settings "direct": {hub: {entity, device}}).
+    A hub whose Fire TV names its Harmony device gets that device linked to the Fire TV's player, unless the device
+    is linked already. Nothing else changes; the Fire TV settings themselves stay where they are.
+    """
+    out = clean_config(links)
+    for hub, cfg in (direct.items() if isinstance(direct, dict) else []):
+        if not isinstance(hub, str) or not isinstance(cfg, dict):
+            continue
+        entity, device = str(cfg.get("entity") or ""), cfg.get("device")
+        if not isinstance(device, str) or not device or not _ENTITY.match(entity):
+            continue
+        out.setdefault(hub, {}).setdefault(device[:120], {"entity": entity, "volumeDirect": False})
     return out

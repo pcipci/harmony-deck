@@ -138,6 +138,21 @@ class LockManager:
     def fire_entity(self, hub_id: str) -> str | None:
         return self._direct(hub_id).get("entity") or None
 
+    def app_device(self, hub_id: str) -> str | None:
+        """Harmony device whose apps the lock watches: the device of the network control that reports apps
+        (the Fire TV of the hub). None if the hub has no such device."""
+        from . import direct
+        from .netent import link_of_entity
+
+        entity = self.fire_entity(hub_id)
+        try:
+            if not entity or not {"app_read", "app_list"} & set(direct.caps(self.hass, entity)):
+                return None
+            link = link_of_entity(self.hass, entity)
+            return link[1] if link and link[0] == self.remote(hub_id) else None
+        except Exception:  # noqa: BLE001 - only a label for the card; registries may not be loaded yet
+            return None
+
     def allowed_apps(self, hub_id: str) -> list[str]:
         entry = self.hub(hub_id)
         if "apps" in entry:
@@ -165,6 +180,7 @@ class LockManager:
             "released_until": until.isoformat() if until else None,
             "activities": list(entry["activities"]),
             "apps": list(self.allowed_apps(hub_id)),
+            "app_device": self.app_device(hub_id),
             "off_devices": list(entry["off_devices"]),
             "seen": list(entry["seen"]),
             "schedule": list(entry["schedule"]),

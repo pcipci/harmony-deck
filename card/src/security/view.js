@@ -69,7 +69,7 @@ export const securityViewMixin = {
       ${this._testHtml(h, s, t)}
       ${this._releaseHtml(h, s, dis)}
       <details class="esec" data-open="acts" ${open("acts", true)}><summary class="etitle">${esc(s.acts)} · ${h.activities.filter((a) => h.all_activities.includes(a)).length}/${h.all_activities.length}</summary>${this._actsHtml(h, s, dis)}</details>
-      <details class="esec" data-open="apps" ${open("apps", true)}><summary class="etitle">${esc(s.apps)}</summary>${this._appsHtml(h, t, dis)}</details>
+      <details class="esec" data-open="apps" ${open("apps", true)}><summary class="etitle">${esc(s.apps)}${h.app_device ? ` · ${esc(h.app_device)}` : ""}</summary>${this._appsHtml(h, t, dis)}</details>
       ${admin ? `<details class="esec" data-open="dbg" ${open("dbg", false)}><summary class="etitle">${esc(s.dbg)}</summary>${this._debugHtml(h, s)}</details>` : ""}
       <details class="esec" data-open="offdev" ${open("offdev", false)}><summary class="etitle">${esc(s.offDev)} · ${(h.off_devices || []).length}</summary>${this._offDevHtml(h, s, dis)}</details>
       <details class="esec" data-open="schedule" ${open("schedule", h.mode === "schedule")}><summary class="etitle">${esc(s.schedule)} · ${h.schedule.length}</summary>${this._scheduleHtml(h, s, dis)}</details>

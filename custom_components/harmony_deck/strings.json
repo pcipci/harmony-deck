@@ -62,6 +62,22 @@
       },
       "differences": {
         "name": "Differences"
+      },
+      "actions": {
+        "name": "Actions"
+      },
+      "net_platform": {
+        "name": "Platform"
+      },
+      "net_capabilities": {
+        "name": "Capabilities"
+      },
+      "net_state": {
+        "name": "State",
+        "state": {
+          "on": "On",
+          "off": "Off"
+        }
       }
     },
     "switch": {
@@ -142,6 +158,11 @@
           "description": "Remote entity of the Harmony hub."
         }
       }
+    }
+  },
+  "device": {
+    "network_device": {
+      "name": "{name} (Network)"
     }
   }
 }

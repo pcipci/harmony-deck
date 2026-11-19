@@ -895,7 +895,7 @@
   "ifMessage": "Message",
   "ifMessagePh": "For example: TV is off",
   "ddLoading": "Loading …",
-  "ddHint": "Pick the matching media player for each device. A suggestion appears when maker or name clearly fit.",
+  "ddHint": "Pick the matching media player for each device. Pure playback targets (AirPlay, DLNA, music servers) are not listed.",
   "ddNoPlayers": "No suitable media players found.",
   "ddLink": "Talk to it via",
   "ddNone": "–",
@@ -959,5 +959,10 @@
     "source_is_channel_list": "The source list in Home Assistant is the channel list, not the HDMI inputs. The input check stays silent here.",
     "mute_toggle_only": "Mute can only be toggled. Harmony Deck checks the state first and switches only when needed.",
     "no_power_on": "Switching on is not set up in Home Assistant (for Netcast: the integration's \"turn on\" action). Switching off works."
-  }
+  },
+  "ddSuggestShow": "Show suggestions",
+  "ddSuggestShowHint": "Suggests a player per device when room, model or kind of device fit; the maker alone is not enough. Applies to all hubs.",
+  "ddNever": "Don't suggest again",
+  "ddNeverSet": "No more suggestions for this device.",
+  "ddAgain": "Suggest again"
 }

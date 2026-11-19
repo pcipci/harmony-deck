@@ -263,6 +263,7 @@ export const styleMixin = {
       .actrow > .actopen { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: none; background: none; color: inherit; font: inherit; text-align: left; padding: 4px 0; cursor: pointer; } .actrow .chev { color: var(--hr-muted); }
       .actrow.ask { padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--hr-danger, #e55) 14%, transparent); } .key.warn { background: var(--hr-danger, #e55); color: #fff; }
       .actformhead { display: flex; align-items: center; gap: 8px; } .actformhead .etitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ddbtns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
       .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
       .steplist { display: flex; flex-direction: column; gap: 6px; }
       .step { border-radius: 12px; background: var(--hr-tile-bg); overflow: hidden; }
@@ -514,6 +515,12 @@ export const styleMixin = {
       @container (max-width: 619px) { .devlist { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tile.dev { min-height: 72px; padding: 8px 4px; } .tile.dev span { font-size: 0.78em; } .tile.dev ha-icon { --mdc-icon-size: 24px; } }
       @container (min-width: 620px) { .devlist { grid-template-columns: repeat(4, minmax(0, 1fr)); } .devremote .panel { max-width: 460px; margin: 0 auto; } }
       .empty { margin: 0; color: var(--hr-muted); }
+      /* 0.11 readability: text at least 12 px, tap targets at least 40 px in the editor (display review) */
+      .etitle { font-size: max(12px, 0.72em); } .raw pre { font-size: max(12px, 0.72em); }
+      .mini.txt { font-size: max(12px, 0.85em); min-height: 40px; padding: 4px 14px; }
+      .ddrow .esub { display: flex; align-items: center; gap: 6px; } .ddquirk { margin-top: 4px; } .ddcaps { margin-top: 6px; }
+      .etabs button, .iconbtn, .copyraw, .devhead .actlink { min-height: 40px; }
+      .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
     </style>`;

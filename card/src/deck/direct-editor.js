@@ -38,6 +38,23 @@ export const directEditorMixin = {
     this._ddLoad(true);
   },
 
+  // Suggestions: on for all unless switched off; single devices can be left out ({off, never: {hub: [device]}}).
+  _ddSuggest() { const s = this._settings().directSuggest || {}; return { off: s.off === true, never: { ...(s.never || {}) } }; },
+
+  async _ddSuggestSave(patch) {
+    await this._saveSettings({ directSuggest: { ...this._ddSuggest(), ...patch } });
+    this._ddLoad(true);
+  },
+
+  _ddNever(hubId, device, never) {
+    const cur = this._ddSuggest().never;
+    const list = new Set(cur[hubId] || []);
+    if (never) list.add(device); else list.delete(device);
+    cur[hubId] = [...list];
+    if (!cur[hubId].length) delete cur[hubId];
+    return this._ddSuggestSave({ never: cur });
+  },
+
   _ddStateText(st, t) {
     if (!st) return "";
     const on = st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown;
@@ -61,7 +78,12 @@ export const directEditorMixin = {
       const option = (id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name(id))} · ${esc(id)}</option>`;
       const rest = ids.filter((id) => !fits.includes(id));
       const opts = `<option value="">${t.ddNone}</option>${fits.length ? `<optgroup label="${esc(t.ddFits)}">${fits.map(option).join("")}</optgroup><optgroup label="${esc(t.ddOthers)}">${rest.map(option).join("")}</optgroup>` : rest.map(option).join("")}`;
-      const suggest = !cur && item.suggest ? `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name(item.suggest))])}</span> <button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button></div>` : "";
+      let suggest = "";
+      if (!cur && item.suggest) {
+        suggest = `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name(item.suggest))])}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button><button type="button" class="mini txt" data-ddnever data-dev="${esc(d)}">${t.ddNever}</button></span></div>`;
+      } else if (!cur && item.noSuggest && !this._dd.suggestOff) {
+        suggest = `<div class="ehint ddsug"><span>${t.ddNeverSet}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddagain data-dev="${esc(d)}">${t.ddAgain}</button></span></div>`;
+      }
       let detail = "";
       if (cur) {
         const caps = item.caps || [];
@@ -77,7 +99,8 @@ export const directEditorMixin = {
       return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
         <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;
     });
-    return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
+    const sugSw = this._swRow(t.ddSuggestShow, "data-ddsugon", !this._ddSuggest().off) + `<div class="ehint">${t.ddSuggestShowHint}</div>`;
+    return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${sugSw}${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
   },
 
   // Which source of the player belongs to each Harmony input the activities use on this device.
@@ -96,6 +119,9 @@ export const directEditorMixin = {
   _bindDirectDev(root) {
     root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
     root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
+    root.querySelectorAll("[data-ddnever]").forEach((b) => b.addEventListener("click", () => this._ddNever(b.closest("[data-hub]").dataset.hub, b.dataset.dev, true)));
+    root.querySelectorAll("[data-ddagain]").forEach((b) => b.addEventListener("click", () => this._ddNever(b.closest("[data-hub]").dataset.hub, b.dataset.dev, false)));
+    root.querySelectorAll("input[data-ddsugon]").forEach((i) => i.addEventListener("change", () => this._ddSuggestSave({ off: !i.checked })));
     root.querySelectorAll("select[data-ddinput]").forEach((s) => s.addEventListener("change", () => {
       const hub = s.closest("[data-hub]").dataset.hub;
       const inputs = { ...(this._ddLinks()[hub]?.[s.dataset.dev]?.inputs || {}) };

@@ -88,6 +88,10 @@ Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei ge
 
 **Lautstärke und Soundbar (0.9):** Die Lautstärke-Tasten der Karte gehen immer dorthin, wohin der Hub sie in der aktuellen Aktivität schickt (zum Beispiel an die Soundbar). Das ändert die Verbindung des Fernsehers nicht. Ein Netzwerk-Befehl für den Fernseher wirkt nur auf den Fernseher. Schickt eine Aktivität die Lautstärke über ein anderes Gerät, sagt das ein Hinweis unter der Lautstärke-Einstellung im Schritt und im Reiter.
 
+**Vorschläge (0.11):** Ein Player wird nur mit echtem Anhaltspunkt vorgeschlagen: gleicher Raum wie der Hub, gleiches Modell, gleiche Geräteart oder ein gemeinsames Namenswort, das nicht der Hersteller ist. Der Hersteller allein reicht nie, und ein Player, der weder schalten noch eine Quelle wählen kann, wird nicht vorgeschlagen. Reine Abspielziele (AirPlay, DLNA-Renderer, Musikserver wie Music Assistant) stehen gar nicht in der Liste. „Vorschläge anzeigen“ oben im Reiter schaltet sie für alle Hubs ab; „Nicht mehr vorschlagen“ neben einem Vorschlag schaltet sie für dieses Gerät ab („Wieder vorschlagen“ nimmt das zurück).
+
+**In Home Assistant (0.11):** Jedes verbundene Gerät bekommt ein eigenes Gerät „Name (Netzwerk)“, neben den „(ADB)“-Geräten der Fire TVs, mit den Diagnose-Sensoren **Plattform** (zum Beispiel `lg_netcast`, Eigenheiten als Attribut), **Fähigkeiten** (in Worten, Codes als Attribut) und **Zustand** (an/aus; Lautstärke, Stumm und Quelle als Attribute). Es entsteht beim Verbinden und verschwindet beim Trennen. Jede gespeicherte Aktion ist eine **Taste** am Gerät des Hubs: Drücken startet die Aktion wie ein Tipp in der Karte; läuft auf dem Hub schon eine andere Aktion, wird das Drücken mit einer Meldung abgelehnt. Die Tasten folgen den Aktionen (neue Aktion = neue Taste, gelöschte Aktion = Taste weg, Umbenennen behält die Entität).
+
 Aktionen aus 0.4 werden von selbst zu einem Schritt. Aktionen gelten für alle Profile.
 
 ## 8. Fire TV
@@ -134,7 +138,7 @@ Die Sperre ist eine Hilfe im Haushalt, kein Sicherheitsprodukt.
 
 ## 12. Entitäten
 
-Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Sequenz (Zustand und Fortschritt der Aktionen), Freigegeben bis, Letzter Eingriff, Eingriffe heute, Eingriff (Ereignis: wird bei jedem Eingriff der Sperre mit `what` ausgelöst, damit eine Automation dich benachrichtigen kann), Hub-Konfiguration lesbar, Aktivitäten, Geräte. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
+Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Sequenz (Zustand und Fortschritt der Aktionen), Freigegeben bis, Letzter Eingriff, Eingriffe heute, Eingriff (Ereignis: wird bei jedem Eingriff der Sperre mit `what` ausgelöst, damit eine Automation dich benachrichtigen kann), Hub-Konfiguration lesbar, Aktivitäten und Geräte (die Namen als kurze Liste, „Bluray, Games und 4 weitere“; Anzahl und vollständige Liste als Attribute), Aktionen (dasselbe für die gespeicherten Aktionen, mit ID, Schritten und Taste pro Aktion), Abweichungen und eine Taste pro Aktion. Pro verbundenem Netzwerkgerät: ein Gerät „Name (Netzwerk)“ mit Plattform, Fähigkeiten und Zustand. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
 
 ## 13. Fehlerbehebung
 

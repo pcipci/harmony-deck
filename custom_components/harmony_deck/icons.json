@@ -56,6 +56,22 @@
       },
       "differences": {
         "default": "mdi:alert-circle-check-outline"
+      },
+      "actions": {
+        "default": "mdi:gesture-tap-button"
+      },
+      "net_platform": {
+        "default": "mdi:puzzle-outline"
+      },
+      "net_capabilities": {
+        "default": "mdi:format-list-checks"
+      },
+      "net_state": {
+        "default": "mdi:power-plug-outline",
+        "state": {
+          "on": "mdi:power-plug",
+          "off": "mdi:power-plug-off-outline"
+        }
       }
     },
     "switch": {

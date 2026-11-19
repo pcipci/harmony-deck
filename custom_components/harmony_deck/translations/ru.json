@@ -62,6 +62,22 @@
       },
       "differences": {
         "name": "Расхождения"
+      },
+      "actions": {
+        "name": "Действия"
+      },
+      "net_platform": {
+        "name": "Платформа"
+      },
+      "net_capabilities": {
+        "name": "Возможности"
+      },
+      "net_state": {
+        "name": "Состояние",
+        "state": {
+          "on": "Вкл.",
+          "off": "Выкл."
+        }
       }
     },
     "switch": {
@@ -142,6 +158,11 @@
           "description": "Объект remote хаба Harmony."
         }
       }
+    }
+  },
+  "device": {
+    "network_device": {
+      "name": "{name} (Сеть)"
     }
   }
 }

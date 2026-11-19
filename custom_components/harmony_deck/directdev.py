@@ -140,27 +140,36 @@ def kind_of(*texts: Any) -> str | None:
     return found.pop() if len(found) == 1 else None
 
 
+def _score_parts(meta: dict[str, Any], cand: dict[str, Any], area: str | None = None) -> dict[str, int]:
+    """Points of a candidate for a Harmony device, by reason (room, kind, maker, model, name)."""
+    parts: dict[str, int] = {}
+    if area and cand.get("area") and _alnum(area) == _alnum(cand["area"]):
+        parts["room"] = 3
+    mine, theirs = kind_of(meta.get("type"), meta.get("label")), kind_of(cand.get("kind"))
+    if mine and theirs:
+        parts["kind"] = 2 if mine == theirs else -6
+    maker_a, maker_b = _alnum(meta.get("manufacturer")), _alnum(cand.get("manufacturer"))
+    if maker_a and maker_b and (maker_a in maker_b or maker_b in maker_a):
+        parts["maker"] = 2
+    model_a, model_b = _alnum(meta.get("model")), _alnum(cand.get("model"))
+    if len(model_a) >= 3 and len(model_b) >= 3 and (model_a in model_b or model_b in model_a):
+        parts["model"] = 3
+    names = _words(cand.get("name")) | _words(str(cand.get("entity", "")).split(".", 1)[-1].replace("_", " "))
+    shared = _words(meta.get("label")) & names
+    if shared:
+        parts["name"] = len(shared)
+        if shared - _words(meta.get("manufacturer")) - _words(cand.get("manufacturer")):
+            parts["named"] = 0      # a shared word that is not the maker (e.g. the room in the name): evidence, no points
+    return parts
+
+
 def match_score(meta: dict[str, Any], cand: dict[str, Any], area: str | None = None) -> int:
     """How well an entity fits a Harmony device.
 
     Same room as the hub 3, same model 3, same maker 2, same kind (TV, receiver, speaker) 2, every shared name word 1;
     a different kind costs 6, so a Blu-ray player of the same maker does not win over the TV.
     """
-    score = 0
-    if area and cand.get("area") and _alnum(area) == _alnum(cand["area"]):
-        score += 3
-    mine, theirs = kind_of(meta.get("type"), meta.get("label")), kind_of(cand.get("kind"))
-    if mine and theirs:
-        score += 2 if mine == theirs else -6
-    maker_a, maker_b = _alnum(meta.get("manufacturer")), _alnum(cand.get("manufacturer"))
-    if maker_a and maker_b and (maker_a in maker_b or maker_b in maker_a):
-        score += 2
-    model_a, model_b = _alnum(meta.get("model")), _alnum(cand.get("model"))
-    if len(model_a) >= 3 and len(model_b) >= 3 and (model_a in model_b or model_b in model_a):
-        score += 3
-    names = _words(cand.get("name")) | _words(str(cand.get("entity", "")).split(".", 1)[-1].replace("_", " "))
-    score += len(_words(meta.get("label")) & names)
-    return score
+    return sum(_score_parts(meta, cand, area).values())
 
 
 def ranked(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | None = None) -> list[tuple[int, str]]:
@@ -168,14 +177,62 @@ def ranked(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | N
     return sorted(((match_score(meta, c, area), c["entity"]) for c in candidates), key=lambda x: -x[0])
 
 
+# Evidence a suggestion needs besides the maker: the same room, model or kind, or a shared name word that is not the maker.
+_EVIDENCE = ("room", "model", "named")
+
+
+def _evident(parts: dict[str, int]) -> bool:
+    return any(k in parts for k in _EVIDENCE) or parts.get("kind", 0) > 0
+
+
 def suggest(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | None = None) -> str | None:
-    """Entity that fits a Harmony device clearly better than all others, else None (the user picks)."""
-    scored = ranked(meta, candidates, area)
-    if not scored or scored[0][0] < 2:
+    """Entity that fits a Harmony device clearly better than all others, else None (the user picks).
+
+    The best one needs at least 3 points, real evidence (room, model or kind; a maker alone is not enough,
+    many makers build TVs, players and speakers), must be able to switch or pick a source (not only play),
+    and must be ahead of the second.
+    """
+    scored = sorted(((_score_parts(meta, c, area), c) for c in candidates), key=lambda x: -sum(x[0].values()))
+    if not scored:
         return None
-    if len(scored) > 1 and scored[1][0] == scored[0][0]:
+    parts, best = scored[0]
+    top = sum(parts.values())
+    if top < 3 or not _evident(parts) or ("caps" in best and only_plays(best["caps"])):
         return None
-    return scored[0][1]
+    if len(scored) > 1 and sum(scored[1][0].values()) == top:
+        return None
+    return best["entity"]
+
+
+# Integrations whose players only play something (AirPlay, DLNA, multiroom audio): never a Harmony device's player.
+PLAYBACK_PLATFORMS = frozenset({"airplay", "dlna_dmr", "music_assistant", "mass", "snapcast", "squeezebox", "slimproto",
+                                "forked_daapd", "mpd", "vlc", "vlc_telnet", "spotify", "plex", "jellyfin", "emby"})
+_PLAYBACK_WORDS = {"airplay", "dlna", "upnp", "spotify", "snapcast"}
+
+
+def playback_target(platform: str | None, name: Any = None, entity: Any = None) -> bool:
+    """True for a player that only plays something (an AirPlay or DLNA target, a music server), by integration or name."""
+    if (platform or "") in PLAYBACK_PLATFORMS:
+        return True
+    words = _words(name) | _words(str(entity or "").split(".", 1)[-1].replace("_", " "))
+    return bool(words & _PLAYBACK_WORDS)
+
+
+def only_plays(caps: list[str]) -> bool:
+    """Neither switches nor picks a source: such a player is not suggested (it may still be picked by hand)."""
+    return not {"power_on", "power_off", "source_select"} & set(caps)
+
+
+def clean_suggest(raw: Any) -> dict[str, Any]:
+    """Setting "directSuggest": {"off": bool, "never": {hub: [device label, ...]}} (suggestions on unless "off")."""
+    raw = raw if isinstance(raw, dict) else {}
+    never: dict[str, list[str]] = {}
+    for hub, labels in (raw.get("never") or {}).items() if isinstance(raw.get("never"), dict) else []:
+        if isinstance(hub, str) and isinstance(labels, list):
+            kept = sorted({l[:120] for l in labels if isinstance(l, str) and l})[:200]
+            if kept:
+                never[hub] = kept
+    return {"off": raw.get("off") is True, "never": never}
 
 
 def clean_op(op: Any, value: Any) -> tuple[str, Any] | None:

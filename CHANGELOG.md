@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.11.0
+
+### Changed
+- **Stricter suggestions in Network control.** A media player is suggested only with real evidence: same room as the hub, same model, same kind of device, or a shared name word that is not the maker. The maker alone is no longer enough (an LG Blu-ray player no longer gets an LG AirPlay target suggested), and players that can neither switch nor pick a source are not suggested.
+- **Pure playback targets are hidden** from the player list: AirPlay, DLNA renderers and music servers (by integration, for example `dlna_dmr`, `music_assistant`, `snapcast`, `squeezebox`, or "AirPlay"/"DLNA" in the name).
+- **Hub sensors "Activities" and "Devices" show names** instead of a number: a short list ("Bluray, Games and 4 more", in Home Assistant's language); the number and the full list are attributes (`count`, `names`). Same entities as before. If an automation compared their number, use the attribute `count`.
+- **Display review:** in the card editor all texts are at least 12 px and tabs, buttons and small text buttons at least 40 px high; spacing in the Network control tab tidied up.
+
+### Added
+- **Suggestions can be switched off:** "Show suggestions" (all hubs) and "Don't suggest again" per device, with "Suggest again".
+- **A Home Assistant device per linked network device**, "Name (Network)", like the "(ADB)" devices of the Fire TVs, with the diagnostic sensors **Platform**, **Capabilities** and **State**. Added and removed with the link.
+- **A button per action** on the hub's device: pressing it starts the action like a tap on the card, refused while another action runs. The buttons follow the stored actions.
+- **Sensor "Actions" per hub:** the names of the stored actions as a short list; id, name, number of steps and button per action as attributes.
+- README: sections on actions and network control with three new screenshots, new rows in the comparison table (catch-up for 0.5 to 0.10).
+
+### Notes
+- Not yet tested on real hardware: the new devices, buttons and the suggestion rules were checked with tests and a simulated Home Assistant.
+
 ## 0.10.0
 
 ### Added

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.10.0";
+  var VERSION = "0.11.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2046,6 +2046,24 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       await this._saveSettings({ directDevices: all });
       this._ddLoad(true);
     },
+    // Suggestions: on for all unless switched off; single devices can be left out ({off, never: {hub: [device]}}).
+    _ddSuggest() {
+      const s = this._settings().directSuggest || {};
+      return { off: s.off === true, never: { ...s.never || {} } };
+    },
+    async _ddSuggestSave(patch) {
+      await this._saveSettings({ directSuggest: { ...this._ddSuggest(), ...patch } });
+      this._ddLoad(true);
+    },
+    _ddNever(hubId, device, never) {
+      const cur = this._ddSuggest().never;
+      const list = new Set(cur[hubId] || []);
+      if (never) list.add(device);
+      else list.delete(device);
+      cur[hubId] = [...list];
+      if (!cur[hubId].length) delete cur[hubId];
+      return this._ddSuggestSave({ never: cur });
+    },
     _ddStateText(st, t) {
       if (!st) return "";
       const on = st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown;
@@ -2070,7 +2088,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const option = (id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name2(id))} · ${esc(id)}</option>`;
         const rest = ids.filter((id) => !fits.includes(id));
         const opts = `<option value="">${t.ddNone}</option>${fits.length ? `<optgroup label="${esc(t.ddFits)}">${fits.map(option).join("")}</optgroup><optgroup label="${esc(t.ddOthers)}">${rest.map(option).join("")}</optgroup>` : rest.map(option).join("")}`;
-        const suggest = !cur && item.suggest ? `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name2(item.suggest))])}</span> <button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button></div>` : "";
+        let suggest = "";
+        if (!cur && item.suggest) {
+          suggest = `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name2(item.suggest))])}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button><button type="button" class="mini txt" data-ddnever data-dev="${esc(d)}">${t.ddNever}</button></span></div>`;
+        } else if (!cur && item.noSuggest && !this._dd.suggestOff) {
+          suggest = `<div class="ehint ddsug"><span>${t.ddNeverSet}</span> <span class="ddbtns"><button type="button" class="mini txt" data-ddagain data-dev="${esc(d)}">${t.ddAgain}</button></span></div>`;
+        }
         let detail = "";
         if (cur) {
           const caps = item.caps || [];
@@ -2084,7 +2107,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         return `<div class="egrp ddrow" data-hub="${esc(h.id)}"><div class="esub"><ha-icon icon="${this._deviceIcon(d, h.id)}"></ha-icon> ${esc(d)}</div>
         <label class="erow"><span>${t.ddLink}</span><select data-ddent data-dev="${esc(d)}">${opts}</select></label>${suggest}${detail}</div>`;
       });
-      return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
+      const sugSw = this._swRow(t.ddSuggestShow, "data-ddsugon", !this._ddSuggest().off) + `<div class="ehint">${t.ddSuggestShowHint}</div>`;
+      return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}"><div class="etitle">${t.tabs.dd}</div><div class="ehint">${t.ddHint}</div>${sugSw}${cands.length ? "" : `<div class="ehint">${t.ddNoPlayers}</div>`}${rows.join("")}</div>`;
     },
     // Which source of the player belongs to each Harmony input the activities use on this device.
     _ddInputsHtml(item, link, sourcesOf, device, t) {
@@ -2101,6 +2125,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindDirectDev(root) {
       root.querySelectorAll("select[data-ddent]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, s.value ? { entity: s.value, volumeDirect: false } : null)));
       root.querySelectorAll("[data-ddtake]").forEach((b) => b.addEventListener("click", () => this._ddSave(b.closest("[data-hub]").dataset.hub, b.dataset.dev, { entity: b.dataset.ddtake, volumeDirect: false })));
+      root.querySelectorAll("[data-ddnever]").forEach((b) => b.addEventListener("click", () => this._ddNever(b.closest("[data-hub]").dataset.hub, b.dataset.dev, true)));
+      root.querySelectorAll("[data-ddagain]").forEach((b) => b.addEventListener("click", () => this._ddNever(b.closest("[data-hub]").dataset.hub, b.dataset.dev, false)));
+      root.querySelectorAll("input[data-ddsugon]").forEach((i) => i.addEventListener("change", () => this._ddSuggestSave({ off: !i.checked })));
       root.querySelectorAll("select[data-ddinput]").forEach((s) => s.addEventListener("change", () => {
         const hub = s.closest("[data-hub]").dataset.hub;
         const inputs = { ...this._ddLinks()[hub]?.[s.dataset.dev]?.inputs || {} };
@@ -4921,6 +4948,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .actrow > .actopen { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: none; background: none; color: inherit; font: inherit; text-align: left; padding: 4px 0; cursor: pointer; } .actrow .chev { color: var(--hr-muted); }
       .actrow.ask { padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--hr-danger, #e55) 14%, transparent); } .key.warn { background: var(--hr-danger, #e55); color: #fff; }
       .actformhead { display: flex; align-items: center; gap: 8px; } .actformhead .etitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ddbtns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
       .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
       .steplist { display: flex; flex-direction: column; gap: 6px; }
       .step { border-radius: 12px; background: var(--hr-tile-bg); overflow: hidden; }
@@ -5172,6 +5200,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @container (max-width: 619px) { .devlist { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tile.dev { min-height: 72px; padding: 8px 4px; } .tile.dev span { font-size: 0.78em; } .tile.dev ha-icon { --mdc-icon-size: 24px; } }
       @container (min-width: 620px) { .devlist { grid-template-columns: repeat(4, minmax(0, 1fr)); } .devremote .panel { max-width: 460px; margin: 0 auto; } }
       .empty { margin: 0; color: var(--hr-muted); }
+      /* 0.11 readability: text at least 12 px, tap targets at least 40 px in the editor (display review) */
+      .etitle { font-size: max(12px, 0.72em); } .raw pre { font-size: max(12px, 0.72em); }
+      .mini.txt { font-size: max(12px, 0.85em); min-height: 40px; padding: 4px 14px; }
+      .ddrow .esub { display: flex; align-items: center; gap: 6px; } .ddquirk { margin-top: 4px; } .ddcaps { margin-top: 6px; }
+      .etabs button, .iconbtn, .copyraw, .devhead .actlink { min-height: 40px; }
+      .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
     </style>`;

@@ -22,6 +22,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 - **A real parental lock.** Per hub: allowed activities and Fire TV apps, schedules, timed release and a list of interventions. The integration enforces it in the background, also when no dashboard is open.
 - **Help when an activity does not start right.** The life ring shows the devices the activity needs and their inputs, with one tap per device to fix it, and leads to the remote of each device.
 - **Several rooms.** Every hub is a tab with its state at a glance.
+- **Network control on top of infrared.** Link a Harmony device to its Home Assistant media player: Harmony Deck reads whether it is really on and on the right input, sets an exact volume, and offers a one-tap fix when an activity did not start right.
 
 ## Features
 
@@ -31,12 +32,13 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Remote** | Volume, D‑pad, channel, transport, colour keys, number pad, each sent to the right device of the activity |
 | **Devices** | One remote per device, keys grouped (inputs, sound, menus …), keyboard for PC/Mac devices |
 | **Favourites** | Per device and per activity; keys you never use can be hidden per device |
-| **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with conditions (wait until, if), values (brightness, colour, volume, source …), volume for infrared devices, network control (state, volume level and source of a linked media player), step list, progress and stop, favorites per action, as a button or a tile; also for automations |
+| **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with conditions (wait until, if), values (brightness, colour, volume, source …), volume for infrared devices, network commands, step list, progress and stop, favorites per action, as a button or a tile; every action is also a Home Assistant button |
+| **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
 | **Looks** | 11 skins, tile and key styles, coloured icons, light and dark |
 | **Profiles** | Different settings for different people or tablets |
-| **Entities** | Status, repair hints, diagnostics and lock entities for automations |
+| **Entities** | Activities, devices and actions of each hub as lists, a button per action, a device per linked network device, differences per hub, lock entities, repair hints and diagnostics |
 | **Languages** | English, German, Russian; more as one JSON file |
 
 ## Compared with other cards
@@ -48,8 +50,11 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | Harmony and Fire TV in one remote | yes | no | no | Fire TV only |
 | Parental lock enforced by the integration | yes | no | no | no |
 | Several hubs as tabs | yes | rarely | no | no |
+| Sequences (keys, pauses, HA actions, conditions) in a visual editor | yes | no | single actions, longer flows via scripts | no |
+| Checks that devices are on and on the right input, with a fix | yes (linked media players) | no | no | no |
+| Home Assistant entities: a button per action, lists per hub | yes | no | no | no |
 
-The Universal Remote Card supports many more platforms and is very flexible; HA‑Firemote has more Fire TV looks. Harmony Deck focuses on Harmony households and does the setup for you.
+The Universal Remote Card supports many more platforms and is very flexible; HA‑Firemote has more Fire TV looks. Harmony Deck focuses on Harmony households and does the setup for you. (Compared with the public READMEs of these projects, November 2026.)
 
 ## Requirements and compatibility
 
@@ -95,6 +100,20 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/firetv.png" width="32%" alt="Fire TV">
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
+
+## Actions and network control
+
+**Actions** are your own buttons: one step ("toggle the candles") or a sequence of Harmony keys, pauses, Home Assistant actions, "wait until" and "if". They run in the integration, so they finish when the page is closed. Every action is also a **button entity** on the hub's device (press = start; refused while another action runs), and the sensor **Actions** lists them.
+
+**Network control** links a Harmony device to its Home Assistant media player. The keys keep going over infrared; the player adds what infrared cannot: is it really on, which input, the exact volume. When an activity left a device in the wrong state, a box under the status offers the fix. Each linked device gets its own device in Home Assistant ("LG TV (Network)") with platform, capabilities and state.
+
+<p align="center">
+  <img src="docs/images/network.png" width="32%" alt="Network control">
+  <img src="docs/images/mismatch.png" width="32%" alt="Target against actual state">
+  <img src="docs/images/netstep.png" width="32%" alt="Network command step">
+</p>
+
+Suggestions in the tab are deliberately careful: a player is only suggested when room, model or kind of device fit, never for the maker alone, and pure playback targets (AirPlay, DLNA, music servers) are not offered. Suggestions can be switched off for all devices or per device.
 
 ## The lock
 

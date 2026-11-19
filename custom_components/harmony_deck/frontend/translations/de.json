@@ -895,7 +895,7 @@
   "ifMessage": "Meldung",
   "ifMessagePh": "Zum Beispiel: Fernseher ist aus",
   "ddLoading": "Lade …",
-  "ddHint": "Wähle zu jedem Gerät den passenden Mediaplayer. Ein Vorschlag erscheint, wenn Hersteller oder Name eindeutig passen.",
+  "ddHint": "Wähle zu jedem Gerät den passenden Mediaplayer. Reine Abspielziele (AirPlay, DLNA, Musikserver) stehen nicht in der Liste.",
   "ddNoPlayers": "Keine passenden Mediaplayer gefunden.",
   "ddLink": "Direkt über",
   "ddNone": "–",
@@ -959,5 +959,10 @@
     "source_is_channel_list": "Die Quellenliste in Home Assistant ist die Senderliste, keine HDMI-Eingänge. Der Eingangsvergleich bleibt hier stumm.",
     "mute_toggle_only": "Stumm kann nur umgeschaltet werden. Harmony Deck prüft vorher den Zustand und schaltet nur, wenn nötig.",
     "no_power_on": "Einschalten ist in Home Assistant nicht eingerichtet (bei Netcast: Aktion „Einschalten“ der Integration). Ausschalten geht."
-  }
+  },
+  "ddSuggestShow": "Vorschläge anzeigen",
+  "ddSuggestShowHint": "Schlägt pro Gerät einen Player vor, wenn Raum, Modell oder Geräteart passen; der Hersteller allein reicht nicht. Gilt für alle Hubs.",
+  "ddNever": "Nicht mehr vorschlagen",
+  "ddNeverSet": "Für dieses Gerät gibt es keine Vorschläge mehr.",
+  "ddAgain": "Wieder vorschlagen"
 }

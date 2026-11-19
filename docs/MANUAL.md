@@ -88,6 +88,10 @@ The integration carries out the steps, so a sequence also finishes when the page
 
 **Volume and the soundbar (0.9):** the volume keys of the card always go where the hub sends them in the current activity (for example to the soundbar); linking the TV changes nothing there. A network command for the TV only affects the TV. If an activity sends the volume through another device, the step and the tab say so in a note under the volume setting.
 
+**Suggestions (0.11):** a player is suggested only with real evidence: the same room as the hub, the same model, the same kind of device, or a shared name word that is not the maker. The maker alone is never enough, and a player that can neither switch nor pick a source is not suggested. Pure playback targets (AirPlay, DLNA renderers, music servers such as Music Assistant) are not in the list at all. "Show suggestions" at the top of the tab switches them off for all hubs; "Don't suggest again" next to a suggestion switches them off for that device ("Suggest again" undoes it).
+
+**In Home Assistant (0.11):** every linked device gets its own device "Name (Network)", next to the "(ADB)" devices of the Fire TVs, with the diagnostic sensors **Platform** (for example `lg_netcast`, peculiarities as attribute), **Capabilities** (in words, codes as attribute) and **State** (on/off; volume, mute and source as attributes). It appears when you link the device and is removed when you unlink it. Every stored action is a **button** on the hub's device: pressing it starts the action like a tap on the card; while another action runs on the hub the press is refused with a message. The buttons follow the actions (a new action adds one, a deleted one removes it, renaming keeps the entity).
+
 Actions of 0.4 are converted to a single step by themselves. Actions are the same for all profiles.
 
 ## 8. Fire TV
@@ -134,7 +138,7 @@ The lock is a household aid, not a security product.
 
 ## 12. Entities
 
-Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Sequence (state and progress of the actions), Released until, Last intervention, Interventions today, Intervention (event: fires with `what` each time the lock switches something off, so an automation can notify you), Hub configuration readable, Activities, Devices. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
+Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Sequence (state and progress of the actions), Released until, Last intervention, Interventions today, Intervention (event: fires with `what` each time the lock switches something off, so an automation can notify you), Hub configuration readable, Activities and Devices (the names as a short list, "Bluray, Games and 4 more"; the number and the full list as attributes), Actions (the same for the stored actions, with id, steps and button per action), Differences, and one button per action. Per linked network device: a device "Name (Network)" with Platform, Capabilities and State. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
 
 ## 13. Troubleshooting
 

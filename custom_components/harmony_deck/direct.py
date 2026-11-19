@@ -101,23 +101,33 @@ def summary(hass: HomeAssistant) -> list[dict[str, Any]]:
             plat = platform(hass, entity)
             snap = snapshot(hass, entity)
             out.append({"hub": hub, "device": device, "entity": entity, "platform": plat, "capabilities": found,
-                        "on": snap.get("on"), "volume": snap.get("volume"), "source": snap.get("source"),
-                        "quirks": directdev.quirks(plat, found)})
+                        "on": snap.get("on"), "volume": snap.get("volume"), "muted": snap.get("muted"),
+                        "source": snap.get("source"), "quirks": directdev.quirks(plat, found)})
     return out
 
 
+def suggest_settings(hass: HomeAssistant) -> dict[str, Any]:
+    return directdev.clean_suggest(((hass.data.get(DOMAIN) or {}).get("settings") or {}).get("directSuggest"))
+
+
 def candidates(hass: HomeAssistant) -> list[dict[str, Any]]:
-    """All media players that can do something useful, with maker and model from the device registry."""
+    """All media players that can do something useful, with maker and model from the device registry.
+
+    Pure playback targets (AirPlay, DLNA, music servers) are left out: they never stand for a Harmony device.
+    """
     ents, devs, areas = er.async_get(hass), dr.async_get(hass), ar.async_get(hass)
     out = []
     for state in hass.states.async_all("media_player"):
         found = caps(hass, state.entity_id)
         if not set(found) - {"state"}:
             continue
-        item: dict[str, Any] = {"entity": state.entity_id, "name": state.attributes.get("friendly_name") or state.entity_id, "caps": found}
+        name = state.attributes.get("friendly_name") or state.entity_id
+        entry = ents.async_get(state.entity_id)
+        if directdev.playback_target(entry.platform if entry else None, name, state.entity_id):
+            continue
+        item: dict[str, Any] = {"entity": state.entity_id, "name": name, "caps": found}
         if isinstance(state.attributes.get("device_class"), str):
             item["kind"] = state.attributes["device_class"]
-        entry = ents.async_get(state.entity_id)
         device = devs.async_get(entry.device_id) if entry and entry.device_id else None
         if device:
             item["manufacturer"], item["model"] = device.manufacturer, device.model
@@ -133,6 +143,7 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
     """Per hub and Harmony device: the linked entity (with capabilities and state) or a suggestion; plus all candidates."""
     cands = candidates(hass)
     cfg = config(hass)
+    prefs = suggest_settings(hass)
     out: dict[str, Any] = {}
     for hub, info in hubs.items():
         meta = info.get("deviceMeta") or {}
@@ -150,13 +161,15 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                 item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
                             platform=plat, quirks=directdev.quirks(plat, found))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
-            elif (pick := directdev.suggest({**item, "label": label}, free, area)) is not None:
+            elif label in (prefs["never"].get(hub) or []):
+                item["noSuggest"] = True
+            elif not prefs["off"] and (pick := directdev.suggest({**item, "label": label}, free, area)) is not None:
                 item["suggest"] = pick
             # Players that fit (best first), for the "Matching" group of the list in the card.
             item["fits"] = [e for score, e in directdev.ranked({**item, "label": label}, cands, area) if score >= 2][:5]
             devices[label] = item
         out[hub] = devices
-    return {"hubs": out, "candidates": cands, "extensions": [ext.name for ext in EXTENSIONS]}
+    return {"hubs": out, "candidates": cands, "suggestOff": prefs["off"], "extensions": [ext.name for ext in EXTENSIONS]}
 
 
 def _sources(hass: HomeAssistant, entity: str) -> list[str]:

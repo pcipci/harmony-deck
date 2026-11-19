@@ -11,11 +11,12 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .actionsmodel import clean_actions
 from .irvolume import clean_config
-from .directdev import clean_config as clean_direct
-from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS
+from .directdev import clean_config as clean_direct, clean_suggest
+from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS, SIGNAL_ACTIONS
 from . import profiles as prof
 from .hub import conf_commands, hub_info, match_conf, merge_conf_commands
 from .lockws import lock_overview
@@ -199,6 +200,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
         settings["irVolume"] = clean_config(settings["irVolume"])
     if "directDevices" in settings:
         settings["directDevices"] = clean_direct(settings["directDevices"])
+    if "directSuggest" in settings:
+        settings["directSuggest"] = clean_suggest(settings["directSuggest"])
     if "volumeCap" in settings:
         try:
             settings["volumeCap"] = min(max(int(settings["volumeCap"]), 10), 100)
@@ -208,6 +211,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
     await _commit(hass, data)
     if "directDevices" in settings and (watch := hass.data[DOMAIN].get("direct_watch")):
         watch.refresh()
+    if "actions" in settings:
+        async_dispatcher_send(hass, SIGNAL_ACTIONS)
     connection.send_result(msg["id"], {"settings": prof.merged(data, name), "profile": name})
 
 

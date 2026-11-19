@@ -9,10 +9,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .actionbtn import ActionsSensor
 from .actionent import SequenceSensor
 from .direct_watch import watcher
 from .entity import DeckEntity, HubEntity
 from .lock import lock_hubs
+from .netent import async_setup_network_devices
 from .lockent import InterventionsToday, LastAction, ReleasedUntil, setup_platform as _lock_platform
 
 
@@ -21,6 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     await _lock_platform(LastAction, "last_action")(hass, entry, async_add_entities)
     await _lock_platform(InterventionsToday, "interventions_today")(hass, entry, async_add_entities)
     await _lock_platform(SequenceSensor, "sequence")(hass, entry, async_add_entities)
+    await _lock_platform(ActionsSensor, "actions")(hass, entry, async_add_entities)
     coordinator = entry.runtime_data
     async_add_entities([HubsFound(coordinator, entry, "hubs_found"), AdbFound(coordinator, entry, "adb_found"),
                         NetworkControl(coordinator, entry, "network_control")])
@@ -38,6 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     _add_hubs()
     entry.async_on_unload(coordinator.async_add_listener(_add_hubs))
+    await async_setup_network_devices(hass, entry, async_add_entities)
 
 
 class HubsFound(DeckEntity, SensorEntity):
@@ -52,19 +56,42 @@ class HubsFound(DeckEntity, SensorEntity):
         return {"harmony_entries": (self.coordinator.data or {}).get("entries", 0)}
 
 
+_MORE = {"de": "und {n} weitere", "ru": "и ещё {n}", "en": "and {n} more"}
+_SHORT = 120        # characters of names in the state before "and N more" (a state may hold 255)
+
+
+def short_list(names: list[str], language: str | None, limit: int = _SHORT) -> str:
+    """"Bluray, Games, Fire TV and 4 more": as many names as fit, the rest counted (in Home Assistant's language)."""
+    if not names:
+        return "-"
+    more = _MORE.get((language or "en").split("-")[0], _MORE["en"])
+    shown: list[str] = []
+    for name in names:
+        if shown and len(", ".join([*shown, name])) > limit:
+            break
+        shown.append(name)
+    text = ", ".join(shown)
+    if rest := len(names) - len(shown):
+        text = f"{text} {more.format(n=rest)}"
+    return text[:255]
+
+
 class HubCount(HubEntity, SensorEntity):
-    """Activities or devices of a hub."""
+    """Activities or devices of a hub: their names as a short list; the number and the full list in the attributes."""
 
     @property
-    def native_value(self) -> int | None:
-        key = "activities" if self._attr_translation_key == "hub_activities" else "devices"
-        return self._hub.get(key) if self._hub.get("readable") else None
+    def _names(self) -> list[str]:
+        key = "activity_names" if self._attr_translation_key == "hub_activities" else "device_names"
+        return list(self._hub.get(key) or [])
+
+    @property
+    def native_value(self) -> str | None:
+        return short_list(self._names, self.hass.config.language) if self._hub.get("readable") else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """The names behind the number (the state stays the count)."""
-        key = "activity_names" if self._attr_translation_key == "hub_activities" else "device_names"
-        return {"names": list(self._hub.get(key) or [])}
+        names = self._names
+        return {"count": len(names), "names": names}
 
 
 class AdbFound(DeckEntity, SensorEntity):

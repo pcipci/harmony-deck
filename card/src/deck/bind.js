@@ -12,6 +12,7 @@ export const bindMixin = {
     this._bindFireEditor(root);
     this._bindDirectDev(root);
     this._bindMismatch(root);
+    this._bindVolSlider(root);
     this._bindKeyboard(root);
     this._bindDevices(root);
     this._bindFavorites(root);

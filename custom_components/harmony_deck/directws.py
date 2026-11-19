@@ -9,9 +9,9 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
-from . import direct
+from . import direct, directdev
 from .const import DOMAIN
-from .directdev import clean_op
+from .directdev import clean_op, slider_device
 from .lock import lock_hubs
 from .websocket import collect_hubs, load_confs
 
@@ -24,6 +24,8 @@ def async_register_direct_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_overview)
     websocket_api.async_register_command(hass, ws_check)
     websocket_api.async_register_command(hass, ws_fix)
+    websocket_api.async_register_command(hass, ws_sliders)
+    websocket_api.async_register_command(hass, ws_volume)
     data["direct_ws_registered"] = True
 
 
@@ -84,3 +86,55 @@ async def ws_fix(hass: HomeAssistant, connection: websocket_api.ActiveConnection
         connection.send_error(msg["id"], "failed", str(err))
         return
     connection.send_result(msg["id"], {"ok": True})
+
+
+def _slider(hass: HomeAssistant, hub: str, info: dict[str, Any]) -> dict[str, Any] | None:
+    """The volume slider of the running activity of a hub: device, entity, level, limit, or None."""
+    remote = hass.states.get(hub)
+    activity = remote.attributes.get("current_activity") if remote else None
+    links = direct.config(hass).get(hub) or {}
+    device = slider_device(info.get("activities") or {}, activity, links)
+    if device is None:
+        return None
+    entity = links[device]["entity"]
+    if "volume_set" not in direct.caps(hass, entity):
+        return None
+    cap = int((hass.data[DOMAIN].get("settings") or {}).get("volumeCap") or 80)
+    plat = direct.platform(hass, entity)
+    return {"activity": activity, "device": device, "entity": entity, "cap": cap,
+            "release": "volume_on_release" in directdev.quirks(plat, [])}
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/direct/sliders"})
+@websocket_api.async_response
+async def ws_sliders(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """{hub: slider or null} for the running activity of every hub (the card asks again when the activity changes)."""
+    hubs, _ = collect_hubs(hass, await load_confs(hass))
+    connection.send_result(msg["id"], {hub: _slider(hass, hub, info) for hub, info in hubs.items()})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{DOMAIN}/direct/volume", vol.Required("hub"): str, vol.Required("value"): vol.Any(int, float)}
+)
+@websocket_api.async_response
+async def ws_volume(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Volume slider of the running activity, for every user (like the volume keys, also while the lock is on).
+
+    Only the volume device of the running activity, only with "Set volume directly" on, and held to the limit
+    of the settings; anything else is refused. The server decides, not the card.
+    """
+    hubs, _ = collect_hubs(hass, await load_confs(hass))
+    slider = _slider(hass, msg["hub"], hubs.get(msg["hub"]) or {})
+    op = clean_op("volume", msg["value"])
+    if slider is None or op is None:
+        connection.send_error(msg["id"], "invalid", "no volume slider for the running activity")
+        return
+    try:
+        await direct.run(hass, slider["entity"], "volume", min(op[1], slider["cap"]), connection.context(msg))
+    except TimeoutError:
+        connection.send_error(msg["id"], "failed", f"{slider['device']}: no answer")
+        return
+    except Exception as err:  # noqa: BLE001 - the message goes to the card
+        connection.send_error(msg["id"], "failed", str(err))
+        return
+    connection.send_result(msg["id"], {"ok": True, "value": min(op[1], slider["cap"])})

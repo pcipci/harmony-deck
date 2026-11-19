@@ -941,7 +941,8 @@
   "ddQuirks": {
     "source_is_channel_list": "The source list in Home Assistant is the channel list, not the HDMI inputs. The input check stays silent here.",
     "mute_toggle_only": "Mute can only be toggled. Harmony Deck checks the state first and switches only when needed.",
-    "no_power_on": "Switching on is not set up in Home Assistant (for Netcast: the integration's \"turn on\" action). Switching off works."
+    "no_power_on": "Switching on is not set up in Home Assistant (for Netcast: the integration's \"turn on\" action). Switching off works.",
+    "volume_on_release": "Volume is set when the slider is released (this TV reacts slowly)."
   },
   "ddSuggestShow": "Show suggestions",
   "ddNever": "Don't suggest again",

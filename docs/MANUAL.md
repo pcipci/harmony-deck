@@ -90,6 +90,8 @@ The integration carries out the steps, so a sequence also finishes when the page
 
 **Where the Fire TV settings live (0.13):** on the link of the Fire TV (Settings › Network control › cog). Existing settings were moved there once; the lock reads the allowed apps from the same place, per device.
 
+**Volume slider (0.14):** if the volume device of the running activity is linked in Settings › Network control with "Set volume directly instead of via IR" on and the player can take a level, the remote shows a slider instead of volume up/down (mute stays). The level is held to the volume limit by the integration, for every user, also while the lock is on. LG Netcast sets the level on release only. Without direct control the keys stay as before.
+
 **Detected platform and sensors (0.10):** the tab Network control shows under each linked player what was detected ("Detected: LG Netcast") and what to know about it. In Home Assistant, the sensors **Network control** (all linked devices with platform, capabilities and state in the attributes) and **Differences** (one per hub, number of differences with the list in the attributes) show the same without the card; use them for automations and notifications.
 
 **Volume and the soundbar (0.9):** the volume keys of the card always go where the hub sends them in the current activity (for example to the soundbar); linking the TV changes nothing there. A network command for the TV only affects the TV. If an activity sends the volume through another device, the step and the tab say so in a note under the volume setting.

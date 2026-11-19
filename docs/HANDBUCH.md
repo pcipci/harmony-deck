@@ -90,6 +90,8 @@ Die Integration führt die Schritte aus, deshalb läuft eine Sequenz auch bei ge
 
 **Wo die Fire-TV-Einstellungen liegen (0.13):** an der Verknüpfung des Fire TV (Einstellungen › Netzwerksteuerung › Zahnrad). Bestehende Einstellungen wurden einmal dorthin verschoben; die Sperre liest die erlaubten Apps von derselben Stelle, pro Gerät.
 
+**Lautstärkeregler (0.14):** Ist das Lautstärke-Gerät der laufenden Aktivität in Einstellungen › Netzwerksteuerung verbunden, „Lautstärke direkt setzen statt per IR“ an und kann der Player einen Pegel annehmen, zeigt die Fernbedienung einen Regler statt Lauter/Leiser (Stumm bleibt). Die Integration hält den Pegel für jeden Nutzer an der Lautstärkegrenze, auch bei aktiver Sperre. LG Netcast setzt den Pegel erst beim Loslassen. Ohne direkte Steuerung bleiben die Tasten wie bisher.
+
 **Erkannte Plattform und Sensoren (0.10):** Der Reiter Netzwerksteuerung zeigt unter jedem verbundenen Mediaplayer, was erkannt wurde („Erkannt: LG Netcast“) und was man darüber wissen sollte. In Home Assistant zeigen die Sensoren **Netzwerksteuerung** (alle verbundenen Geräte mit Plattform, Fähigkeiten und Zustand in den Attributen) und **Abweichungen** (einer pro Hub, Anzahl der Abweichungen mit der Liste in den Attributen) dasselbe ohne die Karte. Du kannst sie für Automationen und Benachrichtigungen nutzen.
 
 **Lautstärke und Soundbar (0.9):** Die Lautstärke-Tasten der Karte gehen immer dorthin, wohin der Hub sie in der aktuellen Aktivität schickt (zum Beispiel an die Soundbar). Das ändert die Verbindung des Fernsehers nicht. Ein Netzwerk-Befehl für den Fernseher wirkt nur auf den Fernseher. Schickt eine Aktivität die Lautstärke über ein anderes Gerät, sagt das ein Hinweis unter der Lautstärke-Einstellung im Schritt und im Reiter.

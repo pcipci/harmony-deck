@@ -336,8 +336,21 @@ def service_call(entity: str, op: str, value: Any) -> tuple[str, str, dict[str, 
 
 # Known peculiarities of some Home Assistant integrations, by platform (codes; the card and docs explain them).
 PLATFORM_QUIRKS: dict[str, tuple[str, ...]] = {
-    "lg_netcast": ("source_is_channel_list", "mute_toggle_only"),
+    "lg_netcast": ("source_is_channel_list", "mute_toggle_only", "volume_on_release"),
 }
+
+
+def slider_device(activities: Any, activity: Any, links: Any) -> str | None:
+    """Harmony device whose volume the slider of the running activity sets, or None (then the card keeps +/-).
+
+    The activity's volume device (role "volume") must be linked with "Set volume directly" switched on.
+    Whether the player can take a level ("volume_set") is checked by the caller, who knows the entity.
+    """
+    if not isinstance(activities, dict) or not isinstance(activity, str):
+        return None
+    device = (activities.get(activity) or {}).get("volume") if isinstance(activities.get(activity), dict) else None
+    link = (links or {}).get(device) if isinstance(device, str) and isinstance(links, dict) else None
+    return device if isinstance(link, dict) and link.get("volumeDirect") is True else None
 
 
 def quirks(platform: str | None, caps: list[str]) -> list[str]:

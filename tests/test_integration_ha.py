@@ -513,7 +513,7 @@ async def test_network_control_and_difference_sensors(hass: HomeAssistant, monke
     assert net.state == "1"
     dev = net.attributes["devices"][0]
     assert dev["platform"] == "lg_netcast" and dev["on"] is False and "volume_set" in dev["capabilities"]
-    assert dev["quirks"] == ["source_is_channel_list", "mute_toggle_only", "no_power_on"]
+    assert dev["quirks"] == ["source_is_channel_list", "mute_toggle_only", "volume_on_release", "no_power_on"]
     assert hass.states.get(ents["differences"]).state == "0"          # PowerOff: TV off is right
 
     hass.states.async_set(REMOTE, "on", {"activity_list": ["PowerOff", "SAT"], "current_activity": "SAT"})

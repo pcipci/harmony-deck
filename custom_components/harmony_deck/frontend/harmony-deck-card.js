@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.13.0";
+  var VERSION = "0.14.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1537,6 +1537,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindFireEditor(root);
       this._bindDirectDev(root);
       this._bindMismatch(root);
+      this._bindVolSlider(root);
       this._bindKeyboard(root);
       this._bindDevices(root);
       this._bindFavorites(root);
@@ -3641,13 +3642,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const lockKeys = extra.noLock ? /* @__PURE__ */ new Set() : this._locks(h).keys;
       const L = (role, html) => lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html;
       const K = (dev, a, icon, cls, label) => extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label);
-      const hasVol = r.volume && this._has(h.id, r.volume, "volume_up");
+      const slH = this._volSlider(h, r, "h"), slV = this._volSlider(h, r, "v");
+      const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
       const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "rk mute round") : "";
-      const vol = hasVol ? `<div class="volcol"><div class="rocker">
+      const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}</div>` : `<div class="rocker">
         ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}
-        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>${muteK}</div>` : "";
+        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}${muteK}</div>` : "";
       if (this._config.compact && !this._config.compact_dpad) {
-        return vol ? `<div class="compactvol"><div class="hrow">${K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
+        return vol ? `<div class="compactvol"><div class="hrow">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
       }
       const dirs = r.nav ? ["up", "down", "left", "right"].filter((a) => this._has(h.id, r.nav, a)) : [];
       const hasOk = !!(r.nav && this._has(h.id, r.nav, "ok"));
@@ -3684,11 +3686,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const kbCmds = !this._config.compact && r.nav ? this._devicesOf(h.id)[r.nav] : null;
       const kbAct = kbCmds ? this._keyboard(h, r.nav, kbCmds, t, { compact: true }) : null;
       if (kbAct) {
-        const kv = hasVol ? `<div class="kbvol">${K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
+        const kv = hasVol ? `<div class="kbvol">${slV || K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${slV ? "" : K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
         return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
       }
       if (hasVol && !hasNav && !hasCh) {
-        const bar = `<div class="volbar">${K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
+        const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
         return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
       }
       const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
@@ -3697,7 +3699,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const navCmds = r.nav ? this._devicesOf(h.id)[r.nav] || [] : [];
       const lmode = !extra.noKeypad && h.current ? this._layoutMode(h.id, h.current) : "remote";
       if (!extra.noKeypad && navCmds.length && !this._edit && (lmode === "keypad" || lmode === "auto" && !fullPad && !hasCh)) {
-        const volRow = hasVol ? `<div class="volbar">${K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
+        const volRow = hasVol ? `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
         return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
       }
       const third = hasCh ? L("channel", ch) : discCol ? L("nav", discCol) : pillCol ? L("nav", pillCol) : "";
@@ -5232,6 +5234,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ha-card .dtext .dfield input { width: 100%; box-sizing: border-box; height: 46px; padding: 0 12px 0 40px; }
       ha-card .dtext .key { width: 46px; height: 46px; flex: none; border-radius: var(--hr-rk-radius, 14px); }
       .raw pre { user-select: text; -webkit-user-select: text; } .copyraw { margin-top: 6px; }
+      .volslider { accent-color: var(--hr-accent, var(--primary-color)); touch-action: none; margin: 0; } .volslider.h { flex: 1; width: 100%; min-height: 52px; } .volslider.v { writing-mode: vertical-lr; direction: rtl; width: 100%; flex: 1; min-height: 0; } .rocker.slr { align-items: center; justify-content: center; padding: 10px 6px; } .kbvol .volslider.v { min-height: 80px; }
       .volbar { display: flex; gap: 8px; } .volbar .key { flex: 1; min-height: 52px; border-radius: var(--hr-rk-radius, 26px); }
       .kbact { display: flex; gap: 6px; align-items: stretch; } .kbact .kbd { flex: 1; min-width: 0; padding: 0; background: none; }
       .kbvol { display: flex; flex-direction: column; gap: 4px; width: 42px; flex: none; } .kbvol .key { flex: 1; min-height: 0; border-radius: 9px; } .kbvol .key ha-icon { --mdc-icon-size: 20px; }
@@ -5307,6 +5310,103 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
   };
 
+  // src/deck/volslider.js
+  var SEND_EVERY = 300;
+  var volSliderMixin = {
+    // Part of the redraw key: what the slider depends on.
+    _slKey(hubs) {
+      return hubs.map((h) => [h.id, h.current, Object.entries(this._settings().directDevices?.[h.id] || {}).map(([d, l]) => [d, l.entity, l.volumeDirect === true])]);
+    },
+    // With every hass update: ask the integration again, after the key stayed the same for a moment.
+    _slWatch(hubs) {
+      const now = JSON.stringify(this._slKey(hubs));
+      if (now === this._slSeen) return;
+      this._slSeen = now;
+      clearTimeout(this._slTimer);
+      const any = hubs.some((h) => Object.values(this._settings().directDevices?.[h.id] || {}).some((l) => l.volumeDirect === true));
+      if (!any) {
+        if (this._sl) {
+          this._sl = null;
+          this._key = "";
+        }
+        return;
+      }
+      this._slTimer = setTimeout(() => this._slLoad(), 600);
+    },
+    async _slLoad() {
+      let next = null;
+      try {
+        next = await this._hass.callWS({ type: "harmony_deck/direct/sliders" });
+      } catch (e) {
+        next = null;
+      }
+      if (JSON.stringify(next) !== JSON.stringify(this._sl || null)) {
+        this._sl = next;
+        this._key = "";
+        this.hass = this._hass;
+      }
+    },
+    // The slider for the volume device `r.volume` of the running activity of hub h, or "" (then +/- stay).
+    _volSlider(h, r, orient) {
+      const s = this._sl?.[h.id];
+      if (!s || this._edit || !r.volume || s.device !== r.volume || s.activity !== h.current) return "";
+      const st = this._hass.states?.[s.entity];
+      const lvl = this._volLive?.[h.id] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
+      return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" data-volrel="${s.release ? 1 : 0}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+    },
+    async _volSend(hub, value) {
+      if (this._volSent?.[hub] === value) return;
+      this._volSent = { ...this._volSent || {}, [hub]: value };
+      try {
+        await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value });
+      } catch (e) {
+        this._sl = { ...this._sl || {}, [hub]: null };
+        this._key = "";
+        this.hass = this._hass;
+      }
+    },
+    _bindVolSlider(root) {
+      root.querySelectorAll("input[data-volhub]").forEach((el) => {
+        const hub = el.dataset.volhub;
+        const release = el.dataset.volrel === "1";
+        const live = () => {
+          this._volLive = { ...this._volLive || {}, [hub]: Number(el.value) };
+          el.title = `${el.value} %`;
+        };
+        const end = () => {
+          clearTimeout(this._volEnd);
+          this._volEnd = setTimeout(() => {
+            this._volDrag = false;
+            this._volLive = null;
+            this._volSent = null;
+            this._key = "";
+            if (this._hass) this.hass = this._hass;
+          }, 1200);
+        };
+        el.addEventListener("pointerdown", () => {
+          this._volDrag = true;
+          clearTimeout(this._volEnd);
+        });
+        el.addEventListener("input", () => {
+          this._volDrag = true;
+          live();
+          if (release || this._volBusy) return;
+          this._volBusy = true;
+          this._volSend(hub, Number(el.value));
+          setTimeout(() => {
+            this._volBusy = false;
+          }, SEND_EVERY);
+        });
+        el.addEventListener("change", () => {
+          live();
+          this._volSend(hub, Number(el.value));
+          end();
+        });
+        ["pointerup", "pointercancel"].forEach((ev) => el.addEventListener(ev, end));
+      });
+    }
+  };
+
   // src/deck/card.js
   var HarmonyDeckCard = class extends HTMLElement {
     // Edit modes: "settings" (forms in tabs, independent of the Activities/Devices switch) or "favs" (stars on the keys of the devices).
@@ -5341,8 +5441,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!this._text) return;
       const hubs = this._hubs();
       this._mmWatch(hubs);
+      this._slWatch(hubs);
       const key = JSON.stringify([
         this._mm,
+        this._sl,
         hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]),
         this._info,
         this._editMode,
@@ -5362,7 +5464,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         }),
         hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])
       ]);
-      if (key === this._key || this._holdingAct) return;
+      if (key === this._key || this._holdingAct || this._volDrag) return;
       this._key = key;
       this._render(hubs);
     }
@@ -5381,7 +5483,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

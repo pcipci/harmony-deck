@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0
+
+### Added
+- **Volume slider instead of +/-.** When the volume device of the running activity is linked in Network control with "Set volume directly" switched on and the player can take a level, the remote shows a slider instead of the two volume keys (mute stays). While you move it the level is sent about every 300 ms (only if it changed) and the final level on release; device updates are ignored while you drag and followed again right after. If the integration cannot take it (any more) the card goes back to +/- by itself.
+- **LG Netcast** (which reacts slowly) sets the level only on release; the device page says so.
+
+### Changed
+- **The integration decides, for every user.** New commands `direct/sliders` and `direct/volume`: only the volume device of the running activity, only with "Set volume directly" on, always held to the volume limit of Settings › Behaviour, and also while the lock is on (like the volume keys). Other devices and the controls of the device page stay administrator-only.
+
+### Notes
+- Not yet tested on real hardware. The tests cover the rules of the integration (device, limit, rights, lock) and the card (dragging, throttle, release, fallback).
+
 ## 0.13.0
 
 ### Changed

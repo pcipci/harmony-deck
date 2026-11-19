@@ -43,13 +43,14 @@ export const panelMixin = {
     const lockKeys = extra.noLock ? new Set() : this._locks(h).keys;
     const L = (role, html) => (lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html);
     const K = (dev, a, icon, cls, label) => (extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label));
-    const hasVol = r.volume && this._has(h.id, r.volume, "volume_up");
+    const slH = this._volSlider(h, r, "h"), slV = this._volSlider(h, r, "v");
+    const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
     const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "rk mute round") : "";
-    const vol = hasVol ? `<div class="volcol"><div class="rocker">
+    const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}</div>` : `<div class="rocker">
         ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}
-        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>${muteK}</div>` : "";
+        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}${muteK}</div>` : "";
     if (this._config.compact && !this._config.compact_dpad) {
-      return vol ? `<div class="compactvol"><div class="hrow">${K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
+      return vol ? `<div class="compactvol"><div class="hrow">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
     }
     const dirs = r.nav ? ["up", "down", "left", "right"].filter((a) => this._has(h.id, r.nav, a)) : [];
     const hasOk = !!(r.nav && this._has(h.id, r.nav, "ok"));
@@ -86,12 +87,12 @@ export const panelMixin = {
     const kbCmds = !this._config.compact && r.nav ? this._devicesOf(h.id)[r.nav] : null;
     const kbAct = kbCmds ? this._keyboard(h, r.nav, kbCmds, t, { compact: true }) : null;
     if (kbAct) {
-      const kv = hasVol ? `<div class="kbvol">${K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
+      const kv = hasVol ? `<div class="kbvol">${slV || K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${slV ? "" : K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
       return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
     }
     // Only volume (games consoles, controlled elsewhere): one wide row instead of an empty remote.
     if (hasVol && !hasNav && !hasCh) {
-      const bar = `<div class="volbar">${K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
+      const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
       return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
     }
     const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
@@ -101,7 +102,7 @@ export const panelMixin = {
     const navCmds = r.nav ? this._devicesOf(h.id)[r.nav] || [] : [];
     const lmode = !extra.noKeypad && h.current ? this._layoutMode(h.id, h.current) : "remote";
     if (!extra.noKeypad && navCmds.length && !this._edit && (lmode === "keypad" || (lmode === "auto" && !fullPad && !hasCh))) {
-      const volRow = hasVol ? `<div class="volbar">${K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
+      const volRow = hasVol ? `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
       return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
     }
     const third = hasCh ? L("channel", ch) : discCol ? L("nav", discCol) : pillCol ? L("nav", pillCol) : "";

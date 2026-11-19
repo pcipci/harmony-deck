@@ -457,6 +457,7 @@ export const styleMixin = {
       ha-card .dtext .dfield input { width: 100%; box-sizing: border-box; height: 46px; padding: 0 12px 0 40px; }
       ha-card .dtext .key { width: 46px; height: 46px; flex: none; border-radius: var(--hr-rk-radius, 14px); }
       .raw pre { user-select: text; -webkit-user-select: text; } .copyraw { margin-top: 6px; }
+      .volslider { accent-color: var(--hr-accent, var(--primary-color)); touch-action: none; margin: 0; } .volslider.h { flex: 1; width: 100%; min-height: 52px; } .volslider.v { writing-mode: vertical-lr; direction: rtl; width: 100%; flex: 1; min-height: 0; } .rocker.slr { align-items: center; justify-content: center; padding: 10px 6px; } .kbvol .volslider.v { min-height: 80px; }
       .volbar { display: flex; gap: 8px; } .volbar .key { flex: 1; min-height: 52px; border-radius: var(--hr-rk-radius, 26px); }
       .kbact { display: flex; gap: 6px; align-items: stretch; } .kbact .kbd { flex: 1; min-width: 0; padding: 0; background: none; }
       .kbvol { display: flex; flex-direction: column; gap: 4px; width: 42px; flex: none; } .kbvol .key { flex: 1; min-height: 0; border-radius: 9px; } .kbvol .key ha-icon { --mdc-icon-size: 20px; }

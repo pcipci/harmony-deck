@@ -19,6 +19,7 @@ export const SKIN_CSS = `
         background: radial-gradient(ellipse 60% 35% at 28% 6%, rgba(190,255,200,.18), transparent 70%), radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.5) 100%), linear-gradient(115deg, rgba(255,255,255,.06), transparent 28%); }
       ${T} .skin-tear { display: block; position: absolute; left: 0; right: 0; top: 46%; height: 14px; z-index: 7; pointer-events: none; background: rgba(61,255,107,.06);
         box-shadow: -5px 0 0 rgba(255,60,60,.22), 5px 0 0 rgba(60,120,255,.22); animation: sktear 9s infinite steps(1); }
+      ${T} { --hr-fire: #3dff6b; --hr-danger: #3dff6b; }
       ${T} * { text-shadow: -1px 0 rgba(255,60,60,.4), 1px 0 rgba(60,140,255,.4), 0 0 6px rgba(61,255,107,.5); letter-spacing: .02em; }
       ${T} ha-icon { filter: drop-shadow(0 0 4px rgba(61,255,107,.7)); }
       ${T} .key, ${T} .tile, ${T} .rocker, ${T} .seg, ${T} button { border: 1px solid #1fa63f; background-image: none;
@@ -43,6 +44,15 @@ export const SKIN_CSS = `
       ${T} .sw:has(> input) input:checked + i::after { transform: translateX(20px); background: #3dff6b; box-shadow: 0 0 10px 2px #3dff6b; }
       /* status line: the small buttons (pause, power) carry no frame */
       ${T} .status button, ${T} .chip button, ${T} .chips button { border: none; box-shadow: none; background: transparent; }
+      /* the tools next to the room tabs: no frame, active = brighter glow */
+      ${T} .bbtns .ib, ${T} .bbtns .profchip { border: none; box-shadow: none; background: transparent; color: #3dff6b; }
+      ${T} .bbtns .ib.sel ha-icon { filter: drop-shadow(0 0 6px #3dff6b) drop-shadow(0 0 12px #3dff6b) brightness(1.35); }
+      /* everything green: On/Off keys, the off button, Fire TV app keys and badges in Pip-Boy style (no brand colours) */
+      ${T} .key.pon ha-icon, ${T} .key.poff ha-icon, ${T} .ib.offb, ${T} .ib.offb ha-icon { color: #3dff6b !important; }
+      ${T} .appcell.svc { --c: #021a05 !important; --fg: #3dff6b !important; border: 1px solid #1fa63f; }
+      ${T} .appcell.svc.on { --c: #3dff6b !important; --fg: #021a05 !important; } ${T} .appcell.svc.on * { text-shadow: none; }
+      ${T} .appbadge { --c: transparent !important; --fg: #3dff6b !important; box-shadow: inset 0 0 0 1px #3dff6b; }
+      ${T} .key.muted { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.muted ha-icon { color: #021a05 !important; filter: none; }
       /* the Activities / Devices switch: the block jumps over */
       ${T} .seg { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; padding: 3px; box-shadow: none; }
       ${T} .seg .th { border-radius: 0; background: #3dff6b; box-shadow: 0 0 12px rgba(61,255,107,.6); }
@@ -52,14 +62,14 @@ export const SKIN_CSS = `
       ${T} .volslider.h::-webkit-slider-runnable-track { height: 28px; background: transparent; } ${T} .volslider.h::-moz-range-track { height: 28px; background: transparent; }
       ${T} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
       ${T} .volslider.h::-moz-range-thumb { width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; }
-      ${T} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; border: 1px solid #3dff6b; background: repeating-linear-gradient(0deg, #3dff6b 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc((100% - 6px) * var(--v, 0) / 100) no-repeat, #021a05; box-shadow: 0 0 8px rgba(61,255,107,.4); }
+      ${T} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; border: 1px solid #3dff6b; box-shadow: 0 0 8px rgba(61,255,107,.35); background: repeating-linear-gradient(0deg, #3dff6b 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc((100% - 6px) * var(--v, 0) / 100) no-repeat, repeating-linear-gradient(0deg, rgba(61,255,107,.16) 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc(100% - 6px) no-repeat, #021a05 !important; }
       ${T} .volslider.v::-webkit-slider-runnable-track { width: 100%; background: transparent; } ${T} .volslider.v::-moz-range-track { background: transparent; }
-      ${T} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
-      ${T} .volslider.v::-moz-range-thumb { width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; }
+      ${T} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 10px; border-radius: 0; background: transparent; border: none; box-shadow: none; }
+      ${T} .volslider.v::-moz-range-thumb { width: 30px; height: 10px; border-radius: 0; background: transparent; border: none; box-shadow: none; }
       /* hold to switch off: green like everything else; blocks fill the whole tile left to right, then the picture shrinks to a line */
       ${T} .holdoff ha-icon, ${T} .tile.off ha-icon { color: #3dff6b !important; }
       ${T} .tile.off.holdoff { justify-content: center; gap: 12px; position: relative; overflow: hidden; }
-      ${T} .tile.off.holdoff::before { content: "" !important; margin: 0 !important; }
+      ${T} .tile.off.holdoff::before { content: "OFF" !important; order: 2; margin: 0 !important; font-weight: 700; letter-spacing: .2em; color: #3dff6b; }
       ${T} .holdoff .hring { display: none; }
       ${T} .holdoff.holding { background: #021a05 !important; }
       ${T} .tile.holdoff.holding::after, ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { content: ""; position: absolute; inset: 0; right: auto; width: calc(var(--p, 0) * 1%); transform: none; animation: none; border-radius: 0;
@@ -100,13 +110,23 @@ export const SKIN_CSS = `
         box-shadow: 0 0 22px 4px rgba(255,150,30,.65), inset 0 0 14px rgba(255,200,90,.7), inset 0 -6px 12px rgba(120,40,0,.55); }
       ${R} .tile.on ha-icon, ${R} .tile.dev.sel ha-icon, ${R} .tile.on small, ${R} .tile.dev.sel small, ${R} .actbtn.acton * { color: #3a1802; filter: none; }
       ${R} .tile.on::after, ${R} .tile.dev.sel::after { opacity: .4; }
-      ${R} .status.chip { box-shadow: 0 0 10px rgba(255,184,74,.55); }
-      ${R} .status.chip.active::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px;
-        background: radial-gradient(circle at 35% 30%, #fff 0 12%, rgba(255,255,255,0) 35%), radial-gradient(circle at 50% 55%, #ffcf70, #ff8a12 60%, #7a3a05); box-shadow: 0 0 10px 2px rgba(255,150,30,.9); }
+      /* status line: one green pilot lamp per running device */
+      ${R} .bar .chip { color: #e2c58a; border-color: rgba(200,162,74,.5); background: transparent; box-shadow: none; }
+      ${R} .bar .chip::before { content: ""; flex: none; width: 11px; height: 11px; border-radius: 50%; margin-right: 2px;
+        background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 8px 2px rgba(77,255,107,.7); }
       ${R} .key, ${R} .rocker { border: 2px solid #c8a24a; background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; box-shadow: 0 4px 0 #6b4a1a, 0 6px 8px rgba(0,0,0,.5); }
       ${R} .key ha-icon, ${R} .rocker ha-icon { color: #2a170a !important; }
       ${R} .rocker .rk { background: transparent !important; box-shadow: none !important; border: none !important; }
       ${R} .key.mute.round, ${R} .key.mute { background: linear-gradient(180deg, #efe3c4, #c9b78d) !important; color: #2a170a !important; }
+      /* Mute inside the volume rocker: a round brass button, raised = sound on, pressed in = muted */
+      ${R} .rocker .rk.mute.round { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210) !important; border: 2px solid #2a170a !important; box-shadow: 0 3px 0 #3b2a14, 0 5px 6px rgba(0,0,0,.6) !important; transition: transform .12s, box-shadow .12s; }
+      ${R} .rocker .rk.mute.round.muted { transform: translateY(3px); filter: brightness(.82); box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 #3b2a14 !important; }
+      /* keys with a state are pressed in while active; keys without one go down on a tap and come back */
+      ${R} .key.sel, ${R} .key.on, ${R} .key.muted, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
+      ${R} .key { transition: transform .12s ease, box-shadow .12s ease; }
+      ${R} .key.lit, ${R} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; color: #2a170a; box-shadow: 0 1px 0 #6b4a1a, 0 2px 3px rgba(0,0,0,.5); }
+      ${R} .rocker .rk.lit, ${R} .rocker .rk:active { background: transparent !important; box-shadow: none !important; }
+      ${R} .appcell.svc.on { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
       /* toggle switch, horizontal: brass nut, chrome lever pointing right = ON (AN, nut glows) or left = OFF (AUS) */
@@ -117,8 +137,15 @@ export const SKIN_CSS = `
       ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
       ${R} .sw:has(> input) i::after { content: ""; position: absolute; height: 10px; width: 24px; top: 13px; left: 6px; border-radius: 5px; transform: none; background: linear-gradient(180deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
       ${R} .sw:has(> input) input:checked + i::after { left: 52px; transform: none; box-shadow: 0 3px 4px rgba(0,0,0,.6); }
-      ${R} .sw:has(> input)::before { content: "AUS"; position: absolute; left: 0; top: 50%; margin-top: -6px; width: 26px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
-      ${R} .sw:has(> input)::after { content: "AN"; position: absolute; right: 0; top: 50%; margin-top: -6px; width: 24px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
+      ${R} .sw:has(> input)::before { content: none; display: none; }
+      ${R} .sw:has(> input)::after { content: none; display: none; }
+      ${R} .sw:has(> input) { width: 88px; }
+      ${R} .sw:has(> input) i::before { left: 18px; }
+      ${R} .sw:has(> input) i::after { left: 4px; width: 20px; }
+      ${R} .sw:has(> input) input:checked + i::after { left: 36px; }
+      ${R} .sw .lamp { display: block; position: absolute; right: 0; top: 8px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #b9b19a; box-sizing: border-box; pointer-events: none;
+        background: radial-gradient(circle at 38% 32%, #ff9a8a, #b0180a 55%, #4a0803); box-shadow: 0 0 5px rgba(255,40,20,.35), inset 0 0 4px rgba(0,0,0,.5); }
+      ${R} .sw input:checked ~ .lamp { background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 10px 3px rgba(77,255,107,.8); }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -137,6 +164,11 @@ export const SKIN_CSS = `
       ${R} .volslider.v::-moz-range-track { width: 12px; border-radius: 6px; background: #2a1408; } ${R} .volslider.v::-moz-range-progress { width: 12px; background: #ff9a1f; }
       ${R} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-left: -9px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
       ${R} .volslider.v::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); }
+      /* vertical volume: a straight rail with a scale of tick marks left and right */
+      ${R} .rocker.slr { position: relative; }
+      ${R} .rocker.slr::before, ${R} .rocker.slr::after { content: ""; position: absolute; top: 18px; bottom: 62px; width: 9px; pointer-events: none; background: repeating-linear-gradient(0deg, #6b4a1a 0 1.5px, transparent 1.5px 12px); }
+      ${R} .rocker.slr::before { left: 5px; } ${R} .rocker.slr::after { right: 5px; }
+      ${R} .rocker.slr:not(:has(.mute))::before, ${R} .rocker.slr:not(:has(.mute))::after { bottom: 18px; }
       /* round typewriter keys on the keyboard */
       ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
       ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }

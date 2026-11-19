@@ -387,7 +387,6 @@
   "cancelBack": "Back",
   "cancelDo": "Discard",
   "harmonyLabel": "Harmony",
-  "harmonyOff": "off",
   "harmonyStarting": "starting {0}",
   "collapseHeader": "Collapse header automatically",
   "holdSwitch": "Switching a running activity needs a long press",
@@ -982,5 +981,6 @@
     "app_read": "Read running app",
     "app_list": "List apps"
   },
-  "preferHint": "Via Harmony the keys can arrive late or not at all (the hub sends infrared or Bluetooth). Direct ADB is fast; it is the default for a new setup."
+  "preferHint": "Via Harmony the keys can arrive late or not at all (the hub sends infrared or Bluetooth). Direct ADB is fast; it is the default for a new setup.",
+  "allOff": "all off"
 }

@@ -45,10 +45,13 @@ export const panelMixin = {
     const K = (dev, a, icon, cls, label) => (extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label));
     const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
     const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
-    const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "rk mute round") : "";
-    const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}</div>` : `<div class="rocker">
-        ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}
-        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}${muteK}</div>` : "";
+    // Mute shows "pressed" when the linked player of the volume device reports muted (Harmony itself does not know it).
+    const mutedNow = (() => { const l = r.volume && this._settings().directDevices?.[h.id]?.[r.volume]; return !!l && this._hass?.states?.[l.entity]?.attributes?.is_volume_muted === true; })();
+    const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", `rk mute round${mutedNow ? " muted" : ""}`) : "";
+    // Mute sits inside the volume rocker: between + and -, or under the slider; both rockers (volume, program) then have the same height.
+    const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}${muteK}</div>` : `<div class="rocker">
+        ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}${muteK}
+        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}</div>` : "";
     if (this._config.compact && !this._config.compact_dpad) {
       return vol ? `<div class="compactvol"><div class="hrow">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
     }
@@ -117,7 +120,8 @@ export const panelMixin = {
   // Events of the remote keys (light up, send).
   _bindKeys(root) {
     root.querySelectorAll("button.key, button.tile").forEach((b) => {
-      const off = () => b.classList.remove("lit");
+      // Radio: a key stays down for at least ~120 ms, so a short tap still shows the press.
+      const off = () => { if (this._skin?.() === "radio") setTimeout(() => b.classList.remove("lit"), 120); else b.classList.remove("lit"); };
       b.addEventListener("pointerdown", () => { if (!this._edit) b.classList.add("lit"); });
       ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => b.addEventListener(ev, off));
     });

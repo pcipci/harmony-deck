@@ -113,7 +113,6 @@ export const renderMixin = {
   _hubHtml(h, t, index = 0, tabs = "") {
     const busy = !!h.starting;
     const cur = h.current && h.current !== "PowerOff" ? h.current : null;
-    const status = busy ? t.starting(h.starting) : cur ? t.running(cur) : t.none;
     const mode = this._mode();
     const compact = !!this._config.compact;
     const hasDevices = !compact && Object.keys(this._devicesOf(h.id)).length > 0;
@@ -128,10 +127,18 @@ export const renderMixin = {
     const helpBtn = this._edit || (compact && !helpAct) ? "" : `<button class="ib ${this._helpOpen?.[h.id] ? "sel" : "hl"}" data-help="${esc(h.id)}" title="${esc(helpAct ? t.help : t.helpOff)}" ${helpAct ? "" : "disabled"}><ha-icon icon="mdi:lifebuoy"></ha-icon></button>`;
     const infoBtn = compact ? "" : `<button class="ib ${this._infoOpen?.[h.id] ? "sel" : ""}" data-info="${esc(h.id)}" title="${esc(t.infoBtn)}"><ha-icon icon="mdi:information-outline"></ha-icon></button>`;
     const openNow = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
-    const collapseBtn = !this._edit && !compact && !this._hdrCollapsed?.[h.id] ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
-    const title = !this._tabsShown && (this._config.title ?? h.name) ? `<div class="hub">${esc(this._config.title ?? h.name)}</div>` : "";
-    const hState = busy ? fmtText(t.harmonyStarting, [h.starting]) : cur ? cur : t.harmonyOff;
-    const bar = `${title}<div class="bar"><div class="chips"><span class="status chip ${cur ? "active" : ""} ${busy ? "busy" : ""}" title="${esc(status)}"><ha-icon icon="mdi:remote"></ha-icon><span class="ct">${esc(t.harmonyLabel)}: ${esc(hState)}</span>${this._lockMark(h.id, t)}</span>${this._fireBar(h.id, t)}</div><div class="bbtns">${this._profChip(t)}${helpBtn}${infoBtn}${collapseBtn}</div></div>`;
+    const collapseBtn = !this._edit && !compact ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
+    const nameTxt = this._config.title ?? h.name;
+    const parts = this._statusParts(h, t, cur, busy);
+    const collapsedNow = !this._edit && !compact && !!openNow && !!this._hdrCollapsed?.[h.id];
+    const toggleBtn = this._edit || compact ? "" : collapsedNow
+      ? `<button class="ib subtle" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="mdi:chevron-down"></ha-icon></button>`
+      : collapseBtn;
+    // Tools (lock, profile, help, info, collapse) sit right in the row of the room tabs, apart from the device controls.
+    const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
+    const top = `<div class="toprow">${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+    // Status chips only for what runs (Harmony activity, Fire TV, linked network devices); nothing runs = no chip line.
+    const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
     const boxes = `${this._infoOpen?.[h.id] ? this._infoHtml(h, t) : ""}${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
     let body;
     if (this._edit || !hasDevices) {
@@ -147,13 +154,36 @@ export const renderMixin = {
     // Big remote open and auto-collapse on: show only a slim line (room, what is open, arrow) plus the remote.
     const open = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
     if (!this._edit && !compact && open && this._hdrCollapsed?.[h.id]) {
-      const what = pend ? t.switchingOff : mode === "devices" ? open : cur ? `${t.harmonyLabel}: ${cur}` : `${t.fireLabel}: ${fi.appInfo ? fi.appInfo.name : t.fireStates[fi.mode]}`;
+      const what = pend ? t.switchingOff : parts.length ? parts.map((x) => x.text).join(" · ") : t.allOff;
       const below = mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below");
       const offB = `<button class="ib offb holdoff" data-hold="act" data-hub="${esc(h.id)}" data-hinttext="${esc(t.holdHint)}" title="${esc(t.offAct)}">${RING_IB}<ha-icon icon="mdi:power"></ha-icon></button>`;
-      const helpB = !this._edit && mode !== "devices" && helpAct ? helpBtn : "";
-      return `<section class="collapsed"><div class="hdr"><div class="slimrow"><button class="slimbar" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon><b>${esc(this._config.title ?? h.name)}</b><span class="sw">${esc(what)}</span>${this._lockMark(h.id, t)}<ha-icon icon="mdi:chevron-down"></ha-icon></button>${helpB}${offB}</div></div>${helpB ? this._helpHtml(h, helpAct, t) : ""}${below}${this._actionsBlock(h, cur, t)}</section>`;
+      // One text line instead of the chips; the room name only when there are no room tabs.
+      const slim = `<button class="slimbar" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><span class="sw ${pend || parts.length ? "" : "none"}">${esc(what)}</span></button>`;
+      const hdr = `${top}<div class="slimrow">${slim}${offB}</div>`;
+      return `<section class="collapsed"><div class="hdr">${hdr}</div>${boxes}${below}${this._actionsBlock(h, cur, t)}</section>`;
     }
-    return `<section><div class="hdr">${tabs}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+    return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+  },
+
+  // What runs in a room, as chips (expanded) and short texts (collapsed): Harmony activity, Fire TV, linked network devices with their source.
+  _statusParts(h, t, cur, busy) {
+    const out = [];
+    if (busy || cur) {
+      const st = busy ? fmtText(t.harmonyStarting, [h.starting]) : cur;
+      out.push({ text: st, html: `<span class="status chip active ${busy ? "busy" : ""}" title="${esc(busy ? t.starting(h.starting) : t.running(cur))}"><ha-icon icon="mdi:remote"></ha-icon><span class="ct">${esc(t.harmonyLabel)}: ${esc(st)}</span></span>` });
+    }
+    const fi = this._fireInfo(h.id);
+    const fbar = this._fireBar(h.id, t);
+    if (fbar) out.push({ text: fi.appInfo ? `${t.fireLabel} ${fi.appInfo.name}` : t.fireLabel, html: fbar });
+    for (const [dev, link] of Object.entries(this._settings().directDevices?.[h.id] || {}).sort(([a], [b]) => a.localeCompare(b))) {
+      if (!link?.entity || link.fire || (fi && link.entity === fi.entity)) continue;
+      const st = this._hass?.states?.[link.entity];
+      if (!st || ["off", "standby", "unavailable", "unknown"].includes(st.state)) continue;
+      const src = st.attributes?.source;
+      const label = src ? `${dev} · ${src}` : dev;
+      out.push({ text: src ? `${dev} ${src}` : dev, html: `<button class="chip netchip" data-chipdev="${esc(dev)}" data-hub="${esc(h.id)}" title="${esc(label)}"><ha-icon icon="mdi:television"></ha-icon><span class="ct">${esc(label)}</span></button>` });
+    }
+    return out;
   },
 
   // Events of the frame: room tabs, slider, collapsing.
@@ -164,6 +194,7 @@ export const renderMixin = {
       const hub = b.dataset.hdrcollapse;
       this._animSection(hub, "collapse", () => { this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [hub]: true }; this._scrollRemote = true; this._scrollAt = Date.now(); this._rerender(); });
     }));
+    root.querySelectorAll("[data-chipdev]").forEach((b) => b.addEventListener("click", () => this._gotoDevice(b.dataset.hub, b.dataset.chipdev)));
     root.querySelectorAll("[data-hdr]").forEach((b) => b.addEventListener("click", () => { this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [b.dataset.hdr]: false }; this._expandHub = b.dataset.hdr; this._rerender(); }));
   },
 

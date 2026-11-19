@@ -121,6 +121,7 @@ export const fireMixin = {
     const f = this._fireInfo(hubId);
     if (!f || this._edit || this._config.compact) return "";
     const live = f.mode === "on" || f.mode === "playing";
+    if (!live) return "";   // the status line shows only what runs
     const key = (code, icon, label) => (code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`);
     return `<span class="firechip chip f-${f.mode}" title="${esc(this._fireText(f, t))}">${this._appBadgeHtml(f.appInfo)}<span class="ct">${esc(t.fireLabel)}: ${esc(f.appInfo ? f.appInfo.name : t.fireStates[f.mode])}</span>${live ? key(85, f.mode === "playing" ? "mdi:pause" : "mdi:play-pause", t.firePlay) + key(223, "mdi:power", t.fireOff) : ""}</span>`;
   },

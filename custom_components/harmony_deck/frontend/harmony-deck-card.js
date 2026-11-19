@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.15.4";
+  var VERSION = "0.15.5";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2686,6 +2686,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const f = this._fireInfo(hubId);
       if (!f || this._edit || this._config.compact) return "";
       const live = f.mode === "on" || f.mode === "playing";
+      if (!live) return "";
       const key = (code, icon, label) => code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`;
       return `<span class="firechip chip f-${f.mode}" title="${esc(this._fireText(f, t))}">${this._appBadgeHtml(f.appInfo)}<span class="ct">${esc(t.fireLabel)}: ${esc(f.appInfo ? f.appInfo.name : t.fireStates[f.mode])}</span>${live ? key(85, f.mode === "playing" ? "mdi:pause" : "mdi:play-pause", t.firePlay) + key(223, "mdi:power", t.fireOff) : ""}</span>`;
     },
@@ -3724,10 +3725,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const K = (dev, a, icon, cls, label) => extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label);
       const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
       const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
-      const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "rk mute round") : "";
-      const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}</div>` : `<div class="rocker">
-        ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}
-        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}${muteK}</div>` : "";
+      const mutedNow = (() => {
+        const l = r.volume && this._settings().directDevices?.[h.id]?.[r.volume];
+        return !!l && this._hass?.states?.[l.entity]?.attributes?.is_volume_muted === true;
+      })();
+      const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", `rk mute round${mutedNow ? " muted" : ""}`) : "";
+      const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}${muteK}</div>` : `<div class="rocker">
+        ${K(r.volume, "volume_up", "mdi:volume-plus", "rk")}${muteK}
+        ${K(r.volume, "volume_down", "mdi:volume-minus", "rk")}</div>`}</div>` : "";
       if (this._config.compact && !this._config.compact_dpad) {
         return vol ? `<div class="compactvol"><div class="hrow">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${K(r.volume, "mute", "mdi:volume-mute", "mute")}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div></div>` : "";
       }
@@ -3793,7 +3798,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     // Events of the remote keys (light up, send).
     _bindKeys(root) {
       root.querySelectorAll("button.key, button.tile").forEach((b) => {
-        const off = () => b.classList.remove("lit");
+        const off = () => {
+          if (this._skin?.() === "radio") setTimeout(() => b.classList.remove("lit"), 120);
+          else b.classList.remove("lit");
+        };
         b.addEventListener("pointerdown", () => {
           if (!this._edit) b.classList.add("lit");
         });
@@ -4267,7 +4275,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _hubHtml(h, t, index = 0, tabs = "") {
       const busy = !!h.starting;
       const cur = h.current && h.current !== "PowerOff" ? h.current : null;
-      const status = busy ? t.starting(h.starting) : cur ? t.running(cur) : t.none;
       const mode = this._mode();
       const compact = !!this._config.compact;
       const hasDevices = !compact && Object.keys(this._devicesOf(h.id)).length > 0;
@@ -4282,10 +4289,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const helpBtn = this._edit || compact && !helpAct ? "" : `<button class="ib ${this._helpOpen?.[h.id] ? "sel" : "hl"}" data-help="${esc(h.id)}" title="${esc(helpAct ? t.help : t.helpOff)}" ${helpAct ? "" : "disabled"}><ha-icon icon="mdi:lifebuoy"></ha-icon></button>`;
       const infoBtn = compact ? "" : `<button class="ib ${this._infoOpen?.[h.id] ? "sel" : ""}" data-info="${esc(h.id)}" title="${esc(t.infoBtn)}"><ha-icon icon="mdi:information-outline"></ha-icon></button>`;
       const openNow = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
-      const collapseBtn = !this._edit && !compact && !this._hdrCollapsed?.[h.id] ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
-      const title = !this._tabsShown && (this._config.title ?? h.name) ? `<div class="hub">${esc(this._config.title ?? h.name)}</div>` : "";
-      const hState = busy ? fmtText(t.harmonyStarting, [h.starting]) : cur ? cur : t.harmonyOff;
-      const bar = `${title}<div class="bar"><div class="chips"><span class="status chip ${cur ? "active" : ""} ${busy ? "busy" : ""}" title="${esc(status)}"><ha-icon icon="mdi:remote"></ha-icon><span class="ct">${esc(t.harmonyLabel)}: ${esc(hState)}</span>${this._lockMark(h.id, t)}</span>${this._fireBar(h.id, t)}</div><div class="bbtns">${this._profChip(t)}${helpBtn}${infoBtn}${collapseBtn}</div></div>`;
+      const collapseBtn = !this._edit && !compact ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
+      const nameTxt = this._config.title ?? h.name;
+      const parts = this._statusParts(h, t, cur, busy);
+      const collapsedNow = !this._edit && !compact && !!openNow && !!this._hdrCollapsed?.[h.id];
+      const toggleBtn = this._edit || compact ? "" : collapsedNow ? `<button class="ib subtle" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="mdi:chevron-down"></ha-icon></button>` : collapseBtn;
+      const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
+      const top = `<div class="toprow">${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+      const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
       const boxes = `${this._infoOpen?.[h.id] ? this._infoHtml(h, t) : ""}${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
       let body;
       if (this._edit || !hasDevices) {
@@ -4300,13 +4311,34 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";
       const open = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
       if (!this._edit && !compact && open && this._hdrCollapsed?.[h.id]) {
-        const what = pend ? t.switchingOff : mode === "devices" ? open : cur ? `${t.harmonyLabel}: ${cur}` : `${t.fireLabel}: ${fi.appInfo ? fi.appInfo.name : t.fireStates[fi.mode]}`;
+        const what = pend ? t.switchingOff : parts.length ? parts.map((x) => x.text).join(" · ") : t.allOff;
         const below = mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below");
         const offB = `<button class="ib offb holdoff" data-hold="act" data-hub="${esc(h.id)}" data-hinttext="${esc(t.holdHint)}" title="${esc(t.offAct)}">${RING_IB}<ha-icon icon="mdi:power"></ha-icon></button>`;
-        const helpB = !this._edit && mode !== "devices" && helpAct ? helpBtn : "";
-        return `<section class="collapsed"><div class="hdr"><div class="slimrow"><button class="slimbar" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon><b>${esc(this._config.title ?? h.name)}</b><span class="sw">${esc(what)}</span>${this._lockMark(h.id, t)}<ha-icon icon="mdi:chevron-down"></ha-icon></button>${helpB}${offB}</div></div>${helpB ? this._helpHtml(h, helpAct, t) : ""}${below}${this._actionsBlock(h, cur, t)}</section>`;
+        const slim = `<button class="slimbar" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><span class="sw ${pend || parts.length ? "" : "none"}">${esc(what)}</span></button>`;
+        const hdr = `${top}<div class="slimrow">${slim}${offB}</div>`;
+        return `<section class="collapsed"><div class="hdr">${hdr}</div>${boxes}${below}${this._actionsBlock(h, cur, t)}</section>`;
       }
-      return `<section><div class="hdr">${tabs}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+      return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+    },
+    // What runs in a room, as chips (expanded) and short texts (collapsed): Harmony activity, Fire TV, linked network devices with their source.
+    _statusParts(h, t, cur, busy) {
+      const out = [];
+      if (busy || cur) {
+        const st = busy ? fmtText(t.harmonyStarting, [h.starting]) : cur;
+        out.push({ text: st, html: `<span class="status chip active ${busy ? "busy" : ""}" title="${esc(busy ? t.starting(h.starting) : t.running(cur))}"><ha-icon icon="mdi:remote"></ha-icon><span class="ct">${esc(t.harmonyLabel)}: ${esc(st)}</span></span>` });
+      }
+      const fi = this._fireInfo(h.id);
+      const fbar = this._fireBar(h.id, t);
+      if (fbar) out.push({ text: fi.appInfo ? `${t.fireLabel} ${fi.appInfo.name}` : t.fireLabel, html: fbar });
+      for (const [dev, link] of Object.entries(this._settings().directDevices?.[h.id] || {}).sort(([a], [b]) => a.localeCompare(b))) {
+        if (!link?.entity || link.fire || fi && link.entity === fi.entity) continue;
+        const st = this._hass?.states?.[link.entity];
+        if (!st || ["off", "standby", "unavailable", "unknown"].includes(st.state)) continue;
+        const src = st.attributes?.source;
+        const label = src ? `${dev} · ${src}` : dev;
+        out.push({ text: src ? `${dev} ${src}` : dev, html: `<button class="chip netchip" data-chipdev="${esc(dev)}" data-hub="${esc(h.id)}" title="${esc(label)}"><ha-icon icon="mdi:television"></ha-icon><span class="ct">${esc(label)}</span></button>` });
+      }
+      return out;
     },
     // Events of the frame: room tabs, slider, collapsing.
     _bindFrame(root) {
@@ -4328,6 +4360,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           this._rerender();
         });
       }));
+      root.querySelectorAll("[data-chipdev]").forEach((b) => b.addEventListener("click", () => this._gotoDevice(b.dataset.hub, b.dataset.chipdev)));
       root.querySelectorAll("[data-hdr]").forEach((b) => b.addEventListener("click", () => {
         this._hdrCollapsed = { ...this._hdrCollapsed || {}, [b.dataset.hdr]: false };
         this._expandHub = b.dataset.hdr;
@@ -4891,7 +4924,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const st = link ? this._hass?.states?.[link.entity]?.state : null;
       const known = st && !["unavailable", "unknown"].includes(st);
       const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
-      return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
+      return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i><b class="lamp"></b></span></label>`;
     },
     // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
     // (a sticky bar pushed down there covered the first row of keys on a tablet).
@@ -4916,10 +4949,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindStickyHeader(root);
       root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
         const { hub, device } = el.dataset;
-        this._pwrLast = { ...this._pwrLast || {}, [`${hub}/${device}`]: el.checked };
-        const cmd = el.checked ? "PowerOn" : "PowerOff";
-        [...root.querySelectorAll("button[data-cmd]")].find((b) => b.dataset.cmd === cmd && b.dataset.hub === hub && b.dataset.device === device)?.click();
+        this._swPowerSend(hub, device, el.checked);
       }));
+    },
+    // The switch sends On/Off itself. (Up to 0.15.4 it "clicked" the hidden On/Off key, but keys send on pointerdown,
+    // so a click never reached them and the switch did nothing.)
+    _swPowerSend(hub, device, on) {
+      this._pwrLast = { ...this._pwrLast || {}, [`${hub}/${device}`]: on };
+      this._buzz();
+      this._hass.callService("remote", "send_command", { entity_id: hub, device, command: on ? "PowerOn" : "PowerOff", ...this._holdOpt() });
     }
   };
 
@@ -4940,6 +4978,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         background: radial-gradient(ellipse 60% 35% at 28% 6%, rgba(190,255,200,.18), transparent 70%), radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.5) 100%), linear-gradient(115deg, rgba(255,255,255,.06), transparent 28%); }
       ${T} .skin-tear { display: block; position: absolute; left: 0; right: 0; top: 46%; height: 14px; z-index: 7; pointer-events: none; background: rgba(61,255,107,.06);
         box-shadow: -5px 0 0 rgba(255,60,60,.22), 5px 0 0 rgba(60,120,255,.22); animation: sktear 9s infinite steps(1); }
+      ${T} { --hr-fire: #3dff6b; --hr-danger: #3dff6b; }
       ${T} * { text-shadow: -1px 0 rgba(255,60,60,.4), 1px 0 rgba(60,140,255,.4), 0 0 6px rgba(61,255,107,.5); letter-spacing: .02em; }
       ${T} ha-icon { filter: drop-shadow(0 0 4px rgba(61,255,107,.7)); }
       ${T} .key, ${T} .tile, ${T} .rocker, ${T} .seg, ${T} button { border: 1px solid #1fa63f; background-image: none;
@@ -4964,6 +5003,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${T} .sw:has(> input) input:checked + i::after { transform: translateX(20px); background: #3dff6b; box-shadow: 0 0 10px 2px #3dff6b; }
       /* status line: the small buttons (pause, power) carry no frame */
       ${T} .status button, ${T} .chip button, ${T} .chips button { border: none; box-shadow: none; background: transparent; }
+      /* the tools next to the room tabs: no frame, active = brighter glow */
+      ${T} .bbtns .ib, ${T} .bbtns .profchip { border: none; box-shadow: none; background: transparent; color: #3dff6b; }
+      ${T} .bbtns .ib.sel ha-icon { filter: drop-shadow(0 0 6px #3dff6b) drop-shadow(0 0 12px #3dff6b) brightness(1.35); }
+      /* everything green: On/Off keys, the off button, Fire TV app keys and badges in Pip-Boy style (no brand colours) */
+      ${T} .key.pon ha-icon, ${T} .key.poff ha-icon, ${T} .ib.offb, ${T} .ib.offb ha-icon { color: #3dff6b !important; }
+      ${T} .appcell.svc { --c: #021a05 !important; --fg: #3dff6b !important; border: 1px solid #1fa63f; }
+      ${T} .appcell.svc.on { --c: #3dff6b !important; --fg: #021a05 !important; } ${T} .appcell.svc.on * { text-shadow: none; }
+      ${T} .appbadge { --c: transparent !important; --fg: #3dff6b !important; box-shadow: inset 0 0 0 1px #3dff6b; }
+      ${T} .key.muted { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.muted ha-icon { color: #021a05 !important; filter: none; }
       /* the Activities / Devices switch: the block jumps over */
       ${T} .seg { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; padding: 3px; box-shadow: none; }
       ${T} .seg .th { border-radius: 0; background: #3dff6b; box-shadow: 0 0 12px rgba(61,255,107,.6); }
@@ -4973,14 +5021,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${T} .volslider.h::-webkit-slider-runnable-track { height: 28px; background: transparent; } ${T} .volslider.h::-moz-range-track { height: 28px; background: transparent; }
       ${T} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
       ${T} .volslider.h::-moz-range-thumb { width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; }
-      ${T} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; border: 1px solid #3dff6b; background: repeating-linear-gradient(0deg, #3dff6b 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc((100% - 6px) * var(--v, 0) / 100) no-repeat, #021a05; box-shadow: 0 0 8px rgba(61,255,107,.4); }
+      ${T} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; border: 1px solid #3dff6b; box-shadow: 0 0 8px rgba(61,255,107,.35); background: repeating-linear-gradient(0deg, #3dff6b 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc((100% - 6px) * var(--v, 0) / 100) no-repeat, repeating-linear-gradient(0deg, rgba(61,255,107,.16) 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc(100% - 6px) no-repeat, #021a05 !important; }
       ${T} .volslider.v::-webkit-slider-runnable-track { width: 100%; background: transparent; } ${T} .volslider.v::-moz-range-track { background: transparent; }
-      ${T} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
-      ${T} .volslider.v::-moz-range-thumb { width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; }
+      ${T} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 10px; border-radius: 0; background: transparent; border: none; box-shadow: none; }
+      ${T} .volslider.v::-moz-range-thumb { width: 30px; height: 10px; border-radius: 0; background: transparent; border: none; box-shadow: none; }
       /* hold to switch off: green like everything else; blocks fill the whole tile left to right, then the picture shrinks to a line */
       ${T} .holdoff ha-icon, ${T} .tile.off ha-icon { color: #3dff6b !important; }
       ${T} .tile.off.holdoff { justify-content: center; gap: 12px; position: relative; overflow: hidden; }
-      ${T} .tile.off.holdoff::before { content: "" !important; margin: 0 !important; }
+      ${T} .tile.off.holdoff::before { content: "OFF" !important; order: 2; margin: 0 !important; font-weight: 700; letter-spacing: .2em; color: #3dff6b; }
       ${T} .holdoff .hring { display: none; }
       ${T} .holdoff.holding { background: #021a05 !important; }
       ${T} .tile.holdoff.holding::after, ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { content: ""; position: absolute; inset: 0; right: auto; width: calc(var(--p, 0) * 1%); transform: none; animation: none; border-radius: 0;
@@ -5021,13 +5069,23 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         box-shadow: 0 0 22px 4px rgba(255,150,30,.65), inset 0 0 14px rgba(255,200,90,.7), inset 0 -6px 12px rgba(120,40,0,.55); }
       ${R} .tile.on ha-icon, ${R} .tile.dev.sel ha-icon, ${R} .tile.on small, ${R} .tile.dev.sel small, ${R} .actbtn.acton * { color: #3a1802; filter: none; }
       ${R} .tile.on::after, ${R} .tile.dev.sel::after { opacity: .4; }
-      ${R} .status.chip { box-shadow: 0 0 10px rgba(255,184,74,.55); }
-      ${R} .status.chip.active::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px;
-        background: radial-gradient(circle at 35% 30%, #fff 0 12%, rgba(255,255,255,0) 35%), radial-gradient(circle at 50% 55%, #ffcf70, #ff8a12 60%, #7a3a05); box-shadow: 0 0 10px 2px rgba(255,150,30,.9); }
+      /* status line: one green pilot lamp per running device */
+      ${R} .bar .chip { color: #e2c58a; border-color: rgba(200,162,74,.5); background: transparent; box-shadow: none; }
+      ${R} .bar .chip::before { content: ""; flex: none; width: 11px; height: 11px; border-radius: 50%; margin-right: 2px;
+        background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 8px 2px rgba(77,255,107,.7); }
       ${R} .key, ${R} .rocker { border: 2px solid #c8a24a; background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; box-shadow: 0 4px 0 #6b4a1a, 0 6px 8px rgba(0,0,0,.5); }
       ${R} .key ha-icon, ${R} .rocker ha-icon { color: #2a170a !important; }
       ${R} .rocker .rk { background: transparent !important; box-shadow: none !important; border: none !important; }
       ${R} .key.mute.round, ${R} .key.mute { background: linear-gradient(180deg, #efe3c4, #c9b78d) !important; color: #2a170a !important; }
+      /* Mute inside the volume rocker: a round brass button, raised = sound on, pressed in = muted */
+      ${R} .rocker .rk.mute.round { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210) !important; border: 2px solid #2a170a !important; box-shadow: 0 3px 0 #3b2a14, 0 5px 6px rgba(0,0,0,.6) !important; transition: transform .12s, box-shadow .12s; }
+      ${R} .rocker .rk.mute.round.muted { transform: translateY(3px); filter: brightness(.82); box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 #3b2a14 !important; }
+      /* keys with a state are pressed in while active; keys without one go down on a tap and come back */
+      ${R} .key.sel, ${R} .key.on, ${R} .key.muted, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
+      ${R} .key { transition: transform .12s ease, box-shadow .12s ease; }
+      ${R} .key.lit, ${R} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; color: #2a170a; box-shadow: 0 1px 0 #6b4a1a, 0 2px 3px rgba(0,0,0,.5); }
+      ${R} .rocker .rk.lit, ${R} .rocker .rk:active { background: transparent !important; box-shadow: none !important; }
+      ${R} .appcell.svc.on { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
       /* toggle switch, horizontal: brass nut, chrome lever pointing right = ON (AN, nut glows) or left = OFF (AUS) */
@@ -5038,8 +5096,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
       ${R} .sw:has(> input) i::after { content: ""; position: absolute; height: 10px; width: 24px; top: 13px; left: 6px; border-radius: 5px; transform: none; background: linear-gradient(180deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
       ${R} .sw:has(> input) input:checked + i::after { left: 52px; transform: none; box-shadow: 0 3px 4px rgba(0,0,0,.6); }
-      ${R} .sw:has(> input)::before { content: "AUS"; position: absolute; left: 0; top: 50%; margin-top: -6px; width: 26px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
-      ${R} .sw:has(> input)::after { content: "AN"; position: absolute; right: 0; top: 50%; margin-top: -6px; width: 24px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
+      ${R} .sw:has(> input)::before { content: none; display: none; }
+      ${R} .sw:has(> input)::after { content: none; display: none; }
+      ${R} .sw:has(> input) { width: 88px; }
+      ${R} .sw:has(> input) i::before { left: 18px; }
+      ${R} .sw:has(> input) i::after { left: 4px; width: 20px; }
+      ${R} .sw:has(> input) input:checked + i::after { left: 36px; }
+      ${R} .sw .lamp { display: block; position: absolute; right: 0; top: 8px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #b9b19a; box-sizing: border-box; pointer-events: none;
+        background: radial-gradient(circle at 38% 32%, #ff9a8a, #b0180a 55%, #4a0803); box-shadow: 0 0 5px rgba(255,40,20,.35), inset 0 0 4px rgba(0,0,0,.5); }
+      ${R} .sw input:checked ~ .lamp { background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 10px 3px rgba(77,255,107,.8); }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -5058,6 +5123,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .volslider.v::-moz-range-track { width: 12px; border-radius: 6px; background: #2a1408; } ${R} .volslider.v::-moz-range-progress { width: 12px; background: #ff9a1f; }
       ${R} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-left: -9px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
       ${R} .volslider.v::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); }
+      /* vertical volume: a straight rail with a scale of tick marks left and right */
+      ${R} .rocker.slr { position: relative; }
+      ${R} .rocker.slr::before, ${R} .rocker.slr::after { content: ""; position: absolute; top: 18px; bottom: 62px; width: 9px; pointer-events: none; background: repeating-linear-gradient(0deg, #6b4a1a 0 1.5px, transparent 1.5px 12px); }
+      ${R} .rocker.slr::before { left: 5px; } ${R} .rocker.slr::after { right: 5px; }
+      ${R} .rocker.slr:not(:has(.mute))::before, ${R} .rocker.slr:not(:has(.mute))::after { bottom: 18px; }
       /* round typewriter keys on the keyboard */
       ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
       ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
@@ -5098,10 +5168,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         .lay-auto section:has(> .below), .lay-wide section:has(> .below) { display: grid; grid-template-columns: 210px minmax(0, 1fr); column-gap: 22px; row-gap: 0; align-items: start;
           grid-template-areas: "hdr hdr" "box box" "link link" "seg below" "cap below" "pager below"; grid-template-rows: auto auto auto auto auto 1fr; }
         .lay-auto section:has(> .below) > *, .lay-wide section:has(> .below) > * { min-width: 0; margin-bottom: 12px; }
-        .lay-auto section:has(> .below) > .hdr, .lay-wide section:has(> .below) > .hdr { grid-area: hdr; display: flex; align-items: center; gap: 16px; }
+        .lay-auto section:has(> .below) > .hdr, .lay-wide section:has(> .below) > .hdr { grid-area: hdr; display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
         .lay-auto section:has(> .below) > .hdr .hubtabs, .lay-wide section:has(> .below) > .hdr .hubtabs { margin: 0; flex: 0 1 auto; } .lay-auto section:has(> .below) .hubtabs button, .lay-wide section:has(> .below) .hubtabs button { flex: 0 0 auto; }
-        .lay-auto section:has(> .below) > .hdr .bar, .lay-wide section:has(> .below) > .hdr .bar { margin-left: auto; min-width: 340px; }
-        .lay-auto section:has(> .below) > .hdr .hub, .lay-wide section:has(> .below) > .hdr .hub { flex: 1; }
         .lay-auto section > .helpbox, .lay-wide section > .helpbox, .lay-auto section > .infopanel, .lay-wide section > .infopanel { grid-area: box; }
         .lay-auto section > .linkbar, .lay-wide section > .linkbar { grid-area: link; }
         .lay-auto section > .seg, .lay-wide section > .seg { grid-area: seg; }
@@ -5455,6 +5523,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .pager { overflow: hidden; border-radius: var(--hr-tile-radius); }
       .pager .track { display: flex; align-items: flex-start; }
       .pager .pane { flex: 0 0 100%; min-width: 0; box-sizing: border-box; padding: 2px; }
+      .toprow { display: flex; align-items: center; gap: 8px; min-width: 0; } .toprow > .hubtabs, .toprow > .hub { flex: 1 1 auto; min-width: 0; } .toprow > .hubtabs { margin-bottom: 0; }
+      .toprow .bbtns, .slimrow .bbtns { display: flex; align-items: center; gap: 2px; flex: none; } .bbtns .ib { width: 36px; height: 36px; } .bbtns .ib.subtle { width: 30px; } .bbtns .lockmark { margin: 0 4px; }
+      .bar .netchip { font: inherit; cursor: pointer; text-align: left; color: var(--hr-text); }
+      .slimbar .sw.none { color: var(--hr-muted); text-align: left; } .slimbar .sw:first-child { text-align: left; }
       .bar { display: flex; align-items: flex-start; gap: 8px; padding: 6px; border-radius: var(--hr-seg-radius, 14px); border: 1px solid var(--divider-color, rgba(128,128,128,.3)); }
       .bar .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 0; min-width: 0; } .bar .bbtns { display: flex; gap: 6px; flex: none; }
       .bar .chip { box-sizing: border-box; flex: 1 1 190px; min-width: 0; height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 10px; border-radius: 999px; border: 1px solid var(--divider-color, rgba(128,128,128,.35)); background: transparent; color: var(--hr-muted); font-size: 0.85em; }
@@ -5464,7 +5536,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .bar .status.busy > ha-icon { animation: pulse 1s ease-in-out infinite; }
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
-      @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; } .bar .bbtns { display: grid; grid-template-columns: repeat(2, 38px); } .profchip { width: 38px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; } .toprow .hubtabs button:not(.sel) .rn { display: none; } .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -5502,6 +5574,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .hdev.go:focus-visible { outline: 2px solid var(--hr-accent); outline-offset: 2px; } .hdev .golink { --mdc-icon-size: 18px; color: var(--hr-muted); margin-left: auto; }
       .volcol { display: flex; flex-direction: column; gap: 8px; height: 100%; } .volcol .rocker { flex: 1; height: auto; min-height: 0; }
       .rk.mute.round { min-height: 46px; border-radius: 999px; background: var(--hr-tile-bg); }
+      .rocker .rk.mute.round { flex: none; align-self: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; background: var(--hr-key-bg); --mdc-icon-size: 20px; }
+      .rocker.slr .rk.mute.round { margin-top: 6px; } .rocker.slr { flex-direction: column; }
+      .sw .lamp { display: none; }
+      .key.muted { color: var(--hr-accent); box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .sidecol { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: space-between; }
       .key.tall { flex: 1; min-height: 40px; flex-direction: column; gap: 1px; border-radius: var(--hr-rk-radius, 14px); padding: 2px; } .key.tall ha-icon { --mdc-icon-size: 20px; }
       .key .sub { font-size: 0.62em; color: var(--hr-muted); line-height: 1.05; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

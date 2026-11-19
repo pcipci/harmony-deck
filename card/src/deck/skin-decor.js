@@ -39,7 +39,7 @@ export const skinDecorMixin = {
     const st = link ? this._hass?.states?.[link.entity]?.state : null;
     const known = st && !["unavailable", "unknown"].includes(st);
     const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
-    return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
+    return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i><b class="lamp"></b></span></label>`;
   },
 
   // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
@@ -63,9 +63,15 @@ export const skinDecorMixin = {
     this._bindStickyHeader(root);
     root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
       const { hub, device } = el.dataset;
-      this._pwrLast = { ...(this._pwrLast || {}), [`${hub}/${device}`]: el.checked };
-      const cmd = el.checked ? "PowerOn" : "PowerOff";
-      [...root.querySelectorAll("button[data-cmd]")].find((b) => b.dataset.cmd === cmd && b.dataset.hub === hub && b.dataset.device === device)?.click();
+      this._swPowerSend(hub, device, el.checked);
     }));
+  },
+
+  // The switch sends On/Off itself. (Up to 0.15.4 it "clicked" the hidden On/Off key, but keys send on pointerdown,
+  // so a click never reached them and the switch did nothing.)
+  _swPowerSend(hub, device, on) {
+    this._pwrLast = { ...(this._pwrLast || {}), [`${hub}/${device}`]: on };
+    this._buzz();
+    this._hass.callService("remote", "send_command", { entity_id: hub, device, command: on ? "PowerOn" : "PowerOff", ...this._holdOpt() });
   },
 };

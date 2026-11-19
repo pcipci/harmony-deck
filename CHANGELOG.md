@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.15.5
+
+### Fixed
+- **Tube radio: the On/Off switch of a device did nothing** (Toggle worked). The switch "clicked" the hidden On/Off key, but keys send when they are pressed down, so the click never reached them. The switch now sends the command itself (with a test).
+- The tube radio switch had German labels (AN/AUS) in every language; it now has a lamp instead of text.
+
+### Changed
+- **Status line shows only what runs:** one chip each for the running Harmony activity, the Fire TV (app badge, pause, standby) and every linked network device that is on, with its source ("LG TV · HDMI 1"; tap opens the device). Everything off = no chips. Nothing is shown for "off" or "unknown" any more.
+- **Tools moved up:** lock, profile, help, info and the collapse arrow sit at the right of the room tab row, apart from the device controls.
+- **Collapsed header** is one text line ("Bluray · Fire TV Netflix · LG TV HDMI 1", or "all off" in muted colour), without the room name (the tabs already show it).
+- **Mute inside the volume rocker** (all skins): between + and -, or under the slider; both rockers (volume, program) now have the same height. Mute shows as active while the linked player reports muted.
+- **Terminal:** green throughout (device On/Off keys, the off tile shows "OFF", Fire TV direct app keys and app badges in Pip-Boy style without brand colours); the tool icons have no frame, active = brighter glow; the vertical volume slider is an LED meter (all blocks dim, the set level bright, no extra thumb); Mute active = green block.
+- **Tube radio:** On/Off switch with a pilot lamp (green glowing = on, red = off) and no text; the vertical volume is a straight rail with a scale of tick marks; Mute is a round brass button (raised = sound, pressed in = muted); keys with a state (selected source, favourites, Mute) are pressed in while active, other keys go down on a tap (about 120 ms); every running device in the status line has a green pilot lamp. Lamps stay for the tiles.
+- On narrow cards only the selected room tab shows its name, so all rooms stay reachable next to the tools.
+
+### Notes
+- Not yet tested on real hardware.
+
 ## 0.15.4
 
 ### Fixed

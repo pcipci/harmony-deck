@@ -981,5 +981,6 @@
     "source_read": "Quelle lesen",
     "app_read": "Laufende App lesen",
     "app_list": "Apps auflisten"
-  }
+  },
+  "preferHint": "Über Harmony können Tasten verzögert oder gar nicht ankommen (der Hub sendet Infrarot oder Bluetooth). ADB direkt ist schnell und für eine neue Einrichtung voreingestellt."
 }

@@ -153,6 +153,76 @@
           "on": "Вкл.",
           "off": "Выкл."
         }
+      },
+      "net_cap_state": {
+        "name": "Чтение состояния",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_power_on": {
+        "name": "Включение",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_power_off": {
+        "name": "Выключение",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_volume_set": {
+        "name": "Задать громкость",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_volume_read": {
+        "name": "Читать громкость",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_mute": {
+        "name": "Без звука",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_source_select": {
+        "name": "Выбор источника",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_source_read": {
+        "name": "Читать источник",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_app_read": {
+        "name": "Читать приложение",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "net_cap_app_list": {
+        "name": "Список приложений",
+        "state": {
+          "yes": "Да",
+          "no": "Нет"
+        }
       }
     },
     "switch": {

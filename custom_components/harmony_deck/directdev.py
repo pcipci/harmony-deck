@@ -123,7 +123,9 @@ def fire_configs(direct: Any, links: Any) -> dict[str, dict[str, Any]]:
         for label in sorted(devices):
             link = devices[label]
             if "fire" in link:
-                out[hub] = {**link["fire"], "entity": link["entity"], "device": label}
+                old = out.get(hub) or {}
+                base = {k: v for k, v in old.items() if k not in ("entity", "device")} if old.get("entity") == link["entity"] else {}
+                out[hub] = {**base, **link["fire"], "entity": link["entity"], "device": label}
                 break
     return out
 

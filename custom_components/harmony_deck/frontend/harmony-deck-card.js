@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.15.2";
+  var VERSION = "0.15.4";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2046,10 +2046,18 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const all = JSON.parse(JSON.stringify(this._ddLinks()));
       all[hubId] = { ...all[hubId] || {} };
       const cand = patch?.entity ? (this._dd?.candidates || []).find((c) => c.entity === patch.entity) : null;
-      if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) patch = { ...patch, fire: {} };
+      const rest = { ...this._settings().direct || {} };
+      if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) {
+        const old = rest[hubId];
+        if (old && old.entity === patch.entity) {
+          const { entity, device: dev, ...keep } = old;
+          patch = { ...patch, fire: keep };
+          delete rest[hubId];
+        } else patch = { ...patch, fire: {} };
+      }
       if (patch === null) delete all[hubId][device];
       else all[hubId][device] = { ...all[hubId][device] || {}, ...patch };
-      await this._saveSettings({ directDevices: all });
+      await this._saveSettings({ directDevices: all, direct: rest });
       this._ddLoad(true);
     },
     // Suggestions: on for all unless switched off; single devices can be left out ({off, never: {hub: [device]}}).
@@ -2504,7 +2512,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${this._grp(g.conn, `${own ? `<input type="hidden" data-direct="entity" value="${esc(cur.entity || "")}"><input type="hidden" data-direct="device" value="${esc(cur.device || "")}">` : `<label class="erow"><span>${t.directEntity}</span>${this._entSelect("data-direct", this._fireCandidates(), cur.entity || "", t)}</label>
         <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>`}
         <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
+        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" || cur.prefer === void 0 ? "selected" : ""}>${t.preferA}</option></select></label>
+        <div class="hint" style="padding:0 0 6px;text-align:left;font-size:12px">${t.preferHint}</div>
         ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
       ${this._grp(g.fireAct, `${this._swRow(t.directAct, 'data-direct="inact"', cur.inActivities)}
         ${this._swRow(t.offlineLock, 'data-direct="offlock"', cur.lockOffline)}`)}
@@ -2585,7 +2594,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _fireCfg(hubId) {
       const links = this._settings().directDevices?.[hubId] || {};
       const label = Object.keys(links).sort().find((l) => links[l].fire);
-      if (label) return { ...links[label].fire, entity: links[label].entity, device: label };
+      if (label) {
+        const old = this._settings().direct?.[hubId];
+        const base = old && old.entity === links[label].entity ? { ...old, device: void 0 } : {};
+        delete base.device;
+        return { ...base, ...links[label].fire, entity: links[label].entity, device: label };
+      }
       return this._settings().direct?.[hubId] || null;
     },
     // Save the Fire TV settings of a hub (null = unlink the Fire TV settings); where they live is decided here.
@@ -4811,7 +4825,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
       root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
       root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
-        if (b.dataset.goetab) this._etab = b.dataset.goetab;
+        this._etab = b.dataset.goetab || "look";
         this._onEdit(b.dataset.edit);
       }));
       root.querySelectorAll("input[data-vis]").forEach((i) => i.addEventListener("change", () => this._saveHidden(i.dataset.hub)));
@@ -4879,7 +4893,27 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
       return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
     },
+    // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
+    // (a sticky bar pushed down there covered the first row of keys on a tablet).
+    _bindStickyHeader(root) {
+      if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
+      this._stickFn = null;
+      const bars = [...root.querySelectorAll("section.collapsed > .hdr")];
+      if (!bars.length) return;
+      const scrolled = () => {
+        for (let n = this; n; n = n.assignedSlot || n.parentNode || n.host) if (n.scrollTop > 0) return true;
+        return (document.scrollingElement?.scrollTop || 0) > 0;
+      };
+      const upd = () => {
+        const on = !scrolled();
+        bars.forEach((hdr) => hdr.classList.toggle("nostick", on));
+      };
+      this._stickFn = upd;
+      window.addEventListener("scroll", upd, { capture: true, passive: true });
+      upd();
+    },
     _bindSkinDecor(root) {
+      this._bindStickyHeader(root);
       root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
         const { hub, device } = el.dataset;
         this._pwrLast = { ...this._pwrLast || {}, [`${hub}/${device}`]: el.checked };
@@ -4923,11 +4957,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${T} .tile.on, ${T} .tile.dev.sel, ${T} .actbtn.acton, ${T} .key.sel, ${T} .mini.sel { background: #3dff6b; color: #021a05; text-shadow: none; box-shadow: 0 0 14px rgba(61,255,107,.55); outline: none; }
       ${T} .tile.on:not(.dev)::before { content: "\\25B6"; color: #021a05; }
       ${T} .tile.on ha-icon, ${T} .tile.on span, ${T} .tile.on small, ${T} .tile.dev.sel ha-icon, ${T} .tile.dev.sel span, ${T} .tile.dev.sel small, ${T} .actbtn.acton *, ${T} .key.sel *, ${T} .mini.sel * { color: #021a05 !important; filter: none; text-shadow: none; }
-      /* switches: off = hollow block, on = filled block (like the active tiles) */
-      ${T} .sw:has(> input) i { border-radius: 0; background: #021a05; border: 1px solid #3dff6b; }
-      ${T} .sw:has(> input) i::after { border-radius: 0; width: 20px; height: 20px; top: 3px; background: #1fa63f; }
-      ${T} .sw:has(> input) input:checked + i { background: #3dff6b; box-shadow: 0 0 10px rgba(61,255,107,.6); }
-      ${T} .sw:has(> input) input:checked + i::after { transform: translateX(20px); background: #021a05; box-shadow: none; }
+      /* switches: a lit slider on black: left = off (dim), right = on (glowing green) */
+      ${T} .sw:has(> input) i { border-radius: 0; background: #010a02; border: 1px solid #1fa63f; box-shadow: inset 0 0 6px rgba(0,0,0,.9); }
+      ${T} .sw:has(> input) i::after { border-radius: 0; width: 20px; height: 20px; top: 3px; background: #14602a; box-shadow: none; }
+      ${T} .sw:has(> input) input:checked + i { background: #010a02; border-color: #3dff6b; box-shadow: 0 0 10px rgba(61,255,107,.55), inset 0 0 8px rgba(61,255,107,.25); }
+      ${T} .sw:has(> input) input:checked + i::after { transform: translateX(20px); background: #3dff6b; box-shadow: 0 0 10px 2px #3dff6b; }
+      /* status line: the small buttons (pause, power) carry no frame */
+      ${T} .status button, ${T} .chip button, ${T} .chips button { border: none; box-shadow: none; background: transparent; }
       /* the Activities / Devices switch: the block jumps over */
       ${T} .seg { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; padding: 3px; box-shadow: none; }
       ${T} .seg .th { border-radius: 0; background: #3dff6b; box-shadow: 0 0 12px rgba(61,255,107,.6); }
@@ -4937,6 +4973,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${T} .volslider.h::-webkit-slider-runnable-track { height: 28px; background: transparent; } ${T} .volslider.h::-moz-range-track { height: 28px; background: transparent; }
       ${T} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
       ${T} .volslider.h::-moz-range-thumb { width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; }
+      ${T} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; border: 1px solid #3dff6b; background: repeating-linear-gradient(0deg, #3dff6b 0 8px, transparent 8px 11px) 3px calc(100% - 3px) / calc(100% - 6px) calc((100% - 6px) * var(--v, 0) / 100) no-repeat, #021a05; box-shadow: 0 0 8px rgba(61,255,107,.4); }
+      ${T} .volslider.v::-webkit-slider-runnable-track { width: 100%; background: transparent; } ${T} .volslider.v::-moz-range-track { background: transparent; }
+      ${T} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
+      ${T} .volslider.v::-moz-range-thumb { width: 30px; height: 6px; border-radius: 0; background: #b8ffc9; border: none; }
+      /* hold to switch off: green like everything else; blocks fill the whole tile left to right, then the picture shrinks to a line */
+      ${T} .holdoff ha-icon, ${T} .tile.off ha-icon { color: #3dff6b !important; }
+      ${T} .tile.off.holdoff { justify-content: center; gap: 12px; position: relative; overflow: hidden; }
+      ${T} .tile.off.holdoff::before { content: "" !important; margin: 0 !important; }
+      ${T} .holdoff .hring { display: none; }
+      ${T} .holdoff.holding { background: #021a05 !important; }
+      ${T} .tile.holdoff.holding::after, ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { content: ""; position: absolute; inset: 0; right: auto; width: calc(var(--p, 0) * 1%); transform: none; animation: none; border-radius: 0;
+        background: repeating-linear-gradient(90deg, rgba(61,255,107,.55) 0 8px, transparent 8px 11px); box-shadow: 0 0 10px rgba(61,255,107,.5); }
+      ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { width: 100%; transition: clip-path .7s linear; clip-path: inset(0 0 0 0); }
+      ${T} .holdoff.fired { background: #3dff6b !important; color: #021a05; transform: scaleY(.14); transition: transform .35s ease-in; box-shadow: 0 0 22px 6px rgba(184,255,201,.8); }
+      ${T} .holdoff.fired ha-icon, ${T} .holdoff.fired span { opacity: 0; }
       @keyframes skroll { from { transform: translateY(-120px); } to { transform: translateY(1400px); } }
       @keyframes sksnow { 0% { background-position: 0 0; } 33% { background-position: -40px 25px; } 66% { background-position: 30px -50px; } 100% { background-position: 0 0; } }
       @keyframes skflick { 0%, 92%, 100% { filter: none; transform: none; } 93% { filter: brightness(1.25); transform: translateX(2px); } 94% { filter: brightness(.8); transform: translateX(-3px) skewX(1deg); } 95% { filter: none; transform: none; } }
@@ -4979,16 +5030,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .key.mute.round, ${R} .key.mute { background: linear-gradient(180deg, #efe3c4, #c9b78d) !important; color: #2a170a !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
-      /* toggle switch: brass nut, chrome lever up = ON (AN, nut glows) or down = OFF (AUS) */
-      ${R} .sw:has(> input) { position: relative; width: 46px; height: 70px; margin-left: 6px; flex: none; }
+      /* toggle switch, horizontal: brass nut, chrome lever pointing right = ON (AN, nut glows) or left = OFF (AUS) */
+      ${R} .sw:has(> input) { position: relative; width: 82px; height: 36px; margin-left: 6px; flex: none; }
       ${R} .sw:has(> input) i { background: none; border: none; box-shadow: none; }
-      ${R} .sw:has(> input) i::before { content: ""; position: absolute; left: 5px; right: 5px; top: 24px; height: 22px; border-radius: 50%; inset: auto; left: 5px; right: 5px; top: 24px; bottom: auto;
+      ${R} .sw:has(> input) i::before { content: ""; position: absolute; top: 7px; left: 30px; width: 22px; height: 22px; border-radius: 50%; inset: auto; bottom: auto; right: auto; top: 7px; left: 30px;
         background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
       ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
-      ${R} .sw:has(> input) i::after { content: ""; position: absolute; width: 10px; height: 23px; left: 18px; top: 35px; border-radius: 5px; transform: none; background: linear-gradient(90deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
-      ${R} .sw:has(> input) input:checked + i::after { top: 12px; transform: none; box-shadow: 0 -3px 4px rgba(0,0,0,.5); }
-      ${R} .sw:has(> input)::before { content: "AN"; position: absolute; left: 0; right: 0; top: 0; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .1em; }
-      ${R} .sw:has(> input)::after { content: "AUS"; position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .1em; }
+      ${R} .sw:has(> input) i::after { content: ""; position: absolute; height: 10px; width: 24px; top: 13px; left: 6px; border-radius: 5px; transform: none; background: linear-gradient(180deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
+      ${R} .sw:has(> input) input:checked + i::after { left: 52px; transform: none; box-shadow: 0 3px 4px rgba(0,0,0,.6); }
+      ${R} .sw:has(> input)::before { content: "AUS"; position: absolute; left: 0; top: 50%; margin-top: -6px; width: 26px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
+      ${R} .sw:has(> input)::after { content: "AN"; position: absolute; right: 0; top: 50%; margin-top: -6px; width: 24px; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .08em; }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -5002,6 +5053,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .volslider.h::-moz-range-progress { height: 22px; clip-path: polygon(0 88%, 100% 0, 100% 100%, 0 100%); background: linear-gradient(90deg, #ff9a1f, #ffd27a); }
       ${R} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -4px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
       ${R} .volslider.h::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); }
+      ${R} .volslider.v { -webkit-appearance: none; appearance: none; width: 30px; background: transparent; }
+      ${R} .volslider.v::-webkit-slider-runnable-track { width: 12px; border-radius: 6px; box-shadow: inset 0 2px 4px #000; background: linear-gradient(0deg, #ff9a1f, #ffd27a calc(var(--v, 0) * 1%), #2a1408 calc(var(--v, 0) * 1%)); }
+      ${R} .volslider.v::-moz-range-track { width: 12px; border-radius: 6px; background: #2a1408; } ${R} .volslider.v::-moz-range-progress { width: 12px; background: #ff9a1f; }
+      ${R} .volslider.v::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-left: -9px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
+      ${R} .volslider.v::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); }
       /* round typewriter keys on the keyboard */
       ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
       ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
@@ -5009,6 +5065,17 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }
       ${R} .mini:not(.txt) ha-icon, ${R} .mini.txt ha-icon { color: inherit; }
       ${R} .key.isfav, ${R} .editmark { color: #2a170a; }
+      ${R} .mini.ic, ${R} .mini.txt { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; box-shadow: 0 3px 0 #6b4a1a; text-shadow: none; }
+      ${R} .mini.txt.sel { background: linear-gradient(180deg, #ffd27a, #ff9a1f); color: #3a1802; }
+      ${R} .infoedit, ${R} .infoedit * { color: #2a170a; text-shadow: none; }
+      /* hold to switch off: the lamp heats up from dark through orange to red, then goes out with a faint afterglow */
+      ${R} .holdoff .hring { display: none; }
+      ${R} .tile.holdoff.holding { border-color: #d9d2bc; color: #fff3e0;
+        background: radial-gradient(ellipse at 50% 16%, rgba(255,255,255,.5) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 58%, rgba(255,70,20,calc(var(--p, 0) / 110)) 0, rgba(180,40,10,calc(var(--p, 0) / 130)) 55%, #1d0f05 100%) !important;
+        box-shadow: 0 0 calc(var(--p, 0) * .3px) calc(var(--p, 0) * .06px) rgba(255,70,20,.85), inset 0 0 14px rgba(0,0,0,.6) !important; }
+      ${R} .tile.holdoff.holding ha-icon { color: #fff3e0 !important; filter: drop-shadow(0 0 6px #ff6a2a); }
+      ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
+      ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i { animation: none !important; transition: none !important; } }
 `;
 
@@ -5425,6 +5492,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ha-card { overflow: visible; }
       section > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 8px); }
       section.collapsed > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 62px); }
+      section.collapsed > .hdr.nostick { position: static; }
       section.collapsed > .hdr { display: block; position: sticky; top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px)); z-index: 4; padding: 6px 0; margin: -6px 0; background: var(--hr-card-bg, var(--card-background-color)); }
       .devhead .devclose { margin-left: auto; }
       .tabhint { margin: 2px 0 6px; } .adbhelp { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; } .adbhelp ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-accent); }
@@ -5569,7 +5637,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         }
         return;
       }
-      this._slTimer = setTimeout(() => this._slLoad(), 600);
+      this._slTimer = setTimeout(() => this._slLoad(), 250);
     },
     async _slLoad() {
       let next = null;
@@ -5720,6 +5788,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     disconnectedCallback() {
       document.removeEventListener("keydown", this._onKey, true);
       this._ro?.disconnect();
+      if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
     }
     getCardSize() {
       return this._config?.compact ? 4 : 10;

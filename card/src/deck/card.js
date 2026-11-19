@@ -96,6 +96,7 @@ export class HarmonyDeckCard extends HTMLElement {
   disconnectedCallback() {
     document.removeEventListener("keydown", this._onKey, true);
     this._ro?.disconnect();
+    if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
   }
 
   getCardSize() { return this._config?.compact ? 4 : 10; }

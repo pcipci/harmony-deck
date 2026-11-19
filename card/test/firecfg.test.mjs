@@ -32,4 +32,11 @@ s = { directDevices: { r: { Cube: { entity: "media_player.fire", fire: { model: 
 c = make(s);
 await c._fireSave("r", null);
 assert.equal("fire" in s.directDevices.r.Cube, false);
+// linking the same player: an empty block must not hide the old settings (0.15.4)
+s = { directDevices: { r: { Cube: { entity: "media_player.fire", fire: {} } } }, direct: { r: { entity: "media_player.fire", device: "", prefer: "adb", model: "cube", hiddenApps: ["Kodi"] } } };
+c = make(s);
+assert.deepEqual(c._fireCfg("r"), { entity: "media_player.fire", prefer: "adb", model: "cube", hiddenApps: ["Kodi"], device: "Cube" });
+// a different player in the old place does not leak in
+s = { directDevices: { r: { Cube: { entity: "media_player.fire", fire: {} } } }, direct: { r: { entity: "media_player.other", prefer: "adb" } } };
+assert.deepEqual(make(s)._fireCfg("r"), { entity: "media_player.fire", device: "Cube" });
 console.log("firecfg ok");

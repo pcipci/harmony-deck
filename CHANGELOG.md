@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.15.4
+
+### Fixed
+- **Fire TV keys stopped working after linking the Fire TV in Network control** (arrows, OK, Home went via Harmony although "ADB directly" was set). Linking created an empty Fire TV settings block on the link, and the card (and the integration's lock logic) took that block and ignored the existing settings (ADB preference, model, IR volume, hidden apps, package names). Now the existing settings of the same player move onto the new link, and an empty block never hides them. A different player in the old place does not leak in.
+- Terminal: the icon of the switch-off tile sits in the middle again.
+
+### Changed
+- **Hold effects per skin** (switch off, locked tiles, actions with hold): Terminal fills the whole tile with green blocks from left to right and shrinks to a line when it fires; the red power symbols are green now. Tube radio: the lamp heats up from dark through orange to red while held and goes out with a faint afterglow. Other skins keep the ring.
+- Settings always open on the first tab (Appearance), except via a shortcut that names a tab (before, the last tab was kept).
+
+*0.15.3 is included:* capability sensors, collapsed header fix, readable radio buttons, skin polish, "ADB directly" preselected for new Fire TV setups.
+
+### Notes
+- Not yet tested on real hardware.
+
+## 0.15.3
+
+### Fixed
+- **Collapsed header covered the first row of keys (tablet).** The bar now sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in its place.
+- **Tube radio:** the buttons of the device pages (Network control: Read again, On/Off, Mute, sources) and "Settings / Favourites / Actions" were dark on dark or light on light; they are now brass buttons with dark text.
+
+### Changed
+- **Terminal:** switches are a lit slider on black (left = dim, right = glowing green); the vertical volume slider is a column of green blocks like the horizontal one; the small buttons in the status line (pause, power) have no green frame.
+- **Tube radio:** toggle switches are horizontal (lever left = off, right = on); the vertical volume slider has the amber fill and brass knob.
+- **Fire TV:** "ADB directly" is the preselected way for the shared keys in a new setup, with a note that keys via Harmony can arrive late or not at all (the hub sends infrared or Bluetooth). Existing settings are not changed.
+- The volume slider asks the integration again a little sooner after a change of activity or player state.
+
+### Added
+- **One diagnostic sensor per capability** (yes / no) on the "Name (Network)" device, so the capabilities can be read on the Home Assistant device page. They are disabled by default; enable the ones you want.
+
+### Notes
+- Not yet tested on real hardware.
+
+
 ## 0.15.2
 
 ### Changed (skins, card only)

@@ -42,7 +42,25 @@ export const skinDecorMixin = {
     return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
   },
 
+  // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
+  // (a sticky bar pushed down there covered the first row of keys on a tablet).
+  _bindStickyHeader(root) {
+    if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
+    this._stickFn = null;
+    const bars = [...root.querySelectorAll("section.collapsed > .hdr")];
+    if (!bars.length) return;
+    const scrolled = () => {
+      for (let n = this; n; n = n.assignedSlot || n.parentNode || n.host) if (n.scrollTop > 0) return true;
+      return (document.scrollingElement?.scrollTop || 0) > 0;
+    };
+    const upd = () => { const on = !scrolled(); bars.forEach((hdr) => hdr.classList.toggle("nostick", on)); };
+    this._stickFn = upd;
+    window.addEventListener("scroll", upd, { capture: true, passive: true });
+    upd();
+  },
+
   _bindSkinDecor(root) {
+    this._bindStickyHeader(root);
     root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
       const { hub, device } = el.dataset;
       this._pwrLast = { ...(this._pwrLast || {}), [`${hub}/${device}`]: el.checked };

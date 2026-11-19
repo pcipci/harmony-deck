@@ -153,6 +153,76 @@
           "on": "Ein",
           "off": "Aus"
         }
+      },
+      "net_cap_state": {
+        "name": "Zustand lesen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_power_on": {
+        "name": "Einschalten",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_power_off": {
+        "name": "Ausschalten",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_volume_set": {
+        "name": "Lautstärke setzen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_volume_read": {
+        "name": "Lautstärke lesen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_mute": {
+        "name": "Stumm",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_source_select": {
+        "name": "Quelle wählen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_source_read": {
+        "name": "Quelle lesen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_app_read": {
+        "name": "Laufende App lesen",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
+      },
+      "net_cap_app_list": {
+        "name": "Apps auflisten",
+        "state": {
+          "yes": "Ja",
+          "no": "Nein"
+        }
       }
     },
     "switch": {

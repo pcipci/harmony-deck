@@ -153,6 +153,76 @@
           "on": "On",
           "off": "Off"
         }
+      },
+      "net_cap_state": {
+        "name": "Reads state",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_power_on": {
+        "name": "Switch on",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_power_off": {
+        "name": "Switch off",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_volume_set": {
+        "name": "Set volume",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_volume_read": {
+        "name": "Read volume",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_mute": {
+        "name": "Mute",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_source_select": {
+        "name": "Pick source",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_source_read": {
+        "name": "Read source",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_app_read": {
+        "name": "Read running app",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "net_cap_app_list": {
+        "name": "List apps",
+        "state": {
+          "yes": "Yes",
+          "no": "No"
+        }
       }
     },
     "switch": {

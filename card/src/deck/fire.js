@@ -26,7 +26,13 @@ export const fireMixin = {
   _fireCfg(hubId) {
     const links = this._settings().directDevices?.[hubId] || {};
     const label = Object.keys(links).sort().find((l) => links[l].fire);
-    if (label) return { ...links[label].fire, entity: links[label].entity, device: label };
+    if (label) {
+      // Settings still in the old place for the same player count too (an empty block made by linking must not hide them).
+      const old = this._settings().direct?.[hubId];
+      const base = old && old.entity === links[label].entity ? { ...old, device: undefined } : {};
+      delete base.device;
+      return { ...base, ...links[label].fire, entity: links[label].entity, device: label };
+    }
     return this._settings().direct?.[hubId] || null;
   },
 

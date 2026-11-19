@@ -34,9 +34,14 @@ export const directEditorMixin = {
     const all = JSON.parse(JSON.stringify(this._ddLinks()));
     all[hubId] = { ...(all[hubId] || {}) };
     const cand = patch?.entity ? (this._dd?.candidates || []).find((c) => c.entity === patch.entity) : null;
-    if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) patch = { ...patch, fire: {} };
+    // The Fire TV page settings move onto the new link (instead of an empty block that would hide them).
+    const rest = { ...(this._settings().direct || {}) };
+    if (cand?.caps?.includes("app_read") && !Object.values(all[hubId]).some((l) => l.fire)) {
+      const old = rest[hubId];
+      if (old && old.entity === patch.entity) { const { entity, device: dev, ...keep } = old; patch = { ...patch, fire: keep }; delete rest[hubId]; } else patch = { ...patch, fire: {} };
+    }
     if (patch === null) delete all[hubId][device]; else all[hubId][device] = { ...(all[hubId][device] || {}), ...patch };
-    await this._saveSettings({ directDevices: all });
+    await this._saveSettings({ directDevices: all, direct: rest });
     this._ddLoad(true);
   },
 

@@ -22,7 +22,7 @@ from .const import DOMAIN
 from .direct_watch import watcher
 from .lock import lock_hubs
 
-KEYS = ("net_platform", "net_capabilities", "net_state")
+KEYS = ("net_platform", "net_capabilities", "net_state") + tuple(f"net_cap_{c}" for c in directdev.CAPS)
 _SEP = "::"
 
 # Capabilities in words, in the language Home Assistant runs in (the codes stay in the attributes).
@@ -154,7 +154,30 @@ class NetState(NetEntity):
         return {"entity": item.get("entity"), "volume": item.get("volume"), "muted": item.get("muted"), "source": item.get("source")}
 
 
-_CLASSES = {"net_platform": NetPlatform, "net_capabilities": NetCapabilities, "net_state": NetState}
+class NetCapability(NetEntity):
+    """One capability of the linked player as its own sensor (yes / no), so it can be seen on the device page.
+
+    Off by default (the list in the "Capabilities" sensor and on the card shows the same); enable the ones you want.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["yes", "no"]
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, entry: ConfigEntry, hub: str, device: str, hub_id: str | None, key: str) -> None:
+        super().__init__(entry, hub, device, hub_id, key)
+        self._code = key[len("net_cap_"):]
+
+    @property
+    def native_value(self) -> str | None:
+        caps = self._item.get("capabilities")
+        if caps is None:
+            return None
+        return "yes" if self._code in caps else "no"
+
+
+_CLASSES = {"net_platform": NetPlatform, "net_capabilities": NetCapabilities, "net_state": NetState,
+            **{f"net_cap_{c}": NetCapability for c in directdev.CAPS}}
 
 
 async def async_setup_network_devices(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:

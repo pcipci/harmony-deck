@@ -413,6 +413,7 @@ export const styleMixin = {
       ha-card { overflow: visible; }
       section > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 8px); }
       section.collapsed > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 62px); }
+      section.collapsed > .hdr.nostick { position: static; }
       section.collapsed > .hdr { display: block; position: sticky; top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px)); z-index: 4; padding: 6px 0; margin: -6px 0; background: var(--hr-card-bg, var(--card-background-color)); }
       .devhead .devclose { margin-left: auto; }
       .tabhint { margin: 2px 0 6px; } .adbhelp { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; } .adbhelp ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-accent); }

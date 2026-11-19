@@ -246,7 +246,7 @@ export const settingsEditorMixin = {
     root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
     root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
     root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
-    root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { if (b.dataset.goetab) this._etab = b.dataset.goetab; this._onEdit(b.dataset.edit); }));
+    root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { this._etab = b.dataset.goetab || "look"; this._onEdit(b.dataset.edit); }));
     root.querySelectorAll("input[data-vis]").forEach((i) => i.addEventListener("change", () => this._saveHidden(i.dataset.hub)));
     root.querySelector("select[data-tilestyle]")?.addEventListener("change", (e) => this._saveSettings({ tileStyle: e.target.value }));
     root.querySelectorAll("[data-iconopen]").forEach((b) => b.addEventListener("click", () => { this._iconOpen = this._iconOpen === b.dataset.iconopen ? null : b.dataset.iconopen; this._rerender(); }));

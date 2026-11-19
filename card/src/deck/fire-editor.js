@@ -88,7 +88,8 @@ export const fireEditorMixin = {
       ${this._grp(g.conn, `${own ? `<input type="hidden" data-direct="entity" value="${esc(cur.entity || "")}"><input type="hidden" data-direct="device" value="${esc(cur.device || "")}">` : `<label class="erow"><span>${t.directEntity}</span>${this._entSelect('data-direct', this._fireCandidates(), cur.entity || "", t)}</label>
         <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>`}
         <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
-        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
+        <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" || cur.prefer === undefined ? "selected" : ""}>${t.preferA}</option></select></label>
+        <div class="hint" style="padding:0 0 6px;text-align:left;font-size:12px">${t.preferHint}</div>
         ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
       ${this._grp(g.fireAct, `${this._swRow(t.directAct, 'data-direct="inact"', cur.inActivities)}
         ${this._swRow(t.offlineLock, 'data-direct="offlock"', cur.lockOffline)}`)}

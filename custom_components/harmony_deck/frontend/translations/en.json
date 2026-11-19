@@ -981,5 +981,6 @@
     "source_read": "Read source",
     "app_read": "Read running app",
     "app_list": "List apps"
-  }
+  },
+  "preferHint": "Via Harmony the keys can arrive late or not at all (the hub sends infrared or Bluetooth). Direct ADB is fast; it is the default for a new setup."
 }

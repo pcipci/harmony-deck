@@ -19,7 +19,7 @@ export const volSliderMixin = {
     clearTimeout(this._slTimer);
     const any = hubs.some((h) => Object.values(this._settings().directDevices?.[h.id] || {}).some((l) => l.volumeDirect === true));
     if (!any) { if (this._sl) { this._sl = null; this._key = ""; } return; }
-    this._slTimer = setTimeout(() => this._slLoad(), 600);
+    this._slTimer = setTimeout(() => this._slLoad(), 250);
   },
 
   async _slLoad() {

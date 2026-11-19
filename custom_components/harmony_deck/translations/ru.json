@@ -56,6 +56,12 @@
           "stopped": "Прервано",
           "error": "Ошибка"
         }
+      },
+      "network_control": {
+        "name": "Сетевое управление"
+      },
+      "differences": {
+        "name": "Расхождения"
       }
     },
     "switch": {

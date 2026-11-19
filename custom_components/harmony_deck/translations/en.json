@@ -56,6 +56,12 @@
           "stopped": "Stopped",
           "error": "Error"
         }
+      },
+      "network_control": {
+        "name": "Network control"
+      },
+      "differences": {
+        "name": "Differences"
       }
     },
     "switch": {

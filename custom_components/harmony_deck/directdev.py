@@ -208,3 +208,17 @@ def service_call(entity: str, op: str, value: Any) -> tuple[str, str, dict[str, 
     if op == "mute":
         return "media_player", "volume_mute", {**target, "is_volume_muted": value}
     return "media_player", "select_source", {**target, "source": value}
+
+
+# Known peculiarities of some Home Assistant integrations, by platform (codes; the card and docs explain them).
+PLATFORM_QUIRKS: dict[str, tuple[str, ...]] = {
+    "lg_netcast": ("source_is_channel_list", "mute_toggle_only"),
+}
+
+
+def quirks(platform: str | None, caps: list[str]) -> list[str]:
+    """What a user should know about a linked player: its platform's peculiarities, and a missing switch-on."""
+    out = list(PLATFORM_QUIRKS.get(platform or "", ()))
+    if "state" in caps and "power_on" not in caps:
+        out.append("no_power_on")
+    return out

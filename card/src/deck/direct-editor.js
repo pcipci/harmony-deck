@@ -4,6 +4,7 @@
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 
+const PLATFORMS = { lg_netcast: "LG Netcast", webostv: "LG webOS", samsungtv: "Samsung TV", sonos: "Sonos", androidtv: "Android TV (ADB)", androidtv_remote: "Android TV", cast: "Google Cast", apple_tv: "Apple TV", denonavr: "Denon AVR", yamaha_musiccast: "Yamaha MusicCast", onkyo: "Onkyo", bravia: "Sony Bravia", philips_js: "Philips TV", roku: "Roku", panasonic_viera: "Panasonic Viera" };
 const CAPS = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read"];
 
 export const directEditorMixin = {
@@ -66,7 +67,9 @@ export const directEditorMixin = {
         const caps = item.caps || [];
         detail = item.known === false
           ? `<div class="ehint">${t.ddGone}</div>`
-          : `<div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
+          : `<div class="ehint ddplat"><ha-icon icon="mdi:lan-connect"></ha-icon> ${esc(item.platform ? fmtText(t.ddFound, [PLATFORMS[item.platform] || item.platform]) : t.ddFoundNone)}</div>
+            ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
+            <div class="ehint ddcaps">${caps.length ? fmtText(t.ddCan, [caps.map((c) => t.ddCaps[c] || c).join(", ")]) : t.ddCanNot}</div>
             <div class="ehint">${fmtText(t.ddNow, [this._ddStateText(item.state, t)])}</div>
             ${this._ddInputsHtml(item, links[d], entityId => this._hass.states?.[entityId]?.attributes?.source_list, d, t)}
             ${caps.includes("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!links[d]?.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}`;

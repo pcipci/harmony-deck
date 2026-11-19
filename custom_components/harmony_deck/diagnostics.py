@@ -8,6 +8,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
+from . import direct
 from .const import DOMAIN
 from .websocket import collect_hubs, load_confs
 
@@ -23,6 +24,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
             "diagnostics": diag,
             "hubs": hubs,
             "settings": hass.data.get(DOMAIN, {}).get("settings", {}),
+            "network_control": direct.summary(hass),
             "profiles": {n: sorted(p) for n, p in hass.data.get(DOMAIN, {}).get("profiles", {}).items()},
         },
         TO_REDACT,

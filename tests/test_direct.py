@@ -88,3 +88,9 @@ def test_room_and_kind_decide_between_two_tvs_and_a_player():
     player = {"label": "LG Blu-ray Player", "manufacturer": "LG"}
     ranked = dd.ranked(player, cands, "Wohnzimmer")
     assert ranked[0][1] == "media_player.bluray" and all(s < 2 for s, e in ranked if e.startswith("media_player.tv"))
+
+
+def test_quirks_by_platform_and_missing_power_on():
+    assert dd.quirks("lg_netcast", ["state", "power_off", "volume_set"]) == ["source_is_channel_list", "mute_toggle_only", "no_power_on"]
+    assert dd.quirks("webostv", ["state", "power_on", "power_off"]) == []
+    assert dd.quirks(None, []) == []

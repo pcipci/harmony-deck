@@ -206,6 +206,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
             settings.pop("volumeCap")
     prof.save(data, name, settings, SETTING_KEYS)
     await _commit(hass, data)
+    if "directDevices" in settings and (watch := hass.data[DOMAIN].get("direct_watch")):
+        watch.refresh()
     connection.send_result(msg["id"], {"settings": prof.merged(data, name), "profile": name})
 
 

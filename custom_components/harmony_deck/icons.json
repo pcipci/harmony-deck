@@ -50,6 +50,12 @@
           "stopped": "mdi:stop-circle-outline",
           "done": "mdi:check-circle-outline"
         }
+      },
+      "network_control": {
+        "default": "mdi:lan-connect"
+      },
+      "differences": {
+        "default": "mdi:alert-circle-check-outline"
       }
     },
     "switch": {

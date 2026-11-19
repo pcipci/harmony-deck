@@ -93,6 +93,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         run.async_stop_all()
     if lock := domain_data.pop("lock", None):
         lock.async_stop()
+    if watch := domain_data.pop("direct_watch", None):
+        watch.stop()
     if getattr(entry, "runtime_data", None):
         unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
         entry.runtime_data.clear_issues()

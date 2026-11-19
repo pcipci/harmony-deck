@@ -85,6 +85,27 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
         await hass.services.async_call(domain, service, data, blocking=True, context=context)
 
 
+def platform(hass: HomeAssistant, entity: str) -> str | None:
+    """Integration an entity comes from (entity registry), e.g. "lg_netcast", "webostv"; None if not registered."""
+    entry = er.async_get(hass).async_get(entity)
+    return entry.platform if entry else None
+
+
+def summary(hass: HomeAssistant) -> list[dict[str, Any]]:
+    """Every linked device with what was found about it (for the sensor "Network control" and diagnostics)."""
+    out = []
+    for hub, devices in config(hass).items():
+        for device, link in devices.items():
+            entity = link["entity"]
+            found = caps(hass, entity)
+            plat = platform(hass, entity)
+            snap = snapshot(hass, entity)
+            out.append({"hub": hub, "device": device, "entity": entity, "platform": plat, "capabilities": found,
+                        "on": snap.get("on"), "volume": snap.get("volume"), "source": snap.get("source"),
+                        "quirks": directdev.quirks(plat, found)})
+    return out
+
+
 def candidates(hass: HomeAssistant) -> list[dict[str, Any]]:
     """All media players that can do something useful, with maker and model from the device registry."""
     ents, devs, areas = er.async_get(hass), dr.async_get(hass), ar.async_get(hass)
@@ -124,7 +145,10 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
             item: dict[str, Any] = {**(meta.get(label) or {})}
             if label in linked:
                 entity = linked[label]["entity"]
-                item.update(linked[label], caps=caps(hass, entity), state=snapshot(hass, entity), known=hass.states.get(entity) is not None)
+                found = caps(hass, entity)
+                plat = platform(hass, entity)
+                item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
+                            platform=plat, quirks=directdev.quirks(plat, found))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
             elif (pick := directdev.suggest({**item, "label": label}, free, area)) is not None:
                 item["suggest"] = pick

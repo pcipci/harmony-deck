@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0
+
+### Added
+- **Sensor "Network control"** (diagnostic, like "Fire TV connections"): one sensor, its state is the number of linked devices; the attributes list per device the Harmony device, the entity, the **detected platform** (for example `lg_netcast`), the **capabilities**, the state now and known **peculiarities**. Also part of the downloadable diagnostics.
+- **Sensor "Differences" per hub:** its state is the number of differences between what the current activity needs and what the linked devices do (0 = all fine); the attributes list them (device, kind, target, actual, possible fix). The check now runs in the integration itself (after the state stayed unchanged for 4 seconds), so you can build automations and notifications without the card.
+- **"Detected: ..." in the tab Network control:** shows the integration the media player comes from and what to know about it. For LG Netcast: the source list is the channel list (no HDMI inputs), mute can only be toggled (Harmony Deck checks first), and switching on is only possible if the integration's turn-on action is set up.
+
+### Notes
+- No Repairs message for linked devices: a TV that is off is normally unreachable, which is no fault.
+
 ## 0.9.0
 
 ### Changed

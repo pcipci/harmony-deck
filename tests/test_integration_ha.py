@@ -490,3 +490,36 @@ async def test_mute_is_not_toggled_back(hass: HomeAssistant):
     assert sent == []                                            # already muted: a toggle-only TV would unmute
     await direct.run(hass, "media_player.netcast", "mute", False)
     assert sent == [{"entity_id": "media_player.netcast", "is_volume_muted": False}]
+
+
+async def test_network_control_and_difference_sensors(hass: HomeAssistant, monkeypatch, freezer):
+    from custom_components.harmony_deck import direct_watch, websocket
+
+    monkeypatch.setattr(direct_watch, "QUIET", 0.01)
+    setup = {"SAT": [{"device": "LG", "power": True, "input": None}]}
+    monkeypatch.setattr(websocket, "collect_hubs", lambda hass, confs=None: ({REMOTE: {"devices": {"LG": []}, "setup": setup}}, {}))
+    entry, _, _ = await _setup(hass)
+    er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
+    hass.states.async_set("media_player.tv", "off", {"supported_features": 4 | 8 | 256 | 2048, "volume_level": 0.2})
+    hass.data[DOMAIN]["settings"]["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv"}}}
+    direct_watch.watcher(hass).refresh()
+    await hass.async_block_till_done()
+    freezer.tick(1)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    ents = {e.translation_key: e.entity_id for e in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id) if e.translation_key in ("network_control", "differences")}
+    net = hass.states.get(ents["network_control"])
+    assert net.state == "1"
+    dev = net.attributes["devices"][0]
+    assert dev["platform"] == "lg_netcast" and dev["on"] is False and "volume_set" in dev["capabilities"]
+    assert dev["quirks"] == ["source_is_channel_list", "mute_toggle_only", "no_power_on"]
+    assert hass.states.get(ents["differences"]).state == "0"          # PowerOff: TV off is right
+
+    hass.states.async_set(REMOTE, "on", {"activity_list": ["PowerOff", "SAT"], "current_activity": "SAT"})
+    await hass.async_block_till_done()
+    freezer.tick(1)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    diff = hass.states.get(ents["differences"])
+    assert diff.state == "1" and diff.attributes["items"][0]["fix"] == "on" and diff.attributes["items"][0]["can"] is False

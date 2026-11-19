@@ -952,5 +952,12 @@
   "ddInputsHint": "Which source of the media player belongs to which Harmony input? Without a choice Harmony Deck guesses by the names. After that the card tells you when the TV is on a different input.",
   "ddFits": "Matching",
   "ddOthers": "Others",
-  "ddVolVia": "In {0} the volume goes through \"{1}\", not through this device."
+  "ddVolVia": "In {0} the volume goes through \"{1}\", not through this device.",
+  "ddFound": "Detected: {0}",
+  "ddFoundNone": "Integration unknown (entity without registration).",
+  "ddQuirks": {
+    "source_is_channel_list": "The source list in Home Assistant is the channel list, not the HDMI inputs. The input check stays silent here.",
+    "mute_toggle_only": "Mute can only be toggled. Harmony Deck checks the state first and switches only when needed.",
+    "no_power_on": "Switching on is not set up in Home Assistant (for Netcast: the integration's \"turn on\" action). Switching off works."
+  }
 }

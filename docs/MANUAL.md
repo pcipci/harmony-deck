@@ -84,6 +84,8 @@ The integration carries out the steps, so a sequence also finishes when the page
 
 **Target against actual state (0.8):** if a linked device does not do what the current activity needs (still on after "off", off although the activity switches it on, on another input), a box under the status says so with a button for the fix ("Switch on", "Switch off", "Switch to …"). It reports only after the state stayed the same for 4 seconds, and it switches only when you tap. Under Settings › Direct devices, "Inputs of the activities" lets you say which source of the player belongs to which Harmony input; without a choice Harmony Deck guesses by name and stays silent when unsure. While the lock is on, the fix can only switch off.
 
+**Detected platform and sensors (0.10):** the tab Network control shows under each linked player what was detected ("Detected: LG Netcast") and what to know about it. In Home Assistant, the sensors **Network control** (all linked devices with platform, capabilities and state in the attributes) and **Differences** (one per hub, number of differences with the list in the attributes) show the same without the card; use them for automations and notifications.
+
 **Volume and the soundbar (0.9):** the volume keys of the card always go where the hub sends them in the current activity (for example to the soundbar); linking the TV changes nothing there. A network command for the TV only affects the TV. If an activity sends the volume through another device, the step and the tab say so in a note under the volume setting.
 
 Actions of 0.4 are converted to a single step by themselves. Actions are the same for all profiles.

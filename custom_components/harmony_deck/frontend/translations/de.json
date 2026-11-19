@@ -957,5 +957,6 @@
   "ddCtlMute": "Stumm",
   "ddCtlUnmute": "Ton an",
   "ddCtlSources": "Quelle",
-  "ddNoSources": "Keine Eingänge gemeldet"
+  "ddNoSources": "Keine Eingänge gemeldet",
+  "ddSourcesSeen": "Zuletzt gesehen – das Gerät meldet seine Eingänge nur, solange es an ist"
 }

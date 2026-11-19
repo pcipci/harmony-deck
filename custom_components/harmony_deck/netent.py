@@ -17,6 +17,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import directdev
 from .const import DOMAIN
 from .direct_watch import watcher
 from .lock import lock_hubs
@@ -27,11 +28,14 @@ _SEP = "::"
 # Capabilities in words, in the language Home Assistant runs in (the codes stay in the attributes).
 CAP_WORDS: dict[str, dict[str, str]] = {
     "en": {"state": "state", "power_on": "switch on", "power_off": "switch off", "volume_set": "set volume",
-           "volume_read": "read volume", "mute": "mute", "source_select": "pick source", "source_read": "read source"},
+           "volume_read": "read volume", "mute": "mute", "source_select": "pick source", "source_read": "read source",
+           "app_read": "read app", "app_list": "list apps", "of": "of", "yes": "yes", "no": "no"},
     "de": {"state": "Zustand", "power_on": "einschalten", "power_off": "ausschalten", "volume_set": "Lautstärke setzen",
-           "volume_read": "Lautstärke lesen", "mute": "stumm", "source_select": "Quelle wählen", "source_read": "Quelle lesen"},
+           "volume_read": "Lautstärke lesen", "mute": "stumm", "source_select": "Quelle wählen", "source_read": "Quelle lesen",
+           "app_read": "App lesen", "app_list": "Apps auflisten", "of": "von", "yes": "ja", "no": "nein"},
     "ru": {"state": "состояние", "power_on": "включить", "power_off": "выключить", "volume_set": "задать громкость",
-           "volume_read": "читать громкость", "mute": "без звука", "source_select": "выбрать источник", "source_read": "читать источник"},
+           "volume_read": "читать громкость", "mute": "без звука", "source_select": "выбрать источник", "source_read": "читать источник",
+           "app_read": "читать приложение", "app_list": "список приложений", "of": "из", "yes": "да", "no": "нет"},
 }
 
 
@@ -122,12 +126,16 @@ class NetCapabilities(NetEntity):
         if caps is None:
             return None
         words = CAP_WORDS[_lang(self.hass)]
-        return ", ".join(words.get(c, c) for c in caps)[:255] or "-"
+        return f"{len([c for c in caps if c in directdev.CAPS])} {words['of']} {len(directdev.CAPS)}"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         caps = list(self._item.get("capabilities") or [])
-        return {"capabilities": caps, "count": len(caps)}
+        words = CAP_WORDS[_lang(self.hass)]
+        out: dict[str, Any] = {words.get(c, c): words["yes"] if c in caps else words["no"] for c in directdev.CAPS}
+        out["capabilities"] = caps
+        out["count"] = len(caps)
+        return out
 
 
 class NetState(NetEntity):

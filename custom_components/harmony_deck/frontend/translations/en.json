@@ -957,5 +957,6 @@
   "ddCtlMute": "Mute",
   "ddCtlUnmute": "Unmute",
   "ddCtlSources": "Source",
-  "ddNoSources": "No inputs reported"
+  "ddNoSources": "No inputs reported",
+  "ddSourcesSeen": "Last seen – the device only reports its inputs while it is on"
 }

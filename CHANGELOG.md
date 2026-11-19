@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.1
+
+### Fixed
+- **The Fire TV page shows only its own device.** No list of all ADB devices any more, the test applies to this device only; the rows "Entity" and "Harmony device" are gone from the page (they are set in the list).
+- **Device page stays current, also while the lock is active.** State, volume, mute and the picked source follow Home Assistant live instead of the values read when the page was opened.
+- **Sources of a player that is off.** Home Assistant publishes no source list while a player is off. The last list seen is remembered (also across restarts) and shown greyed with the note "last seen"; inputs (HDMI …) come first, apps and "Live TV" below.
+
+### Changed
+- **Sensor "Capabilities"** shows a short value ("6 of 10") instead of a long text; one attribute per capability says yes/no, in Home Assistant's language. The codes stay in the attribute `capabilities`.
+
 ## 0.12.0
 
 ### Changed

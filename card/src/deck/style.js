@@ -267,7 +267,7 @@ export const styleMixin = {
       .ddsug { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; color: var(--hr-muted); font-size: 0.85em; } .ddsugtx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mini.ic { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-text); --mdc-icon-size: 20px; }
       .ddpagehead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; } .ddpagetitle { font-weight: 600; } .ddpagetitle small { color: var(--hr-muted); font-weight: 400; }
-      .ddctl { align-items: center; flex-wrap: wrap; } .ddctls { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; } .ddctls input[type=range] { flex: 1; min-width: 90px; } .ddnow { color: var(--hr-muted); }
+      .mini.seen { opacity: .6; font-style: italic; } .ddctl { align-items: center; flex-wrap: wrap; } .ddctls { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; } .ddctls input[type=range] { flex: 1; min-width: 90px; } .ddnow { color: var(--hr-muted); }
       .mini.txt.sel { background: var(--hr-accent); color: var(--hr-on-accent, #fff); }
       .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
       .steplist { display: flex; flex-direction: column; gap: 6px; }

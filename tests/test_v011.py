@@ -160,7 +160,8 @@ async def test_device_per_network_device(hass: HomeAssistant, hass_ws_client, mo
     ents = {e.translation_key: e.entity_id for e in er.async_entries_for_device(er.async_get(hass), dev.id)}
     assert set(ents) == {"net_platform", "net_capabilities", "net_state"}
     assert hass.states.get(ents["net_platform"]).state == "lg_netcast"
-    assert hass.states.get(ents["net_capabilities"]).state == "state, switch off, set volume, read volume, mute, read source"
+    caps = hass.states.get(ents["net_capabilities"])
+    assert caps.state == "6 of 10" and caps.attributes["set volume"] == "yes" and caps.attributes["pick source"] == "no"
     state = hass.states.get(ents["net_state"])
     assert state.state == "on" and state.attributes["volume"] == 20 and state.attributes["source"] == "HDMI 1"
 

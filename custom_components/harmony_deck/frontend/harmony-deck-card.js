@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.12.0";
+  var VERSION = "0.12.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2116,11 +2116,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
       if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
       if (item.page === "firetv") {
-        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
       }
       const caps = item.caps || [];
       const has = (c) => caps.includes(c);
-      const st = item.state || {};
+      const live = this._hass.states?.[link.entity];
+      const st = { ...item.state || {}, ...live && !["unavailable", "unknown"].includes(live.state) ? { on: live.state !== "off", ...live.attributes?.source != null ? { source: live.attributes.source } : {}, ...live.attributes?.volume_level != null ? { volume: Math.round(live.attributes.volume_level * 100) } : {}, ...live.attributes?.is_volume_muted != null ? { muted: !!live.attributes.is_volume_muted } : {} } : {} };
+      const seen = item.sourcesLive === false || live?.state === "off";
       const cap = this._settings().volumeCap || 80;
       const row = (label, ctl) => `<div class="erow ddctl"><span>${label}</span><span class="ddctls">${ctl}</span></div>`;
       const btn = (attrs, text, icon) => `<button type="button" class="mini txt" ${attrs} data-dev="${esc(d)}">${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(text)}</span></button>`;
@@ -2129,7 +2131,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         has("power_on") || has("power_off") ? row(t.ddCtlPower, (has("power_on") ? btn('data-ddctl="on"', t.ddCtlOn, "mdi:power") : "") + (has("power_off") ? btn('data-ddctl="off"', t.ddCtlOff, "mdi:power-off") : "")) : "",
         has("volume_set") ? row(t.ddCtlVolume, `<input type="range" min="0" max="${cap}" value="${Math.min(st.volume ?? 0, cap)}" data-ddctl="volume" data-dev="${esc(d)}"><span class="ddnow" data-ddvolval>${st.volume != null ? st.volume + " %" : ""}</span>`) : has("volume_read") ? row(t.ddCtlVolume, `<span class="ddnow">${st.volume != null ? st.volume + " %" : t.ddUnknown}</span>`) : "",
         has("mute") ? row(t.ddCtlMute, btn(`data-ddctl="mute" data-val="${st.muted ? "0" : "1"}"`, st.muted ? t.ddCtlUnmute : t.ddCtlMute, st.muted ? "mdi:volume-high" : "mdi:volume-off")) : "",
-        has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : ""
+        has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""} ${seen ? "seen" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") + (seen ? `<div class="ehint">${t.ddSourcesSeen}</div>` : "") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : ""
       ].join("");
       const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
       return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}
@@ -2399,10 +2401,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       else delete all[hub];
       await this._saveSettings({ direct: all });
     },
-    _adbStatus(cur, t) {
+    _adbStatus(cur, t, own) {
       const st = this._hass.states;
       const ent = cur.entity;
-      const found = this._fireCandidates();
+      const found = own ? cur.entity ? [cur.entity] : [] : this._fireCandidates();
       const label = (id) => {
         const s = st[id];
         const ok = s && !["unavailable", "unknown"].includes(s.state);
@@ -2463,7 +2465,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._pkgList = { ...this._pkgList || {}, [ent]: [...list].sort() };
       }
     },
-    _directEdit(h, t) {
+    _directEdit(h, t, own) {
       const cur = this._settings().direct?.[h.id] || {};
       const allApps = this._appsOf(h.id);
       const devs = Object.keys(this._devicesOf(h.id));
@@ -2471,9 +2473,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const dopts = [`<option value="">${t.directAuto}</option>`, ...devs.map((d) => `<option value="${esc(d)}" ${cur.device === d ? "selected" : ""}>${esc(d)}</option>`)].join("");
       return `<div class="esec directedit" data-t="fire" data-hub="${esc(h.id)}"><div class="etitle">${t.direct}</div>
       <div class="hint" style="padding:6px 0;text-align:left;font-size:12px">${t.directReq}</div>
-      <div class="adbstat">${this._adbStatus(cur, t)}</div>
-      ${this._grp(g.conn, `<label class="erow"><span>${t.directEntity}</span>${this._entSelect("data-direct", this._fireCandidates(), cur.entity || "", t)}</label>
-        <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>
+      <div class="adbstat">${this._adbStatus(cur, t, own)}</div>
+      ${this._grp(g.conn, `${own ? `<input type="hidden" data-direct="entity" value="${esc(cur.entity || "")}"><input type="hidden" data-direct="device" value="${esc(cur.device || "")}">` : `<label class="erow"><span>${t.directEntity}</span>${this._entSelect("data-direct", this._fireCandidates(), cur.entity || "", t)}</label>
+        <label class="erow"><span>${t.directDevice}</span><select data-direct="device">${dopts}</select></label>`}
         <label class="erow"><span>${t.directModel}</span><select data-direct="model">${Object.entries(t.models).map(([k, v]) => `<option value="${k}" ${(cur.model || "all") === k ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>
         <label class="erow"><span>${t.directPrefer}</span><select data-direct="prefer"><option value="">${t.preferH}</option><option value="adb" ${cur.prefer === "adb" ? "selected" : ""}>${t.preferA}</option></select></label>
         ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
@@ -5013,7 +5015,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .ddsug { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; color: var(--hr-muted); font-size: 0.85em; } .ddsugtx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mini.ic { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-text); --mdc-icon-size: 20px; }
       .ddpagehead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; } .ddpagetitle { font-weight: 600; } .ddpagetitle small { color: var(--hr-muted); font-weight: 400; }
-      .ddctl { align-items: center; flex-wrap: wrap; } .ddctls { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; } .ddctls input[type=range] { flex: 1; min-width: 90px; } .ddnow { color: var(--hr-muted); }
+      .mini.seen { opacity: .6; font-style: italic; } .ddctl { align-items: center; flex-wrap: wrap; } .ddctls { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; } .ddctls input[type=range] { flex: 1; min-width: 90px; } .ddnow { color: var(--hr-muted); }
       .mini.txt.sel { background: var(--hr-accent); color: var(--hr-on-accent, #fff); }
       .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
       .steplist { display: flex; flex-direction: column; gap: 6px; }
@@ -5323,7 +5325,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._infoOpen,
         this._actPanel,
         this._actPanelOff,
-        hubs.map((h) => this._links(h).map((l) => this._hass.states?.[l.entity]?.state)),
+        hubs.map((h) => this._links(h).map((l) => {
+          const e = this._hass.states?.[l.entity];
+          return [e?.state, e?.attributes?.source, e?.attributes?.source_list?.length];
+        })),
         hubs.map((h) => {
           const f = this._fireInfo(h.id);
           return f && [f.mode, f.app];

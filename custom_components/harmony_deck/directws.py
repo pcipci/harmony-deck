@@ -32,6 +32,7 @@ def async_register_direct_websocket(hass: HomeAssistant) -> None:
 async def ws_overview(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     """Linked direct devices with capabilities and state, suggestions and all candidate media players."""
     hubs, _ = collect_hubs(hass, await load_confs(hass))
+    await direct.load_seen(hass)
     connection.send_result(msg["id"], direct.overview(hass, hubs))
 
 

@@ -137,3 +137,15 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
     other = await hass_ws_client(hass, hass_read_only_access_token)
     await other.send_json_auto_id({"type": "harmony_deck/direct/fix", "hub": REMOTE, "device": "LG", "op": "volume", "value": 10})
     assert (await other.receive_json())["error"]["code"] == "unauthorized"
+
+
+def test_source_cache_remembers_list_while_player_is_off():
+    """A player that is off publishes no source list: the last one seen is shown (and input-like names come first)."""
+    from types import SimpleNamespace
+    from custom_components.harmony_deck import direct
+    hass = SimpleNamespace(data={})
+    live = ["Netflix", "HDMI 1", "Live TV", "HDMI 2"]
+    assert direct._remember(hass, "media_player.tv", live) == live
+    assert direct._remember(hass, "media_player.tv", []) == live
+    assert direct._remember(hass, "media_player.other", []) == []
+    assert sorted(live, key=lambda x: not direct.directdev.input_like(x))[:2] == ["HDMI 1", "HDMI 2"]

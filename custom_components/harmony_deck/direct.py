@@ -12,6 +12,7 @@ from typing import Any, Protocol
 
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
+from homeassistant.helpers.storage import Store
 
 from . import directdev, mismatch
 from .const import DOMAIN
@@ -191,7 +192,8 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                 plat = platform(hass, entity)
                 item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
                             platform=plat, quirks=directdev.quirks(plat, found), page=PAGES.get(plat or "", "generic"),
-                            sources=_sources(hass, entity))
+                            sources=sorted(_remember(hass, entity, _sources(hass, entity)), key=lambda x: not directdev.input_like(x)),
+                            sourcesLive=bool(_sources(hass, entity)))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
             elif label in (prefs["never"].get(hub) or []):
                 item["noSuggest"] = True
@@ -202,6 +204,34 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
             devices[label] = item
         out[hub] = devices
     return {"hubs": out, "candidates": cands, "suggestOff": prefs["off"], "extensions": [ext.name for ext in EXTENSIONS]}
+
+
+_SEEN_STORE = Store  # alias kept for tests that replace it
+
+
+async def load_seen(hass: HomeAssistant) -> dict[str, list[str]]:
+    """Last source lists seen per player (a player that is off publishes none); loaded once, then kept in memory."""
+    data = hass.data.setdefault(DOMAIN, {})
+    if "seen_sources" not in data:
+        store = _SEEN_STORE(hass, 1, f"{DOMAIN}.seen_sources")
+        loaded = await store.async_load()
+        data["seen_sources_store"] = store
+        data["seen_sources"] = dict(loaded) if isinstance(loaded, dict) else {}
+    return data["seen_sources"]
+
+
+def _remember(hass: HomeAssistant, entity: str, live: list[str]) -> list[str]:
+    """Live list wins and is remembered when it changed; empty live list (player off) falls back to the remembered one."""
+    data = hass.data.setdefault(DOMAIN, {})
+    seen = data.setdefault("seen_sources", {})
+    if live:
+        if seen.get(entity) != live:
+            seen[entity] = list(live)
+            store = data.get("seen_sources_store")
+            if store is not None:
+                store.async_delay_save(lambda: dict(seen), 5)
+        return live
+    return list(seen.get(entity) or [])
 
 
 def _sources(hass: HomeAssistant, entity: str) -> list[str]:

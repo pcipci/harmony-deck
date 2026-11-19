@@ -107,11 +107,13 @@ export const directEditorMixin = {
     const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
     if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
     if (item.page === "firetv") {
-      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
     }
     const caps = item.caps || [];
     const has = (c) => caps.includes(c);
-    const st = item.state || {};
+    const live = this._hass.states?.[link.entity];
+    const st = { ...(item.state || {}), ...(live && !["unavailable", "unknown"].includes(live.state) ? { on: live.state !== "off", ...(live.attributes?.source != null ? { source: live.attributes.source } : {}), ...(live.attributes?.volume_level != null ? { volume: Math.round(live.attributes.volume_level * 100) } : {}), ...(live.attributes?.is_volume_muted != null ? { muted: !!live.attributes.is_volume_muted } : {}) } : {}) };
+    const seen = item.sourcesLive === false || live?.state === "off";
     const cap = this._settings().volumeCap || 80;
     const row = (label, ctl) => `<div class="erow ddctl"><span>${label}</span><span class="ddctls">${ctl}</span></div>`;
     const btn = (attrs, text, icon) => `<button type="button" class="mini txt" ${attrs} data-dev="${esc(d)}">${icon ? `<ha-icon icon="${icon}"></ha-icon>` : ""}<span>${esc(text)}</span></button>`;
@@ -120,7 +122,7 @@ export const directEditorMixin = {
       has("power_on") || has("power_off") ? row(t.ddCtlPower, (has("power_on") ? btn('data-ddctl="on"', t.ddCtlOn, "mdi:power") : "") + (has("power_off") ? btn('data-ddctl="off"', t.ddCtlOff, "mdi:power-off") : "")) : "",
       has("volume_set") ? row(t.ddCtlVolume, `<input type="range" min="0" max="${cap}" value="${Math.min(st.volume ?? 0, cap)}" data-ddctl="volume" data-dev="${esc(d)}"><span class="ddnow" data-ddvolval>${st.volume != null ? st.volume + " %" : ""}</span>`) : (has("volume_read") ? row(t.ddCtlVolume, `<span class="ddnow">${st.volume != null ? st.volume + " %" : t.ddUnknown}</span>`) : ""),
       has("mute") ? row(t.ddCtlMute, btn(`data-ddctl="mute" data-val="${st.muted ? "0" : "1"}"`, st.muted ? t.ddCtlUnmute : t.ddCtlMute, st.muted ? "mdi:volume-high" : "mdi:volume-off")) : "",
-      has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : "",
+      has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""} ${seen ? "seen" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") + (seen ? `<div class="ehint">${t.ddSourcesSeen}</div>` : "") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : "",
     ].join("");
     const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
     return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}

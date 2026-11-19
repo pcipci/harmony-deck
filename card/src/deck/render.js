@@ -60,7 +60,7 @@ export const renderMixin = {
           ${this._cancelAsk
             ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>`
             : `<div class="editrow">${this._editMode === "profiles" ? "" : `<button class="editcancel" data-edit="cancel" title="${esc(t.cancelTip)}"><ha-icon icon="mdi:close"></ha-icon><span>${t.cancel}</span></button>`}<button class="editdone" data-edit="off"><ha-icon icon="mdi:check"></ha-icon><span>${t.done}</span></button></div>`}</div>` : ""}
-        ${blocks || `<p class="empty">${t.empty}</p>`}
+        ${this._skinHead(skin, sel)}${blocks || `<p class="empty">${t.empty}</p>`}${this._skinTail(skin)}
       </ha-card>`;
     this._bind();
     if (held) requestAnimationFrame(() => requestAnimationFrame(() => { this.style.minHeight = ""; }));

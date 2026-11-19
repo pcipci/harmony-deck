@@ -43,7 +43,7 @@ export const panelMixin = {
     const lockKeys = extra.noLock ? new Set() : this._locks(h).keys;
     const L = (role, html) => (lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html);
     const K = (dev, a, icon, cls, label) => (extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label));
-    const slH = this._volSlider(h, r, "h"), slV = this._volSlider(h, r, "v");
+    const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
     const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
     const muteK = r.volume && this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "rk mute round") : "";
     const vol = hasVol ? `<div class="volcol">${slV ? `<div class="rocker slr">${slV}</div>` : `<div class="rocker">

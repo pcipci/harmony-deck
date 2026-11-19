@@ -109,4 +109,16 @@ export const SKINS = {
     "--hr-muted": "#5f6368",
     "--hr-card-bg": "#fff",
   },
+  // Terminal / Radio: colours here, shapes and effects in skin-css.js.
+  terminal: {
+    "--hr-card-bg": "#021a05", "--hr-tile-bg": "#04210a", "--hr-key-bg": "#062b0e", "--hr-panel-bg": "#031507", "--hr-accent": "#3dff6b", "--hr-on-accent": "#021a05",
+    "--hr-text": "#3dff6b", "--hr-muted": "#1fa63f", "--hr-opt-bg": "#04210a", "--hr-select-bg": "#04210a", "color-scheme": "dark",
+    "--hr-radius": "3px", "--hr-tile-radius": "3px", "--hr-rocker-radius": "3px", "--hr-rk-radius": "3px", "--hr-seg-radius": "3px",
+    "--hr-dpad-radius": "0px", "--hr-ok-radius": "0px", "--hr-d-big": "0px", "--hr-d-small": "0px",
+  },
+  radio: {
+    "--hr-card-bg": "#4a2c17", "--hr-tile-bg": "#2a1a10", "--hr-key-bg": "#e3d5b0", "--hr-panel-bg": "#2f1c0e", "--hr-accent": "#ffb84a", "--hr-on-accent": "#2a170a",
+    "--hr-text": "#f1e3c1", "--hr-muted": "#c8a24a", "--hr-opt-bg": "#2a1a10", "--hr-select-bg": "#2a1a10", "color-scheme": "dark",
+    "--hr-radius": "999px", "--hr-tile-radius": "22px", "--hr-rocker-radius": "30px", "--hr-rk-radius": "22px",
+  },
 };

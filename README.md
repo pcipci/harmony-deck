@@ -36,7 +36,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume (a slider instead of +/- in the remote) and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
-| **Looks** | 11 skins, tile and key styles, coloured icons, light and dark |
+| **Looks** | 13 skins incl. the effect skins Terminal (green phosphor glass with interference) and Tube radio (pilot lamps, magic eye, toggle switches); tile and key styles, coloured icons, light and dark |
 | **Profiles** | Different settings for different people or tablets |
 | **Entities** | Activities, devices and actions of each hub as lists, a button per action, a device per linked network device, differences per hub, lock entities, repair hints and diagnostics |
 | **Languages** | English, German, Russian; more as one JSON file |
@@ -101,6 +101,13 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
+Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, the running activity as a glass pilot lamp, a magic eye that follows the volume, toggle switches). Effects only lie over the card, animations stop with "reduce motion".
+
+<p align="center">
+  <img src="docs/images/skin-terminal.png" width="32%" alt="Skin Terminal">
+  <img src="docs/images/skin-radio.png" width="32%" alt="Skin Tube radio">
+</p>
+
 ## Actions and network control
 
 **Actions** are your own buttons: one step ("toggle the candles") or a sequence of Harmony keys, pauses, Home Assistant actions, "wait until" and "if". They run in the integration, so they finish when the page is closed. Every action is also a **button entity** on the hub's device (press = start; refused while another action runs), and the sensor **Actions** lists them.
@@ -139,7 +146,7 @@ Everything can also be set in the visual editors. YAML options win over the sett
 | Option | Meaning |
 |---|---|
 | `entity` | one hub (`remote.…`), empty = all hubs as tabs |
-| `skin` | `homebase`, `remote`, `device`, `light`, `pebble`, `paper`, `clay`, `glass`, `nord`, `catppuccin`, `synthwave` |
+| `skin` | `homebase`, `remote`, `device`, `light`, `pebble`, `paper`, `clay`, `glass`, `nord`, `catppuccin`, `synthwave`, `terminal`, `radio` |
 | `language` | `de`, `en`, `ru` (default: language of Home Assistant) |
 | `columns` | tiles per row (default 3) |
 | `tile_style` | `icon_text`, `icon`, `text` |

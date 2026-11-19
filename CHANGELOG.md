@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.0
+
+### Added
+- **Two effect skins: Terminal and Tube radio** (Settings › Appearance › Look). Terminal: green phosphor glass with a dark bezel, scanlines, snow, a rolling bar, a torn band and now and then a flicker; angular keys, the cross with cut corners and a square OK, activities as list lines with the running one inverted, rectangular switches. Tube radio: wood and brass, the running activity as a glass pilot lamp with a wire grille, a lamp bulb in the status field, a dial with a needle and a **magic eye** that follows the volume of the linked player (half open without one), brass toggle switches (lever up = on). The effects only lie over the card, taps and text are not touched, and the animations stop when the system asks for reduced motion.
+- **Volume slider in the device view.** Every device linked in Network control with "Set volume directly" on gets the slider there too (before only the volume device of the running activity), whatever activity runs. Same rules: held to the volume limit by the integration, for every user, also while the lock is on (like the volume keys). New command `direct/volume` takes an optional `device`; `direct/sliders` now answers `{hub: {activity, devices}}`.
+
+### Notes
+- Not yet tested on real hardware. The tests cover the rules of the integration and the card (slider in both views, both skins in the quality run).
+
 ## 0.14.0
 
 ### Added

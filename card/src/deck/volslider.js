@@ -1,6 +1,7 @@
 // Volume slider: when the volume device of the running activity is linked with "Set volume directly" and takes a level,
 // the card shows a slider instead of +/-. The integration decides (websocket direct/sliders) and holds the level to the
 // volume limit (direct/volume); the card only shows the slider and sends the level while it is moved and on release.
+import { esc } from "../shared/util.js";
 
 const SEND_EVERY = 300;    // ms between two levels while dragging
 
@@ -28,20 +29,23 @@ export const volSliderMixin = {
   },
 
   // The slider for the volume device `r.volume` of the running activity of hub h, or "" (then +/- stay).
-  _volSlider(h, r, orient) {
-    const s = this._sl?.[h.id];
-    if (!s || this._edit || !r.volume || s.device !== r.volume || s.activity !== h.current) return "";
+  // In the device view (`deviceView`) the slider belongs to the device itself, whatever activity runs.
+  _volSlider(h, r, orient, deviceView) {
+    const s = deviceView ? this._sl?.[h.id]?.devices?.[r.volume] : this._sl?.[h.id]?.activity;
+    if (!s || this._edit || !r.volume || s.device !== r.volume || (!deviceView && s.activity !== h.current)) return "";
     const st = this._hass.states?.[s.entity];
-    const lvl = this._volLive?.[h.id] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" data-volrel="${s.release ? 1 : 0}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+    const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
+    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
   },
 
-  async _volSend(hub, value) {
-    if (this._volSent?.[hub] === value) return;
-    this._volSent = { ...(this._volSent || {}), [hub]: value };
-    try { await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value }); } catch (e) {
+  async _volSend(hub, value, device) {
+    const id = hub + (device ? "/" + device : "");
+    if (this._volSent?.[id] === value) return;
+    this._volSent = { ...(this._volSent || {}), [id]: value };
+    try { await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value, ...(device ? { device } : {}) }); } catch (e) {
       // not possible (any more): back to +/-
-      this._sl = { ...(this._sl || {}), [hub]: null };
+      const cur = this._sl?.[hub] || {};
+      this._sl = { ...(this._sl || {}), [hub]: device ? { ...cur, devices: { ...(cur.devices || {}), [device]: null } } : { ...cur, activity: null } };
       this._key = ""; this.hass = this._hass;
     }
   },
@@ -50,7 +54,9 @@ export const volSliderMixin = {
     root.querySelectorAll("input[data-volhub]").forEach((el) => {
       const hub = el.dataset.volhub;
       const release = el.dataset.volrel === "1";
-      const live = () => { this._volLive = { ...(this._volLive || {}), [hub]: Number(el.value) }; el.title = `${el.value} %`; };
+      const dev = el.dataset.voldev || "";
+      const id = hub + (dev ? "/" + dev : "");
+      const live = () => { this._volLive = { ...(this._volLive || {}), [id]: Number(el.value) }; el.title = `${el.value} %`; };
       const end = () => {
         clearTimeout(this._volEnd);
         // Let the device report the new level before the card follows the device again.
@@ -63,10 +69,10 @@ export const volSliderMixin = {
         if (release || this._volBusy) return;
         // While moving: send the level about every 300 ms, only if it changed (the last level goes out on release).
         this._volBusy = true;
-        this._volSend(hub, Number(el.value));
+        this._volSend(hub, Number(el.value), dev);
         setTimeout(() => { this._volBusy = false; }, SEND_EVERY);
       });
-      el.addEventListener("change", () => { live(); this._volSend(hub, Number(el.value)); end(); });
+      el.addEventListener("change", () => { live(); this._volSend(hub, Number(el.value), dev); end(); });
       ["pointerup", "pointercancel"].forEach((ev) => el.addEventListener(ev, end));
     });
   },

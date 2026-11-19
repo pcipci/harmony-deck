@@ -1,4 +1,5 @@
 // Style sheet of the cards.
+import { SKIN_CSS } from "../shared/skin-css.js";
 
 export const styleMixin = {
   _style() {
@@ -529,6 +530,7 @@ export const styleMixin = {
       .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
+      ${SKIN_CSS}
     </style>`;
   },
 };

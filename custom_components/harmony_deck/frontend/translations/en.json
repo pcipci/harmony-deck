@@ -85,7 +85,9 @@
     "paper": "Sun paper",
     "nord": "Nord",
     "glass": "Frosted glass",
-    "clay": "Clay"
+    "clay": "Clay",
+    "terminal": "Terminal",
+    "radio": "Tube radio"
   },
   "mute": "Mute",
   "back": "Back",

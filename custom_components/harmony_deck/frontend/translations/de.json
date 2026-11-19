@@ -85,7 +85,9 @@
     "paper": "Sonnenpapier",
     "nord": "Nord",
     "glass": "Milchglas",
-    "clay": "Knetmasse"
+    "clay": "Knetmasse",
+    "terminal": "Terminal",
+    "radio": "Röhrenradio"
   },
   "mute": "Stumm",
   "back": "Zurück",

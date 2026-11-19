@@ -35,7 +35,7 @@ export const volSliderMixin = {
     if (!s || this._edit || !r.volume || s.device !== r.volume || (!deviceView && s.activity !== h.current)) return "";
     const st = this._hass.states?.[s.entity];
     const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round((Math.min(lvl, s.cap) / (s.cap || 100)) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
   },
 
   async _volSend(hub, value, device) {
@@ -56,7 +56,7 @@ export const volSliderMixin = {
       const release = el.dataset.volrel === "1";
       const dev = el.dataset.voldev || "";
       const id = hub + (dev ? "/" + dev : "");
-      const live = () => { this._volLive = { ...(this._volLive || {}), [id]: Number(el.value) }; el.title = `${el.value} %`; };
+      const live = () => { this._volLive = { ...(this._volLive || {}), [id]: Number(el.value) }; el.title = `${el.value} %`; el.style.setProperty("--v", String(Math.round((Number(el.value) / (Number(el.max) || 100)) * 100))); };
       const end = () => {
         clearTimeout(this._volEnd);
         // Let the device report the new level before the card follows the device again.

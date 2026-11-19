@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.2
+
+### Changed (skins, card only)
+- **Tube radio:** every tile (activities, devices) is now a pilot lamp under a wire grille: unlit = dark amber glass, running or selected = glowing. The On/Off switch is a real toggle (brass nut, chrome lever, AN above / AUS below). The Activities/Devices switch is a bakelite rocker plate that slides over. The horizontal volume slider is a wedge from small to big with a brass knob. Keyboard keys are round, like typewriter keys.
+- **Terminal:** "active" now looks the same everywhere: green block with dark text for the running activity, the selected device, the active tab and active keys. Switches are hollow when off and filled when on. The Activities/Devices switch is a block that jumps over, the volume slider is a bar of green blocks.
+
+### Notes
+- Not yet tested on real hardware. The vertical volume slider keeps its simple look in both skins.
+
+
 ## 0.15.1
 
 ### Fixed

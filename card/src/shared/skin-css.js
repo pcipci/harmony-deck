@@ -33,13 +33,23 @@ export const SKIN_CSS = `
       ${T} .grid { grid-template-columns: 1fr !important; gap: 4px !important; }
       ${T} .tile:not(.dev) { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; min-height: 44px; }
       ${T} .tile:not(.dev)::before { content: ">"; color: #1fa63f; margin-right: 2px; }
-      ${T} .tile.on { background: #3dff6b; color: #021a05; text-shadow: none; }
+      ${T} .tile.on, ${T} .tile.dev.sel, ${T} .actbtn.acton, ${T} .key.sel, ${T} .mini.sel { background: #3dff6b; color: #021a05; text-shadow: none; box-shadow: 0 0 14px rgba(61,255,107,.55); outline: none; }
       ${T} .tile.on:not(.dev)::before { content: "\\25B6"; color: #021a05; }
-      ${T} .tile.on ha-icon, ${T} .tile.on span { color: #021a05; filter: none; text-shadow: none; }
-      ${T} .sw i { border-radius: 0; background: #021a05; border: 1px solid #1fa63f; }
-      ${T} .sw i::after { border-radius: 0; width: 20px; height: 20px; top: 3px; background: #1fa63f; }
-      ${T} .sw input:checked + i { background: rgba(61,255,107,.2); }
-      ${T} .sw input:checked + i::after { transform: translateX(20px); background: #3dff6b; box-shadow: 0 0 8px #3dff6b; }
+      ${T} .tile.on ha-icon, ${T} .tile.on span, ${T} .tile.on small, ${T} .tile.dev.sel ha-icon, ${T} .tile.dev.sel span, ${T} .tile.dev.sel small, ${T} .actbtn.acton *, ${T} .key.sel *, ${T} .mini.sel * { color: #021a05 !important; filter: none; text-shadow: none; }
+      /* switches: off = hollow block, on = filled block (like the active tiles) */
+      ${T} .sw:has(> input) i { border-radius: 0; background: #021a05; border: 1px solid #3dff6b; }
+      ${T} .sw:has(> input) i::after { border-radius: 0; width: 20px; height: 20px; top: 3px; background: #1fa63f; }
+      ${T} .sw:has(> input) input:checked + i { background: #3dff6b; box-shadow: 0 0 10px rgba(61,255,107,.6); }
+      ${T} .sw:has(> input) input:checked + i::after { transform: translateX(20px); background: #021a05; box-shadow: none; }
+      /* the Activities / Devices switch: the block jumps over */
+      ${T} .seg { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; padding: 3px; box-shadow: none; }
+      ${T} .seg .th { border-radius: 0; background: #3dff6b; box-shadow: 0 0 12px rgba(61,255,107,.6); }
+      ${T} .seg .lab { border-radius: 0; color: #3dff6b; } ${T} .seg .lab.a { color: #021a05; font-weight: 700; } ${T} .seg .lab.a * { text-shadow: none; }
+      /* volume slider: a bar of green blocks (like a loading bar) */
+      ${T} .volslider.h { -webkit-appearance: none; appearance: none; height: 28px; min-height: 28px; border: 1px solid #3dff6b; background: repeating-linear-gradient(90deg, #3dff6b 0 8px, transparent 8px 11px) 3px 3px / calc((100% - 6px) * var(--v, 0) / 100) calc(100% - 6px) no-repeat, #021a05; box-shadow: 0 0 8px rgba(61,255,107,.4); }
+      ${T} .volslider.h::-webkit-slider-runnable-track { height: 28px; background: transparent; } ${T} .volslider.h::-moz-range-track { height: 28px; background: transparent; }
+      ${T} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; box-shadow: 0 0 8px #3dff6b; }
+      ${T} .volslider.h::-moz-range-thumb { width: 6px; height: 28px; border-radius: 0; background: #b8ffc9; border: none; }
       @keyframes skroll { from { transform: translateY(-120px); } to { transform: translateY(1400px); } }
       @keyframes sksnow { 0% { background-position: 0 0; } 33% { background-position: -40px 25px; } 66% { background-position: 30px -50px; } 100% { background-position: 0 0; } }
       @keyframes skflick { 0%, 92%, 100% { filter: none; transform: none; } 93% { filter: brightness(1.25); transform: translateX(2px); } 94% { filter: brightness(.8); transform: translateX(-3px) skewX(1deg); } 95% { filter: none; transform: none; } }
@@ -61,13 +71,18 @@ export const SKIN_CSS = `
         --w: calc((1 - var(--eye, .5)) * 150deg);
         background: radial-gradient(circle at 50% 50%, #0c1f0c 0 15%, transparent 16%), conic-gradient(from 0deg, #6dff6d 0 calc(180deg - var(--w) / 2), #0f3a14 0 calc(180deg + var(--w) / 2), #6dff6d 0), radial-gradient(circle, #0a1a0a, #041004); }
       ${R} .skin-eye::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(ellipse at 35% 22%, rgba(255,255,255,.55), transparent 38%); }
-      ${R} .tile { border: 2px solid #c8a24a; background: radial-gradient(circle at 30% 25%, #4a3322, #1f1209); box-shadow: inset 0 2px 4px rgba(255,255,255,.12), 0 3px 6px rgba(0,0,0,.6); }
-      ${R} .tile.on { position: relative; color: #3a1802; border: 3px solid #d9d2bc; text-shadow: 0 1px 0 rgba(255,220,150,.7);
+      /* every tile is a pilot lamp under a wire grille: unlit = dark amber glass, lit (running / selected) = glowing */
+      ${R} .tile { position: relative; border: 3px solid #b9b19a; color: #e2c58a; text-shadow: 0 1px 0 rgba(0,0,0,.8);
+        background: radial-gradient(ellipse at 50% 16%, rgba(255,255,255,.38) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 58%, #7a4414 0, #43230a 55%, #1d0f05 100%);
+        box-shadow: inset 0 0 14px rgba(0,0,0,.8), inset 0 -6px 10px rgba(0,0,0,.5), 0 3px 6px rgba(0,0,0,.6); }
+      ${R} .tile:not(.locked):not(.edit-tile)::after { content: ""; position: absolute; inset: 3px; border-radius: inherit; pointer-events: none; opacity: .55;
+        background: repeating-linear-gradient(0deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px), repeating-linear-gradient(90deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px); }
+      ${R} .tile ha-icon { color: inherit; }
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton { position: relative; color: #3a1802; border: 3px solid #d9d2bc; text-shadow: 0 1px 0 rgba(255,220,150,.7); outline: none;
         background: radial-gradient(ellipse at 50% 18%, rgba(255,255,255,.75) 0 7%, rgba(255,255,255,0) 30%), radial-gradient(ellipse at 50% 120%, rgba(255,240,170,.9), rgba(255,240,170,0) 55%), radial-gradient(circle at 50% 55%, #ffb347 0, #ff8a12 45%, #a8480a 85%, #5a2403 100%);
         box-shadow: 0 0 22px 4px rgba(255,150,30,.65), inset 0 0 14px rgba(255,200,90,.7), inset 0 -6px 12px rgba(120,40,0,.55); }
-      ${R} .tile.on ha-icon { color: #3a1802; filter: none; }
-      ${R} .tile.on::after { content: ""; position: absolute; inset: 3px; border-radius: inherit; pointer-events: none; opacity: .5;
-        background: repeating-linear-gradient(0deg, rgba(60,40,10,.5) 0 1px, transparent 1px 10px), repeating-linear-gradient(90deg, rgba(60,40,10,.5) 0 1px, transparent 1px 10px); }
+      ${R} .tile.on ha-icon, ${R} .tile.dev.sel ha-icon, ${R} .tile.on small, ${R} .tile.dev.sel small, ${R} .actbtn.acton * { color: #3a1802; filter: none; }
+      ${R} .tile.on::after, ${R} .tile.dev.sel::after { opacity: .4; }
       ${R} .status.chip { box-shadow: 0 0 10px rgba(255,184,74,.55); }
       ${R} .status.chip.active::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px;
         background: radial-gradient(circle at 35% 30%, #fff 0 12%, rgba(255,255,255,0) 35%), radial-gradient(circle at 50% 55%, #ffcf70, #ff8a12 60%, #7a3a05); box-shadow: 0 0 10px 2px rgba(255,150,30,.9); }
@@ -77,14 +92,31 @@ export const SKIN_CSS = `
       ${R} .key.mute.round, ${R} .key.mute { background: linear-gradient(180deg, #efe3c4, #c9b78d) !important; color: #2a170a !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
-      /* toggle switch: brass plate, lever up = ON (the plate glows), lever down = OFF */
-      ${R} .sw { width: 40px; height: 52px; margin-left: 6px; }
-      ${R} .sw i { border-radius: 10px; background: linear-gradient(180deg, #e6c869, #a98530); border: 2px solid #5c4210; box-shadow: inset 0 2px 3px rgba(255,255,255,.5), 0 3px 5px rgba(0,0,0,.6); }
-      ${R} .sw i::before { content: "AUS"; position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font: 700 8px Georgia, serif; color: #3a2808; letter-spacing: .06em; }
-      ${R} .sw input:checked + i::before { content: "AN"; top: 2px; bottom: auto; }
-      ${R} .sw i::after { width: 12px; height: 24px; left: 11px; top: 14px; border-radius: 6px; background: linear-gradient(90deg, #777, #fafafa 50%, #777); box-shadow: 0 3px 4px rgba(0,0,0,.6); transform: translateY(8px); }
-      ${R} .sw input:checked + i::after { transform: translateY(-8px); box-shadow: 0 -3px 4px rgba(0,0,0,.5); background: linear-gradient(90deg, #777, #fafafa 50%, #777); }
-      ${R} .sw input:checked + i { box-shadow: inset 0 2px 3px rgba(255,255,255,.5), 0 0 12px rgba(255,150,30,.6); }
+      /* toggle switch: brass nut, chrome lever up = ON (AN, nut glows) or down = OFF (AUS) */
+      ${R} .sw:has(> input) { position: relative; width: 46px; height: 70px; margin-left: 6px; flex: none; }
+      ${R} .sw:has(> input) i { background: none; border: none; box-shadow: none; }
+      ${R} .sw:has(> input) i::before { content: ""; position: absolute; left: 5px; right: 5px; top: 24px; height: 22px; border-radius: 50%; inset: auto; left: 5px; right: 5px; top: 24px; bottom: auto;
+        background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
+      ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
+      ${R} .sw:has(> input) i::after { content: ""; position: absolute; width: 10px; height: 23px; left: 18px; top: 35px; border-radius: 5px; transform: none; background: linear-gradient(90deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
+      ${R} .sw:has(> input) input:checked + i::after { top: 12px; transform: none; box-shadow: 0 -3px 4px rgba(0,0,0,.5); }
+      ${R} .sw:has(> input)::before { content: "AN"; position: absolute; left: 0; right: 0; top: 0; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .1em; }
+      ${R} .sw:has(> input)::after { content: "AUS"; position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font: 700 9px Georgia, serif; color: #c8a24a; letter-spacing: .1em; }
+      /* the Activities / Devices switch: a bakelite rocker plate sliding over */
+      ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
+      ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
+        background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(90,60,10,.25) 6px 7px), linear-gradient(180deg, #fff7df, #e0cf9f 55%, #b79e5e); }
+      ${R} .seg .lab { color: #c8a24a; text-shadow: 0 1px 0 #000; letter-spacing: .08em; } ${R} .seg .lab.a { color: #3a1802; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
+      /* volume slider: a wedge from small to big with a brass knob */
+      ${R} .volslider.h { -webkit-appearance: none; appearance: none; height: 34px; min-height: 34px; background: transparent; }
+      ${R} .volslider.h::-webkit-slider-runnable-track { height: 22px; clip-path: polygon(0 88%, 100% 0, 100% 100%, 0 100%); box-shadow: inset 0 2px 4px #000;
+        background: linear-gradient(90deg, #ff9a1f, #ffd27a calc(var(--v, 0) * 1%), #2a1408 calc(var(--v, 0) * 1%)); }
+      ${R} .volslider.h::-moz-range-track { height: 22px; clip-path: polygon(0 88%, 100% 0, 100% 100%, 0 100%); background: #2a1408; }
+      ${R} .volslider.h::-moz-range-progress { height: 22px; clip-path: polygon(0 88%, 100% 0, 100% 100%, 0 100%); background: linear-gradient(90deg, #ff9a1f, #ffd27a); }
+      ${R} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -4px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 5px rgba(0,0,0,.7); }
+      ${R} .volslider.h::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); }
+      /* round typewriter keys on the keyboard */
+      ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
       ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
       /* readable text on the light brass-cream surfaces: buttons of the editors, favourites and the small buttons */
       ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }

@@ -101,7 +101,7 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, the running activity as a glass pilot lamp, a magic eye that follows the volume, toggle switches). Effects only lie over the card, animations stop with "reduce motion".
+Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), a magic eye that follows the volume, toggle switches, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion".
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Skin Terminal">

@@ -961,5 +961,25 @@
   "ddCtlUnmute": "Ton an",
   "ddCtlSources": "Quelle",
   "ddNoSources": "Keine Eingänge gemeldet",
-  "ddSourcesSeen": "Zuletzt gesehen – das Gerät meldet seine Eingänge nur, solange es an ist"
+  "ddSourcesSeen": "Zuletzt gesehen – das Gerät meldet seine Eingänge nur, solange es an ist",
+  "ddCapsTitle": "Fähigkeiten: {0} von {1}",
+  "ddCapSeen": "zuletzt gesehen",
+  "ddRescan": "Neu einlesen",
+  "ddRescanWait": "Liest …",
+  "ddRescanDone": "{0} von {1} Fähigkeiten, {2} Eingänge gelesen.",
+  "ddRescanOff": "Das Gerät ist aus: Es gibt nur wenig zu lesen. Einschalten und noch einmal drücken.",
+  "ddRescanFail": "Einlesen nicht möglich: {0}",
+  "ddRescanHint": "Vergisst die gemerkten Werte und liest Fähigkeiten und Eingänge jetzt vom Gerät (am besten bei eingeschaltetem Gerät).",
+  "ddCapName": {
+    "state": "Zustand lesen",
+    "power_on": "Einschalten",
+    "power_off": "Ausschalten",
+    "volume_set": "Lautstärke setzen",
+    "volume_read": "Lautstärke lesen",
+    "mute": "Stumm",
+    "source_select": "Quelle wählen",
+    "source_read": "Quelle lesen",
+    "app_read": "Laufende App lesen",
+    "app_list": "Apps auflisten"
+  }
 }

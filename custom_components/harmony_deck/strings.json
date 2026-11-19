@@ -70,7 +70,82 @@
         "name": "Platform"
       },
       "net_capabilities": {
-        "name": "Capabilities"
+        "name": "Capabilities",
+        "state_attributes": {
+          "cap_state": {
+            "name": "Reads state",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_power_on": {
+            "name": "Switch on",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_power_off": {
+            "name": "Switch off",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_volume_set": {
+            "name": "Set volume",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_volume_read": {
+            "name": "Read volume",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_mute": {
+            "name": "Mute",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_source_select": {
+            "name": "Pick source",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_source_read": {
+            "name": "Read source",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_app_read": {
+            "name": "Read running app",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "cap_app_list": {
+            "name": "List apps",
+            "state": {
+              "yes": "Yes",
+              "no": "No"
+            }
+          },
+          "count": {
+            "name": "Number"
+          }
+        }
       },
       "net_state": {
         "name": "State",

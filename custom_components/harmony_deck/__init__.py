@@ -47,6 +47,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         glob["direct"], glob["directDevices"] = move_fire_settings(glob.get("direct"), glob.get("directDevices"))
         glob["fireMoved"] = True
     domain_data["settings"] = stored["global"]  # hardware related part (read by the coordinator)
+    from . import direct
+
+    await direct.load_seen(hass)        # last seen sources and capabilities of the linked players
+    await direct.load_seen_caps(hass)
     domain_data["profiles"] = stored["profiles"]
     domain_data["assign"] = stored["assign"]
 

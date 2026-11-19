@@ -131,9 +131,8 @@ class NetCapabilities(NetEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         caps = list(self._item.get("capabilities") or [])
-        words = CAP_WORDS[_lang(self.hass)]
-        out: dict[str, Any] = {words.get(c, c): words["yes"] if c in caps else words["no"] for c in directdev.CAPS}
-        out["capabilities"] = caps
+        # One attribute per capability (fixed key, name and yes/no translated by Home Assistant), so all can be compared.
+        out: dict[str, Any] = {f"cap_{c}": "yes" if c in caps else "no" for c in directdev.CAPS}
         out["count"] = len(caps)
         return out
 

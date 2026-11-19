@@ -8,7 +8,7 @@ const SEND_EVERY = 300;    // ms between two levels while dragging
 export const volSliderMixin = {
   // Part of the redraw key: what the slider depends on.
   _slKey(hubs) {
-    return hubs.map((h) => [h.id, h.current, Object.entries(this._settings().directDevices?.[h.id] || {}).map(([d, l]) => [d, l.entity, l.volumeDirect === true])]);
+    return hubs.map((h) => [h.id, h.current, Object.entries(this._settings().directDevices?.[h.id] || {}).map(([d, l]) => [d, l.entity, l.volumeDirect === true, this._hass?.states?.[l.entity]?.state])]);
   },
 
   // With every hass update: ask the integration again, after the key stayed the same for a moment.

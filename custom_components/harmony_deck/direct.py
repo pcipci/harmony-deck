@@ -99,6 +99,34 @@ def _extensions(hass: HomeAssistant, entity: str) -> list[Extension]:
     return [ext for ext in EXTENSIONS if ext.applies(hass, entity)]
 
 
+async def load_seen_caps(hass: HomeAssistant) -> dict[str, list[str]]:
+    """Capabilities seen per player while it was on (a player that is off reports fewer); loaded once."""
+    data = hass.data.setdefault(DOMAIN, {})
+    if "seen_caps" not in data:
+        store = _SEEN_STORE(hass, 1, f"{DOMAIN}.seen_caps")
+        loaded = await store.async_load()
+        data["seen_caps_store"] = store
+        data["seen_caps"] = dict(loaded) if isinstance(loaded, dict) else {}
+    return data["seen_caps"]
+
+
+def known_caps(hass: HomeAssistant, entity: str, fresh: bool = False) -> list[str]:
+    """What a player can do as far as known: the live capabilities plus those seen earlier (kept across restarts).
+
+    ``fresh`` (button "Read again") forgets the earlier ones first. Carrying out an op still asks the live ones.
+    """
+    data = hass.data.setdefault(DOMAIN, {})
+    seen = data.setdefault("seen_caps", {})
+    live = caps(hass, entity)
+    old = [] if fresh else list(seen.get(entity) or [])
+    both = [c for c in directdev.CAPS if c in live or c in old]
+    if set(live) - {"state"} and seen.get(entity) != both:
+        seen[entity] = both
+        if (store := data.get("seen_caps_store")) is not None:
+            store.async_delay_save(lambda: dict(seen), 5)
+    return both
+
+
 def caps(hass: HomeAssistant, entity: str) -> list[str]:
     state = hass.states.get(entity)
     found = set(directdev.media_caps(None if state is None else state.state, None if state is None else dict(state.attributes)))
@@ -147,7 +175,8 @@ def summary(hass: HomeAssistant) -> list[dict[str, Any]]:
     for hub, devices in config(hass).items():
         for device, link in devices.items():
             entity = link["entity"]
-            found = caps(hass, entity)
+            found = known_caps(hass, entity)
+            remember_sources(hass, entity)       # read again whenever the watcher sees a change (e.g. switched on)
             plat = platform(hass, entity)
             snap = snapshot(hass, entity)
             out.append({"hub": hub, "device": device, "entity": entity, "platform": plat, "capabilities": found,
@@ -206,11 +235,11 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
             item: dict[str, Any] = {**(meta.get(label) or {})}
             if label in linked:
                 entity = linked[label]["entity"]
-                found = caps(hass, entity)
+                found = known_caps(hass, entity)
                 plat = platform(hass, entity)
                 item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
                             platform=plat, quirks=directdev.quirks(plat, found), page=PAGES.get(plat or "", "generic"),
-                            sources=sorted(_remember(hass, entity, _sources(hass, entity)), key=lambda x: not directdev.input_like(x)),
+                            capsLive=caps(hass, entity), sources=remember_sources(hass, entity),
                             sourcesLive=bool(_sources(hass, entity)))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
             elif label in (prefs["never"].get(hub) or []):
@@ -252,6 +281,11 @@ def _remember(hass: HomeAssistant, entity: str, live: list[str]) -> list[str]:
     return list(seen.get(entity) or [])
 
 
+def remember_sources(hass: HomeAssistant, entity: str) -> list[str]:
+    """Sources to show: live or the last seen ones, inputs first (apps and "Live TV" after them)."""
+    return sorted(_remember(hass, entity, _sources(hass, entity)), key=lambda x: not directdev.input_like(x))
+
+
 def _sources(hass: HomeAssistant, entity: str) -> list[str]:
     """Sources of a player worth showing and comparing (only the inputs where the list is a channel list)."""
     state = hass.states.get(entity)
@@ -261,7 +295,7 @@ def _sources(hass: HomeAssistant, entity: str) -> list[str]:
 
 def _inputs(hass: HomeAssistant, info: dict[str, Any], device: str, link: dict[str, Any]) -> list[dict[str, Any]]:
     """Harmony inputs the activities use on a device, each with the chosen source, a guess and the player's sources."""
-    sources = _sources(hass, link["entity"])
+    sources = remember_sources(hass, link["entity"])     # also while the player is off (last seen list)
     out: dict[str, dict[str, Any]] = {}
     for activity, items in (info.get("setup") or {}).items():
         for item in items:

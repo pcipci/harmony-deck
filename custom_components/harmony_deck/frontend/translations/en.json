@@ -961,5 +961,25 @@
   "ddCtlUnmute": "Unmute",
   "ddCtlSources": "Source",
   "ddNoSources": "No inputs reported",
-  "ddSourcesSeen": "Last seen – the device only reports its inputs while it is on"
+  "ddSourcesSeen": "Last seen – the device only reports its inputs while it is on",
+  "ddCapsTitle": "Capabilities: {0} of {1}",
+  "ddCapSeen": "last seen",
+  "ddRescan": "Read again",
+  "ddRescanWait": "Reading …",
+  "ddRescanDone": "{0} of {1} capabilities, {2} inputs read.",
+  "ddRescanOff": "The device is off, so there is little to read. Switch it on and press again.",
+  "ddRescanFail": "Cannot read: {0}",
+  "ddRescanHint": "Forgets the remembered values and reads capabilities and inputs from the device now (best with the device switched on).",
+  "ddCapName": {
+    "state": "Read state",
+    "power_on": "Switch on",
+    "power_off": "Switch off",
+    "volume_set": "Set volume",
+    "volume_read": "Read volume",
+    "mute": "Mute",
+    "source_select": "Pick source",
+    "source_read": "Read source",
+    "app_read": "Read running app",
+    "app_list": "List apps"
+  }
 }

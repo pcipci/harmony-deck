@@ -32,4 +32,22 @@ export const skinDecorMixin = {
     const h = hubs.find((x) => x.id === this._hubSel) || hubs[0];
     el.style.setProperty("--eye", this._eyeLevel(h));
   },
+
+  // On/Off toggle switch of the device view (tube radio). The state comes from the linked player, else from the last tap.
+  _powerSwitch(hub, dev, t) {
+    const link = this._settings().directDevices?.[hub]?.[dev];
+    const st = link ? this._hass?.states?.[link.entity]?.state : null;
+    const known = st && !["unavailable", "unknown"].includes(st);
+    const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
+    return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
+  },
+
+  _bindSkinDecor(root) {
+    root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
+      const { hub, device } = el.dataset;
+      this._pwrLast = { ...(this._pwrLast || {}), [`${hub}/${device}`]: el.checked };
+      const cmd = el.checked ? "PowerOn" : "PowerOff";
+      [...root.querySelectorAll("button[data-cmd]")].find((b) => b.dataset.cmd === cmd && b.dataset.hub === hub && b.dataset.device === device)?.click();
+    }));
+  },
 };

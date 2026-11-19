@@ -26,6 +26,7 @@ def async_register_direct_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_fix)
     websocket_api.async_register_command(hass, ws_sliders)
     websocket_api.async_register_command(hass, ws_volume)
+    websocket_api.async_register_command(hass, ws_rescan)
     data["direct_ws_registered"] = True
 
 
@@ -35,6 +36,7 @@ async def ws_overview(hass: HomeAssistant, connection: websocket_api.ActiveConne
     """Linked direct devices with capabilities and state, suggestions and all candidate media players."""
     hubs, _ = collect_hubs(hass, await load_confs(hass))
     await direct.load_seen(hass)
+    await direct.load_seen_caps(hass)
     connection.send_result(msg["id"], direct.overview(hass, hubs))
 
 
@@ -106,7 +108,7 @@ def _device_slider(hass: HomeAssistant, links: dict[str, Any], device: str) -> d
     if not isinstance(link, dict) or link.get("volumeDirect") is not True:
         return None
     entity = link["entity"]
-    if "volume_set" not in direct.caps(hass, entity):
+    if "volume_set" not in direct.known_caps(hass, entity):
         return None
     cap = int((hass.data[DOMAIN].get("settings") or {}).get("volumeCap") or 80)
     plat = direct.platform(hass, entity)
@@ -118,6 +120,7 @@ def _device_slider(hass: HomeAssistant, links: dict[str, Any], device: str) -> d
 async def ws_sliders(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     """Per hub: the slider of the running activity ("activity") and of every linked device ("devices", device view)."""
     hubs, _ = collect_hubs(hass, await load_confs(hass))
+    await direct.load_seen_caps(hass)
     out = {}
     for hub, info in hubs.items():
         links = direct.config(hass).get(hub) or {}
@@ -155,3 +158,22 @@ async def ws_volume(hass: HomeAssistant, connection: websocket_api.ActiveConnect
         connection.send_error(msg["id"], "failed", str(err))
         return
     connection.send_result(msg["id"], {"ok": True, "value": min(op[1], slider["cap"])})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/direct/rescan", vol.Required("hub"): str, vol.Required("device"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_rescan(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Button "Read again": forget what was remembered about the player and read capabilities and inputs now."""
+    linked = direct.device_of(hass, msg["hub"], msg["device"])
+    if linked is None:
+        connection.send_error(msg["id"], "invalid", "no direct device")
+        return
+    await direct.load_seen(hass)
+    await direct.load_seen_caps(hass)
+    entity = linked["entity"]
+    found = direct.known_caps(hass, entity, fresh=True)
+    sources = direct.remember_sources(hass, entity)
+    state = hass.states.get(entity)
+    connection.send_result(msg["id"], {"caps": found, "count": len(found), "total": len(directdev.CAPS), "sources": sources,
+                                       "on": state is not None and state.state not in ("off", "unavailable", "unknown", "standby")})

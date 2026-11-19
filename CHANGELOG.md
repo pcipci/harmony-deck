@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.1
+
+### Fixed
+- **Slider and inputs were missing when the TV was off at the start.** The integration now remembers capabilities and the source list of each linked player (also across restarts) and reads them again whenever the player changes (for example switched on). The volume slider asks again when the player's state changes. A greyed note "last seen" marks remembered values.
+- **Sensor "Capabilities": all capabilities are visible.** One attribute per capability with a fixed key and a name translated by Home Assistant (yes/no), plus `count`. The state stays short ("7 of 10").
+- **Tube radio:** dark text on the light buttons in Settings and Favourites; On/Off of a device as a toggle switch (lever up = on, state taken from the linked player).
+
+### Added
+- **Device page: list of all capabilities** ("Capabilities: 7 of 10", remembered ones marked "last seen") and the button **Read again**: forgets the remembered values and reads capabilities and inputs from the device now (administrators; best with the device switched on). Useful to compare two devices of the same kind.
+
+### Notes
+- Not yet tested on real hardware. Whether the attribute list shows in the Home Assistant dialog could be checked in tests only, not in the real interface.
+
 ## 0.15.0
 
 ### Added

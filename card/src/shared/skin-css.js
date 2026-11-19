@@ -85,5 +85,10 @@ export const SKIN_CSS = `
       ${R} .sw i::after { width: 12px; height: 24px; left: 11px; top: 14px; border-radius: 6px; background: linear-gradient(90deg, #777, #fafafa 50%, #777); box-shadow: 0 3px 4px rgba(0,0,0,.6); transform: translateY(8px); }
       ${R} .sw input:checked + i::after { transform: translateY(-8px); box-shadow: 0 -3px 4px rgba(0,0,0,.5); background: linear-gradient(90deg, #777, #fafafa 50%, #777); }
       ${R} .sw input:checked + i { box-shadow: inset 0 2px 3px rgba(255,255,255,.5), 0 0 12px rgba(255,150,30,.6); }
+      ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
+      /* readable text on the light brass-cream surfaces: buttons of the editors, favourites and the small buttons */
+      ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }
+      ${R} .mini:not(.txt) ha-icon, ${R} .mini.txt ha-icon { color: inherit; }
+      ${R} .key.isfav, ${R} .editmark { color: #2a170a; }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i { animation: none !important; transition: none !important; } }
 `;

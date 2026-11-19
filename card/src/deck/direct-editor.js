@@ -127,7 +127,12 @@ export const directEditorMixin = {
       has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""} ${seen ? "seen" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") + (seen ? `<div class="ehint">${t.ddSourcesSeen}</div>` : "") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : "",
     ].join("");
     const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
-    return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}
+    // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
+    const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
+    const liveCaps = item.capsLive || caps;
+    const capList = `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
+    const rescan = `<div class="egrp ddrescan"><button type="button" class="mini txt" data-ddrescan data-dev="${esc(d)}" title="${esc(t.ddRescanHint)}"><ha-icon icon="mdi:refresh"></ha-icon><span>${t.ddRescan}</span></button><span class="ehint" data-ddrescanmsg>${this._ddRescanMsg?.[d] || ""}</span></div>`;
+    return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
       ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
@@ -160,6 +165,19 @@ export const directEditorMixin = {
 
   _bindDirectDev(root) {
     root.querySelectorAll("[data-ddpage]").forEach((b) => b.addEventListener("click", () => { this._ddPage = { hub: b.closest("[data-hub]").dataset.hub, device: b.dataset.dev }; this._rerender(); }));
+    root.querySelectorAll("[data-ddrescan]").forEach((b) => b.addEventListener("click", async () => {
+      const t = this._t();
+      const dev = b.dataset.dev;
+      const hub = b.closest("[data-hub]").dataset.hub;
+      const say = (txt) => { this._ddRescanMsg = { ...(this._ddRescanMsg || {}), [dev]: txt }; const m = this.shadowRoot.querySelector("[data-ddrescanmsg]"); if (m) m.textContent = txt; };
+      say(t.ddRescanWait);
+      try {
+        const r = await this._hass.callWS({ type: "harmony_deck/direct/rescan", hub, device: dev });
+        say(r.on ? fmtText(t.ddRescanDone, [r.count, r.total, (r.sources || []).length]) : t.ddRescanOff);
+      } catch (e) { say(fmtText(t.ddRescanFail, [e?.message || String(e)])); }
+      await this._ddLoad(true);
+      this._rerender();
+    }));
     root.querySelectorAll("[data-ddback]").forEach((b) => b.addEventListener("click", () => { this._ddPage = null; this._ddLoad(true); this._rerender(); }));
     root.querySelectorAll("[data-ddctl]").forEach((el) => {
       const hub = () => el.closest("[data-hub]").dataset.hub, box = () => el.closest("[data-hub]");

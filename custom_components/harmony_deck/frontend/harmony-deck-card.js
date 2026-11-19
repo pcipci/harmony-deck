@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.15.0";
+  var VERSION = "0.15.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1538,6 +1538,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindDirectDev(root);
       this._bindMismatch(root);
       this._bindVolSlider(root);
+      this._bindSkinDecor(root);
       this._bindKeyboard(root);
       this._bindDevices(root);
       this._bindFavorites(root);
@@ -1969,7 +1970,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }).join("");
       const dp = this._directHtml(h, dev, t, false, "", true) || {};
       const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
-      const pw = power.length ? `<div class="block power"><div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power")).join("")}</div></div>` : "";
+      const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
+      const pwSwitch = swPower ? this._powerSwitch(h.id, dev, t) : "";
+      const pw = power.length ? `<div class="block power">${pwSwitch}<div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power", swPower && c !== "PowerToggle" ? "pwronoff" : "")).join("")}</div></div>` : "";
       const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", ""];
       const pad = !kb && Object.keys(digitCmds).length >= 3 ? `<details class="block numpad" open><summary class="dname">${t.numbers}</summary><div class="nums">${digits.map((d) => d && digitCmds[d] ? btn(digitCmds[d], d) : "<span></span>").join("")}</div></details>` : "";
       const act = !embed && !this._edit ? this._runningActOf(h, dev) : null;
@@ -2137,7 +2140,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""} ${seen ? "seen" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") + (seen ? `<div class="ehint">${t.ddSourcesSeen}</div>` : "") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : ""
       ].join("");
       const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
-      return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}
+      const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
+      const liveCaps = item.capsLive || caps;
+      const capList = `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
+      const rescan = `<div class="egrp ddrescan"><button type="button" class="mini txt" data-ddrescan data-dev="${esc(d)}" title="${esc(t.ddRescanHint)}"><ha-icon icon="mdi:refresh"></ha-icon><span>${t.ddRescan}</span></button><span class="ehint" data-ddrescanmsg>${this._ddRescanMsg?.[d] || ""}</span></div>`;
+      return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
       ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
@@ -2168,6 +2175,25 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindDirectDev(root) {
       root.querySelectorAll("[data-ddpage]").forEach((b) => b.addEventListener("click", () => {
         this._ddPage = { hub: b.closest("[data-hub]").dataset.hub, device: b.dataset.dev };
+        this._rerender();
+      }));
+      root.querySelectorAll("[data-ddrescan]").forEach((b) => b.addEventListener("click", async () => {
+        const t = this._t();
+        const dev = b.dataset.dev;
+        const hub = b.closest("[data-hub]").dataset.hub;
+        const say = (txt) => {
+          this._ddRescanMsg = { ...this._ddRescanMsg || {}, [dev]: txt };
+          const m = this.shadowRoot.querySelector("[data-ddrescanmsg]");
+          if (m) m.textContent = txt;
+        };
+        say(t.ddRescanWait);
+        try {
+          const r = await this._hass.callWS({ type: "harmony_deck/direct/rescan", hub, device: dev });
+          say(r.on ? fmtText(t.ddRescanDone, [r.count, r.total, (r.sources || []).length]) : t.ddRescanOff);
+        } catch (e) {
+          say(fmtText(t.ddRescanFail, [e?.message || String(e)]));
+        }
+        await this._ddLoad(true);
         this._rerender();
       }));
       root.querySelectorAll("[data-ddback]").forEach((b) => b.addEventListener("click", () => {
@@ -4844,6 +4870,22 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!el) return;
       const h = hubs.find((x) => x.id === this._hubSel) || hubs[0];
       el.style.setProperty("--eye", this._eyeLevel(h));
+    },
+    // On/Off toggle switch of the device view (tube radio). The state comes from the linked player, else from the last tap.
+    _powerSwitch(hub, dev, t) {
+      const link = this._settings().directDevices?.[hub]?.[dev];
+      const st = link ? this._hass?.states?.[link.entity]?.state : null;
+      const known = st && !["unavailable", "unknown"].includes(st);
+      const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
+      return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i></span></label>`;
+    },
+    _bindSkinDecor(root) {
+      root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
+        const { hub, device } = el.dataset;
+        this._pwrLast = { ...this._pwrLast || {}, [`${hub}/${device}`]: el.checked };
+        const cmd = el.checked ? "PowerOn" : "PowerOff";
+        [...root.querySelectorAll("button[data-cmd]")].find((b) => b.dataset.cmd === cmd && b.dataset.hub === hub && b.dataset.device === device)?.click();
+      }));
     }
   };
 
@@ -4930,6 +4972,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .sw i::after { width: 12px; height: 24px; left: 11px; top: 14px; border-radius: 6px; background: linear-gradient(90deg, #777, #fafafa 50%, #777); box-shadow: 0 3px 4px rgba(0,0,0,.6); transform: translateY(8px); }
       ${R} .sw input:checked + i::after { transform: translateY(-8px); box-shadow: 0 -3px 4px rgba(0,0,0,.5); background: linear-gradient(90deg, #777, #fafafa 50%, #777); }
       ${R} .sw input:checked + i { box-shadow: inset 0 2px 3px rgba(255,255,255,.5), 0 0 12px rgba(255,150,30,.6); }
+      ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
+      /* readable text on the light brass-cream surfaces: buttons of the editors, favourites and the small buttons */
+      ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }
+      ${R} .mini:not(.txt) ha-icon, ${R} .mini.txt ha-icon { color: inherit; }
+      ${R} .key.isfav, ${R} .editmark { color: #2a170a; }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i { animation: none !important; transition: none !important; } }
 `;
 
@@ -5201,6 +5248,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .ddsug { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; color: var(--hr-muted); font-size: 0.85em; } .ddsugtx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mini.ic { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-text); --mdc-icon-size: 20px; }
       .ddpagehead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; } .ddpagetitle { font-weight: 600; } .ddpagetitle small { color: var(--hr-muted); font-weight: 400; }
+      .ddcaps { margin-bottom: 8px; } .ddcaps summary { cursor: pointer; font-weight: 600; } .ddcapgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 10px; padding: 6px 0; } .ddcap { display: flex; align-items: center; gap: 6px; font-size: 13px; } .ddcap.no { opacity: .5; } .ddcap.yes ha-icon { color: var(--hr-accent); } .ddcap.seen { opacity: .7; font-style: italic; } .ddrescan { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; } .ddcap ha-icon { --mdc-icon-size: 18px; }
       .mini.seen { opacity: .6; font-style: italic; } .ddctl { align-items: center; flex-wrap: wrap; } .ddctls { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; } .ddctls input[type=range] { flex: 1; min-width: 90px; } .ddnow { color: var(--hr-muted); }
       .mini.txt.sel { background: var(--hr-accent); color: var(--hr-on-accent, #fff); }
       .mini.txt { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 4px 10px; border: none; border-radius: 999px; font: inherit; font-size: 0.85em; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 16px; }
@@ -5473,7 +5521,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var volSliderMixin = {
     // Part of the redraw key: what the slider depends on.
     _slKey(hubs) {
-      return hubs.map((h) => [h.id, h.current, Object.entries(this._settings().directDevices?.[h.id] || {}).map(([d, l]) => [d, l.entity, l.volumeDirect === true])]);
+      return hubs.map((h) => [h.id, h.current, Object.entries(this._settings().directDevices?.[h.id] || {}).map(([d, l]) => [d, l.entity, l.volumeDirect === true, this._hass?.states?.[l.entity]?.state])]);
     },
     // With every hass update: ask the integration again, after the key stayed the same for a moment.
     _slWatch(hubs) {

@@ -133,7 +133,10 @@ export const devicesMixin = {
     }).join("");
     const dp = this._directHtml(h, dev, t, false, "", true) || {};
     const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
-    const pw = power.length ? `<div class="block power"><div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power")).join("")}</div></div>` : "";
+    // Tube radio: On/Off as one toggle switch (lever up = on) instead of two buttons; Toggle stays a button.
+    const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
+    const pwSwitch = swPower ? this._powerSwitch(h.id, dev, t) : "";
+    const pw = power.length ? `<div class="block power">${pwSwitch}<div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power", swPower && c !== "PowerToggle" ? "pwronoff" : "")).join("")}</div></div>` : "";
     const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", ""];
     const pad = !kb && Object.keys(digitCmds).length >= 3 ? `<details class="block numpad" open><summary class="dname">${t.numbers}</summary><div class="nums">${digits.map((d) => (d && digitCmds[d] ? btn(digitCmds[d], d) : "<span></span>")).join("")}</div></details>` : "";
     // Part of the running activity: say so, and lead back to the remote of that activity.

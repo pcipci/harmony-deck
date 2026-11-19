@@ -118,9 +118,40 @@ def _alnum(text: Any) -> str:
     return "".join(_WORD.findall(str(text or "").casefold()))
 
 
-def match_score(meta: dict[str, Any], cand: dict[str, Any]) -> int:
-    """How well an entity fits a Harmony device: same maker 2, same model 3, every shared name word 1."""
+# Kinds of devices, by Harmony's device type, by words in a name, and by a player's device_class.
+_KIND_WORDS = {
+    "tv": {"tv", "television", "fernseher", "fernsehgerat", "телевизор", "lcd", "oled"},
+    "receiver": {"receiver", "avr", "verstarker", "amplifier", "amp", "stereoreceiver", "audiovideoreceiver", "усилитель", "ресивер"},
+    "speaker": {"speaker", "soundbar", "lautsprecher", "колонка"},
+    "player": {"bluray", "blu", "dvd", "dvr", "recorder", "player", "плеер"},
+    "streamer": {"fire", "firetv", "chromecast", "shield", "apple", "roku", "stick", "cube"},
+}
+_UMLAUT = str.maketrans({"ä": "a", "ö": "o", "ü": "u", "ß": "ss"})
+
+
+def kind_of(*texts: Any) -> str | None:
+    """"tv", "receiver", "speaker", "player" or "streamer" if a text (type, name, device_class) says so clearly, else None."""
+    found = set()
+    for text in texts:
+        words = {w.translate(_UMLAUT) for w in re.findall(r"\w+", str(text or "").casefold())}
+        for kind, known in _KIND_WORDS.items():
+            if words & known:
+                found.add(kind)
+    return found.pop() if len(found) == 1 else None
+
+
+def match_score(meta: dict[str, Any], cand: dict[str, Any], area: str | None = None) -> int:
+    """How well an entity fits a Harmony device.
+
+    Same room as the hub 3, same model 3, same maker 2, same kind (TV, receiver, speaker) 2, every shared name word 1;
+    a different kind costs 6, so a Blu-ray player of the same maker does not win over the TV.
+    """
     score = 0
+    if area and cand.get("area") and _alnum(area) == _alnum(cand["area"]):
+        score += 3
+    mine, theirs = kind_of(meta.get("type"), meta.get("label")), kind_of(cand.get("kind"))
+    if mine and theirs:
+        score += 2 if mine == theirs else -6
     maker_a, maker_b = _alnum(meta.get("manufacturer")), _alnum(cand.get("manufacturer"))
     if maker_a and maker_b and (maker_a in maker_b or maker_b in maker_a):
         score += 2
@@ -132,9 +163,14 @@ def match_score(meta: dict[str, Any], cand: dict[str, Any]) -> int:
     return score
 
 
-def suggest(meta: dict[str, Any], candidates: list[dict[str, Any]]) -> str | None:
+def ranked(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | None = None) -> list[tuple[int, str]]:
+    """(score, entity), best first; equal scores keep the order of the candidates."""
+    return sorted(((match_score(meta, c, area), c["entity"]) for c in candidates), key=lambda x: -x[0])
+
+
+def suggest(meta: dict[str, Any], candidates: list[dict[str, Any]], area: str | None = None) -> str | None:
     """Entity that fits a Harmony device clearly better than all others, else None (the user picks)."""
-    scored = sorted(((match_score(meta, c), c["entity"]) for c in candidates), reverse=True)
+    scored = ranked(meta, candidates, area)
     if not scored or scored[0][0] < 2:
         return None
     if len(scored) > 1 and scored[1][0] == scored[0][0]:

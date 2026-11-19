@@ -44,7 +44,11 @@ export const directEditorMixin = {
       const item = info[d] || {};
       const ids = cands.map((c) => c.entity);
       if (cur && !ids.includes(cur)) ids.push(cur);
-      const opts = [`<option value="">${t.ddNone}</option>`, ...ids.map((id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name(id))} · ${esc(id)}</option>`)].join("");
+      // Players that fit this device (room, kind, maker, name) come first, the rest below.
+      const fits = (item.fits || []).filter((id) => ids.includes(id));
+      const option = (id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name(id))} · ${esc(id)}</option>`;
+      const rest = ids.filter((id) => !fits.includes(id));
+      const opts = `<option value="">${t.ddNone}</option>${fits.length ? `<optgroup label="${esc(t.ddFits)}">${fits.map(option).join("")}</optgroup><optgroup label="${esc(t.ddOthers)}">${rest.map(option).join("")}</optgroup>` : rest.map(option).join("")}`;
       const suggest = !cur && item.suggest ? `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name(item.suggest))])}</span> <button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button></div>` : "";
       let detail = "";
       if (cur) {

@@ -162,13 +162,13 @@ def fixit_raw(config: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def device_meta(config: Mapping[str, Any]) -> dict[str, dict[str, str]]:
-    """{device label: {"manufacturer", "model"}} as the hub knows them (to suggest a matching direct device)."""
+    """{device label: {"manufacturer", "model", "type"}} as the hub knows them (to suggest a matching direct device)."""
     result: dict[str, dict[str, str]] = {}
     for device in config.get("device", []) or []:
         label = device.get("label")
         if not label:
             continue
-        meta = {k: str(device[k])[:80] for k in ("manufacturer", "model") if device.get(k)}
+        meta = {k: str(device[k])[:80] for k in ("manufacturer", "model", "type") if device.get(k)}
         if meta:
             result[label] = meta
     return result

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.8.0";
+  var VERSION = "0.9.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2055,7 +2055,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const item = info[d] || {};
         const ids = cands.map((c) => c.entity);
         if (cur && !ids.includes(cur)) ids.push(cur);
-        const opts = [`<option value="">${t.ddNone}</option>`, ...ids.map((id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name2(id))} · ${esc(id)}</option>`)].join("");
+        const fits = (item.fits || []).filter((id) => ids.includes(id));
+        const option = (id) => `<option value="${esc(id)}" ${id === cur ? "selected" : ""}>${esc(name2(id))} · ${esc(id)}</option>`;
+        const rest = ids.filter((id) => !fits.includes(id));
+        const opts = `<option value="">${t.ddNone}</option>${fits.length ? `<optgroup label="${esc(t.ddFits)}">${fits.map(option).join("")}</optgroup><optgroup label="${esc(t.ddOthers)}">${rest.map(option).join("")}</optgroup>` : rest.map(option).join("")}`;
         const suggest = !cur && item.suggest ? `<div class="ehint ddsug"><span>${fmtText(t.ddSuggest, [esc(name2(item.suggest))])}</span> <button type="button" class="mini txt" data-ddtake="${esc(item.suggest)}" data-dev="${esc(d)}">${t.ddTake}</button></div>` : "";
         let detail = "";
         if (cur) {

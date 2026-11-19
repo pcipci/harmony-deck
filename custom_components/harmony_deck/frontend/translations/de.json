@@ -116,7 +116,7 @@
     "behave": "Bedienung",
     "devs": "Geräte",
     "acts": "Aktivitäten",
-    "dd": "Direktgeräte",
+    "dd": "Netzwerksteuerung",
     "fire": "Fire TV",
     "misc": "Hub",
     "info": "Info"
@@ -721,7 +721,7 @@
     "fire": "Fire TV direkt per ADB: Verknüpfung, Apps, Farbtasten und Tasten. Ohne Fire TV kannst du diesen Reiter ignorieren.",
     "misc": "Name und Sichtbarkeit dieses Hubs und das Verhalten beim Ausschalten.",
     "info": "Technische Angaben zum Hub und die Erklärung der Symbole.",
-    "dd": "Verbindet ein Harmony-Gerät mit einem Mediaplayer in Home Assistant. Die Tasten bleiben bei Harmony, der Mediaplayer liefert dazu Zustand, Lautstärke-Wert und Quelle."
+    "dd": "Verbindet ein Harmony-Gerät mit einem Mediaplayer in Home Assistant. Die Tasten laufen weiter per Infrarot über den Hub, der Mediaplayer steuert und meldet über das Netzwerk: Zustand, Lautstärke-Wert und Quelle."
   },
   "adbHelp": "Fire TV nicht erreichbar. Prüfe: Fire TV eingeschaltet und im Netz? ADB-Debugging an (Einstellungen › Mein Fire TV › Entwickleroptionen)? In Home Assistant die Integration „Android TV“ neu laden. Danach „Verbindung testen“.",
   "groups": {
@@ -753,7 +753,7 @@
     "irvol": "Lautstärke (IR)",
     "wait": "Warten bis",
     "if": "Wenn",
-    "dev": "Gerät"
+    "dev": "Netzwerk-Befehl"
   },
   "stepTypeHints": {
     "key": "Eine Taste eines Geräts senden",
@@ -762,7 +762,7 @@
     "irvol": "Infrarot-Gerät auf eine Lautstärke bringen",
     "wait": "Warten, bis etwas eintritt",
     "if": "Etwas prüfen und verzweigen",
-    "dev": "Gerät direkt schalten, Lautstärke oder Quelle setzen"
+    "dev": "Gerät über das Netzwerk schalten, Lautstärke oder Quelle setzen"
   },
   "stepAdd": "Schritt hinzufügen",
   "actBack": "Zurück",
@@ -921,8 +921,8 @@
     "source_select": "Quelle wählen",
     "source_read": "Quelle lesen"
   },
-  "devHint": "Es erscheinen nur Geräte, die unter Einstellungen → Direktgeräte verbunden sind.",
-  "devNoDevices": "Noch kein Gerät verbunden. Das geht unter Einstellungen → Direktgeräte.",
+  "devHint": "Es erscheinen nur Geräte, die unter Einstellungen → Netzwerksteuerung verbunden sind.",
+  "devNoDevices": "Noch kein Gerät verbunden. Das geht unter Einstellungen → Netzwerksteuerung.",
   "devOps": {
     "on": "Einschalten",
     "off": "Ausschalten",
@@ -949,5 +949,7 @@
   "ddInputAuto": "Automatisch: {0}",
   "ddInputNone": "Automatisch (kein Vorschlag)",
   "ddInputUsed": "in {0}",
-  "ddInputsHint": "Welche Quelle des Mediaplayers gehört zu welchem Harmony-Eingang? Ohne Auswahl rät Harmony Deck anhand der Namen. Danach meldet die Karte, wenn der Fernseher auf einem anderen Eingang steht."
+  "ddInputsHint": "Welche Quelle des Mediaplayers gehört zu welchem Harmony-Eingang? Ohne Auswahl rät Harmony Deck anhand der Namen. Danach meldet die Karte, wenn der Fernseher auf einem anderen Eingang steht.",
+  "ddFits": "Passend",
+  "ddOthers": "Weitere"
 }

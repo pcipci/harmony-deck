@@ -116,7 +116,7 @@
     "behave": "Behaviour",
     "devs": "Devices",
     "acts": "Activities",
-    "dd": "Direct devices",
+    "dd": "Network control",
     "fire": "Fire TV",
     "misc": "Hub",
     "info": "Info"
@@ -721,7 +721,7 @@
     "fire": "Fire TV directly over ADB: link, apps, colour keys and keys. Without a Fire TV you can ignore this tab.",
     "misc": "Name and visibility of this hub and what happens when switching off.",
     "info": "Technical details of the hub and the meaning of the symbols.",
-    "dd": "Links a Harmony device to a media player in Home Assistant. The keys stay with Harmony; the media player adds state, volume level and source."
+    "dd": "Links a Harmony device to a media player in Home Assistant. The keys still go over infrared through the hub; the media player controls and reports over the network: state, volume level and source."
   },
   "adbHelp": "Fire TV not reachable. Check: Fire TV switched on and on the network? ADB debugging on (Settings › My Fire TV › Developer options)? Reload the “Android TV” integration in Home Assistant. Then “Test connection”.",
   "groups": {
@@ -753,7 +753,7 @@
     "irvol": "Volume (IR)",
     "wait": "Wait until",
     "if": "If",
-    "dev": "Device"
+    "dev": "Network command"
   },
   "stepTypeHints": {
     "key": "Send a key of a device",
@@ -762,7 +762,7 @@
     "irvol": "Bring an infrared device to a volume",
     "wait": "Wait until something happens",
     "if": "Check something and branch",
-    "dev": "Switch a device directly, set volume or source"
+    "dev": "Switch a device over the network, set volume or source"
   },
   "stepAdd": "Add step",
   "actBack": "Back",
@@ -921,8 +921,8 @@
     "source_select": "select source",
     "source_read": "read source"
   },
-  "devHint": "Only devices linked under Settings → Direct devices appear here.",
-  "devNoDevices": "No device linked yet. Do that under Settings → Direct devices.",
+  "devHint": "Only devices linked under Settings → Network control appear here.",
+  "devNoDevices": "No device linked yet. Do that under Settings → Network control.",
   "devOps": {
     "on": "Switch on",
     "off": "Switch off",
@@ -949,5 +949,7 @@
   "ddInputAuto": "Automatic: {0}",
   "ddInputNone": "Automatic (no suggestion)",
   "ddInputUsed": "in {0}",
-  "ddInputsHint": "Which source of the media player belongs to which Harmony input? Without a choice Harmony Deck guesses by the names. After that the card tells you when the TV is on a different input."
+  "ddInputsHint": "Which source of the media player belongs to which Harmony input? Without a choice Harmony Deck guesses by the names. After that the card tells you when the TV is on a different input.",
+  "ddFits": "Matching",
+  "ddOthers": "Others"
 }

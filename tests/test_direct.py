@@ -68,3 +68,23 @@ def test_service_calls():
 def test_device_meta_from_hub_config():
     config = {"device": [{"label": "LG TV", "manufacturer": "LG", "model": "40LF6309"}, {"label": "Fire TV"}, {"manufacturer": "x"}]}
     assert device_meta(config) == {"LG TV": {"manufacturer": "LG", "model": "40LF6309"}}
+
+
+def test_kind_from_names_and_types():
+    assert dd.kind_of("LG-Fernseher") == "tv" and dd.kind_of("Television") == "tv" and dd.kind_of("tv") == "tv"
+    assert dd.kind_of("LG Blu-ray Player") == "player" and dd.kind_of("Yamaha-Verstärker") == "receiver"
+    assert dd.kind_of("Amazon Fire TV Cube") is None          # streamer and TV words: not clear
+    assert dd.kind_of("Panasonic") is None and dd.kind_of(None) is None
+
+
+def test_room_and_kind_decide_between_two_tvs_and_a_player():
+    cands = [{"entity": "media_player.tv_wz", "name": "LG webOS TV", "manufacturer": "LG", "kind": "tv", "area": "Wohnzimmer"},
+             {"entity": "media_player.tv_sz", "name": "LG Smart TV", "manufacturer": "LG", "kind": "tv", "area": "Schlafzimmer"},
+             {"entity": "media_player.bluray", "name": "Blu-ray", "manufacturer": "LG", "area": "Wohnzimmer"}]
+    tv = {"label": "LG-Fernseher", "manufacturer": "LG"}
+    assert dd.suggest(tv, cands) is None                                 # without the room: two equal TVs
+    assert dd.suggest(tv, cands, "Wohnzimmer") == "media_player.tv_wz"
+    assert dd.suggest(tv, cands, "Schlafzimmer") == "media_player.tv_sz"
+    player = {"label": "LG Blu-ray Player", "manufacturer": "LG"}
+    ranked = dd.ranked(player, cands, "Wohnzimmer")
+    assert ranked[0][1] == "media_player.bluray" and all(s < 2 for s, e in ranked if e.startswith("media_player.tv"))

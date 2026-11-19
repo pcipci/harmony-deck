@@ -11,7 +11,7 @@ import asyncio
 from typing import Any, Protocol
 
 from homeassistant.core import Context, HomeAssistant
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
 
 from . import directdev, mismatch
 from .const import DOMAIN
@@ -75,6 +75,8 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
         sources = state.attributes.get("source_list") if state else None
         if isinstance(sources, list) and value not in sources:
             raise ValueError(f"unknown source: {value}")
+    if op == "mute" and snapshot(hass, entity).get("muted") is value:
+        return      # already so; some players (LG Netcast) only know "toggle mute" and would undo it
     for ext in _extensions(hass, entity):
         if await ext.run(hass, entity, op, value):
             return
@@ -85,17 +87,23 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
 
 def candidates(hass: HomeAssistant) -> list[dict[str, Any]]:
     """All media players that can do something useful, with maker and model from the device registry."""
-    ents, devs = er.async_get(hass), dr.async_get(hass)
+    ents, devs, areas = er.async_get(hass), dr.async_get(hass), ar.async_get(hass)
     out = []
     for state in hass.states.async_all("media_player"):
         found = caps(hass, state.entity_id)
         if not set(found) - {"state"}:
             continue
         item: dict[str, Any] = {"entity": state.entity_id, "name": state.attributes.get("friendly_name") or state.entity_id, "caps": found}
+        if isinstance(state.attributes.get("device_class"), str):
+            item["kind"] = state.attributes["device_class"]
         entry = ents.async_get(state.entity_id)
         device = devs.async_get(entry.device_id) if entry and entry.device_id else None
         if device:
             item["manufacturer"], item["model"] = device.manufacturer, device.model
+        area_id = (entry.area_id if entry else None) or (device.area_id if device else None)
+        area = areas.async_get_area(area_id) if area_id else None
+        if area:
+            item["area"] = area.name
         out.append(item)
     return sorted(out, key=lambda c: str(c["name"]).casefold())
 
@@ -107,6 +115,7 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for hub, info in hubs.items():
         meta = info.get("deviceMeta") or {}
+        area = (info.get("area") or {}).get("name")
         linked = cfg.get(hub) or {}
         taken = {d["entity"] for d in linked.values()}
         free = [c for c in cands if c["entity"] not in taken]
@@ -117,8 +126,10 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                 entity = linked[label]["entity"]
                 item.update(linked[label], caps=caps(hass, entity), state=snapshot(hass, entity), known=hass.states.get(entity) is not None)
                 item["inputList"] = _inputs(hass, info, label, linked[label])
-            elif (pick := directdev.suggest({**item, "label": label}, free)) is not None:
+            elif (pick := directdev.suggest({**item, "label": label}, free, area)) is not None:
                 item["suggest"] = pick
+            # Players that fit (best first), for the "Matching" group of the list in the card.
+            item["fits"] = [e for score, e in directdev.ranked({**item, "label": label}, cands, area) if score >= 2][:5]
             devices[label] = item
         out[hub] = devices
     return {"hubs": out, "candidates": cands, "extensions": [ext.name for ext in EXTENSIONS]}

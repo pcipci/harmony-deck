@@ -473,3 +473,20 @@ async def test_direct_check_and_fix_respects_lock(hass: HomeAssistant, hass_ws_c
     assert res["error"]["code"] == "locked"
     assert (await call(type="harmony_deck/direct/fix", hub=REMOTE, device="LG", op="off"))["success"]
     assert sent[-1] == ("turn_off", {})
+
+
+async def test_mute_is_not_toggled_back(hass: HomeAssistant):
+    from custom_components.harmony_deck import direct
+
+    await _setup(hass)
+    sent = []
+
+    async def rec(call):
+        sent.append(dict(call.data))
+
+    hass.services.async_register("media_player", "volume_mute", rec)
+    hass.states.async_set("media_player.netcast", "on", {"supported_features": 8, "is_volume_muted": True})
+    await direct.run(hass, "media_player.netcast", "mute", True)
+    assert sent == []                                            # already muted: a toggle-only TV would unmute
+    await direct.run(hass, "media_player.netcast", "mute", False)
+    assert sent == [{"entity_id": "media_player.netcast", "is_volume_muted": False}]

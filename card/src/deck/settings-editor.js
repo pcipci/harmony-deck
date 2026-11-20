@@ -50,11 +50,12 @@ export const settingsEditorMixin = {
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
           ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
-          ${this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
+          ${h && this._hubs().length > 1 ? this._selRow(t.roomSkin, `data-roomskin data-hub="${esc(h.id)}"`, { "": t.roomSkinSame, ...skins }, this._settings().roomSkins?.[h.id] || "") : ""}
+          ${this._trait("noColorIcons") ? "" : this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
         ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
           ${this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle())}`)}
-        ${this._grp(g.keys, `${this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
+        ${this._grp(g.keys, `${this._trait("premium") ? "" : this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
           ${this._selRow(t.labels, "data-labels", t.labelOpts, this._labels())}
           ${this._selRow(t.glow, "data-glow", t.glows, this._glow())}`)}</div>
       <div class="esec" data-t="behave"><div class="etitle">${t.tabs.behave}</div>
@@ -266,5 +267,10 @@ export const settingsEditorMixin = {
     root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
     root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
     root.querySelector("select[data-skin]")?.addEventListener("change", (e) => this._saveSettings({ skin: e.target.value }));
+    root.querySelector("select[data-roomskin]")?.addEventListener("change", (e) => {
+      const rs = { ...(this._settings().roomSkins || {}) };
+      if (e.target.value) rs[e.target.dataset.hub] = e.target.value; else delete rs[e.target.dataset.hub];
+      this._saveSettings({ roomSkins: rs });
+    });
   },
 };

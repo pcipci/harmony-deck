@@ -1,5 +1,6 @@
 // Style sheet of the cards.
 import { SKIN_CSS } from "../shared/skin-css.js";
+import { SKIN_CSS_NEW } from "../shared/skin-css-new.js";
 
 export const styleMixin = {
   _style() {
@@ -562,7 +563,11 @@ export const styleMixin = {
       .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
+      ha-card.fadein { animation: hdfadein .25s ease; }
+      @keyframes hdfadein { from { opacity: 0; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { ha-card.fadein { animation: none; } }
       ${SKIN_CSS}
+      ${SKIN_CSS_NEW}
     </style>`;
   },
 };

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.18.0
+
+### Added
+- **Skin per room (optional):** Settings › Look › "Skin for this room" lets every room (hub) have its own skin, so you see at a glance which room you are in. The default is "Same as default" (nothing changes). A skin set in the card's YAML still wins. Stored per room in the new integration setting `roomSkins`.
+- **Fade between rooms:** when the next room has another skin, the card fades out (0.15 s), switches and fades in. With "reduce motion" in the system the switch is immediate.
+
+## 0.17.0
+
+### Added
+- **Skin Thermal (Wärmebild):** heat-vision look: violet-blue night with soft heat colours (blue, teal, green, yellow, orange, red), short names in angular 14-segment letters (up to 12 characters, longer names keep the normal font), running activity red with three red dots in a triangle, part of the activity in orange, free ones cool teal, volume as a heat bar, "hold to switch off" as a target lock (the three dots light one after the other, then a white flash).
+- **Skin Nixie:** dark wood, activities and devices as number tubes with glowing digits, brass toggle switches (hex nut, chrome lever wide at the tip, a lamp that is always visible: bright when on, dim red when off), pressed brass keys.
+- **Skin Nostromo:** amber monochrome ship computer without screen flicker: blinking block cursor behind the running activity, typing effect when switching, ASCII-style hold bar, very faint refresh line and afterglow.
+- **Settings follow the skin:** options that a skin does not use are hidden (for example "Coloured icons" and the key shape in the effect skins).
+- `docs/SKIN_CHECKLIST.md`: elements every skin mock must show (direct keys, state keys, volume slider, switches, segment switch, power knob, hold effect, markings, window, tabs).
+
+### Changed
+- **Fewer plain skins:** "Remote" and "Device" are now one skin, **Dark**. A saved "Remote" or "Device" is switched to Dark automatically (the integration keeps the old value, the card maps it).
+- **Tube radio:** an active direct key of the Fire TV (for example Standby) is now a pressed brass key with a border like the other keys (app keys stay dark glass).
+
+### Notes
+- Not yet tested on real hardware. The segment letters are drawn by the card (no font file).
+
 ## 0.16.3
 
 ### Fixed

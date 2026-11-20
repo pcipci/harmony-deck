@@ -2,7 +2,8 @@
 
 export const SKINS = {
   homebase: {},
-  remote: {
+  // Dunkel: the former skins "Fernbedienung" and "Gerät" in one (round remote look).
+  dark: {
     "--hr-text": "#e8eaed", "--hr-muted": "#9aa0a6", "--hr-card-bg": "#14171c",
     "--hr-opt-bg": "#2b2f37", "color-scheme": "dark",
     "--hr-tile-bg": "linear-gradient(180deg, #343841, #262a31)",
@@ -13,26 +14,6 @@ export const SKINS = {
     "--hr-accent": "#ff9800",
     "--hr-on-accent": "#1b1e23",
     "--hr-select-bg": "#2b2f37",
-  },
-  device: {
-    "--hr-text": "#e8eaed", "--hr-muted": "#9aa0a6",
-    "--hr-opt-bg": "#2a2d32", "color-scheme": "dark",
-    "--hr-tile-bg": "#2a2d32",
-    "--hr-key-bg": "#383c43",
-    "--hr-radius": "6px",
-    "--hr-tile-radius": "8px",
-    "--hr-panel-bg": "#17191d",
-    "--hr-accent": "#4fc3f7",
-    "--hr-on-accent": "#0e1114",
-    "--hr-card-bg": "#101215",
-    "--hr-dpad-radius": "22px",
-    "--hr-ok-radius": "12px",
-    "--hr-d-big": "12px",
-    "--hr-d-small": "4px",
-    "--hr-rocker-radius": "12px",
-    "--hr-rk-radius": "7px",
-    "--hr-seg-radius": "6px",
-    "--hr-key-shadow": "0 2px 0 rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06)",
   },
   catppuccin: {
     "--hr-opt-bg": "#313244", "color-scheme": "dark",
@@ -116,6 +97,24 @@ export const SKINS = {
     "--hr-radius": "3px", "--hr-tile-radius": "3px", "--hr-rocker-radius": "3px", "--hr-rk-radius": "3px", "--hr-seg-radius": "3px",
     "--hr-dpad-radius": "0px", "--hr-ok-radius": "0px", "--hr-d-big": "0px", "--hr-d-small": "0px",
   },
+  // Wärmebild: heat-vision look (violet-blue night, heat colours blue-teal-green-yellow-orange-red), names in segment letters.
+  thermal: {
+    "--hr-card-bg": "#0a0724", "--hr-tile-bg": "#0d0a3a", "--hr-key-bg": "#0d0a3a", "--hr-panel-bg": "#0a0724", "--hr-accent": "#ff3a2a", "--hr-on-accent": "#2a0600",
+    "--hr-text": "#6fd0c0", "--hr-muted": "#ff6a4a", "--hr-opt-bg": "#0d0a3a", "--hr-select-bg": "#0d0a3a", "color-scheme": "dark",
+    "--hr-radius": "2px", "--hr-tile-radius": "2px", "--hr-rocker-radius": "2px", "--hr-rk-radius": "2px", "--hr-seg-radius": "2px", "--hr-dpad-radius": "0px", "--hr-ok-radius": "0px", "--hr-d-big": "0px", "--hr-d-small": "0px",
+  },
+  // Nixie: dark wood, number tubes with glowing digits, brass toggle switches.
+  nixie: {
+    "--hr-card-bg": "#2b1a10", "--hr-tile-bg": "#120a08", "--hr-key-bg": "#e3d5b0", "--hr-panel-bg": "#24150c", "--hr-accent": "#ff9a3a", "--hr-on-accent": "#1a0e06",
+    "--hr-text": "#f0d9a8", "--hr-muted": "#c8964a", "--hr-opt-bg": "#120a08", "--hr-select-bg": "#120a08", "color-scheme": "dark",
+    "--hr-radius": "999px", "--hr-tile-radius": "40px", "--hr-rocker-radius": "30px", "--hr-rk-radius": "22px",
+  },
+  // Nostromo: amber monochrome ship computer.
+  nostromo: {
+    "--hr-card-bg": "#120a00", "--hr-tile-bg": "#1a1000", "--hr-key-bg": "#2a1b00", "--hr-panel-bg": "#120a00", "--hr-accent": "#ffb000", "--hr-on-accent": "#1a0f00",
+    "--hr-text": "#ffb000", "--hr-muted": "#a06a00", "--hr-opt-bg": "#1a1000", "--hr-select-bg": "#1a1000", "color-scheme": "dark",
+    "--hr-radius": "2px", "--hr-tile-radius": "2px", "--hr-rocker-radius": "2px", "--hr-rk-radius": "2px", "--hr-seg-radius": "2px", "--hr-dpad-radius": "0px", "--hr-ok-radius": "0px", "--hr-d-big": "0px", "--hr-d-small": "0px",
+  },
   radio: {
     "--hr-card-bg": "#4a2c17", "--hr-tile-bg": "#2a1a10", "--hr-key-bg": "#e3d5b0", "--hr-panel-bg": "#2f1c0e", "--hr-accent": "#ffb84a", "--hr-on-accent": "#2a170a",
     "--hr-text": "#f1e3c1", "--hr-muted": "#c8a24a", "--hr-opt-bg": "#2a1a10", "--hr-select-bg": "#2a1a10", "color-scheme": "dark",
@@ -124,4 +123,8 @@ export const SKINS = {
 };
 
 // Order in the pickers: the default first, then the two effect skins (premium looks), then the rest as defined.
-export const skinOrder = () => { const front = ["homebase", "terminal", "radio"].filter((k) => k in SKINS); return [...front, ...Object.keys(SKINS).filter((k) => !front.includes(k))]; };
+export const skinOrder = () => { const front = ["homebase", "terminal", "radio", "thermal", "nixie", "nostromo"].filter((k) => k in SKINS); return [...front, ...Object.keys(SKINS).filter((k) => !front.includes(k))]; };
+
+// Saved skin keys of removed skins map to their successor.
+export const SKIN_ALIAS = { remote: "dark", device: "dark" };
+export const skinKey = (k) => { const a = SKIN_ALIAS[k] || k; return SKINS[a] ? a : "homebase"; };

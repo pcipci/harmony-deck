@@ -55,7 +55,7 @@ export const renderMixin = {
     const held = this.offsetHeight;
     if (held) this.style.minHeight = `${held}px`;
     this.shadowRoot.innerHTML = `${this._style()}
-      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
+      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
         ${this._edit ? `<div class="edittool"><div class="edmode">${this._edModeHtml(t)}</div>
           ${this._cancelAsk
             ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>`
@@ -194,7 +194,14 @@ export const renderMixin = {
 
   // Events of the frame: room tabs, slider, collapsing.
   _bindFrame(root) {
-    root.querySelectorAll("[data-hubtab]").forEach((b) => b.addEventListener("click", () => { this._hubSel = b.dataset.hubtab; try { localStorage.setItem("harmony_deck_last_hub", this._hubSel); } catch (e) { /* no storage */ } this._rerender(); }));
+    root.querySelectorAll("[data-hubtab]").forEach((b) => b.addEventListener("click", () => {
+      const id = b.dataset.hubtab;
+      const go = () => { this._hubSel = id; try { localStorage.setItem("harmony_deck_last_hub", this._hubSel); } catch (e) { /* no storage */ } this._fadeIn = this._fadeIn || false; this._rerender(); };
+      // Another skin in the next room: fade out, switch, fade in (not with "reduce motion").
+      const card = root.querySelector("ha-card");
+      const reduce = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (card && !reduce && id !== this._hubSel && this._skinFor(id) !== this._skin()) { card.style.transition = "opacity .15s ease"; card.style.opacity = "0"; this._fadeIn = true; setTimeout(go, 150); } else go();
+    }));
     this._bindSlider();
     root.querySelectorAll("[data-hdrcollapse]").forEach((b) => b.addEventListener("click", () => {
       const hub = b.dataset.hdrcollapse;

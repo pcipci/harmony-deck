@@ -1,10 +1,12 @@
 // Display options: card YAML wins over the shared settings, then the default.
-import { SKINS } from "../shared/skins.js";
+import { skinKey } from "../shared/skins.js";
 import { skinTrait } from "../shared/skin-traits.js";
 
 export const optionsMixin = {
   _trait(name, fallback = false) { return skinTrait(this._skin(), name, fallback); },
-  _skin() { const k = this._config.skin || this._settings().skin || "homebase"; return SKINS[k] ? k : "homebase"; },
+  // Skin of the room (hub) shown; a skin set in the card's YAML wins, then the room skin (0.18), then the default skin.
+  _skinFor(hubId) { return skinKey(this._config.skin || this._settings().roomSkins?.[hubId] || this._settings().skin || "homebase"); },
+  _skin() { return this._skinFor(this._hubSel); },
 
   _tileStyle() { return this._config.tile_style || this._settings().tileStyle || "icon_text"; },
 

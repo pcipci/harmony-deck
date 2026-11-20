@@ -21,7 +21,7 @@ const attrs = { "aria-pressed": "false" };
 const el = { dataset: { hub: "remote.sz", device: "TV" }, parentElement: { classList: { toggle() {}, add() {} } }, getAttribute: (k) => attrs[k], setAttribute: (k, v) => { attrs[k] = v; }, addEventListener: (ev, fn) => listeners.push([ev, fn]) };
 const root = { querySelectorAll: (sel) => (sel === "button[data-swpwr]" ? [el] : []) };
 const sent = [];
-const p = { ...skinDecorMixin, _bindStickyHeader() {}, _swPowerSend: (...a) => sent.push(a) };
+const p = { ...skinDecorMixin, _bindStickyHeader() {}, _trait: () => false, _swPowerSend: (...a) => sent.push(a) };
 p._bindSkinDecor(root);
 assert.equal(listeners[0][0], "click");
 listeners[0][1]();

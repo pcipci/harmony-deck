@@ -1,5 +1,6 @@
 // Decoration of the effect skins (see shared/skin-css.js): glass reflection and torn band (terminal),
 // dial with magic eye (radio). The eye follows the volume of the running activity's device.
+import { segSvg } from "../shared/segfont.js";
 import { skinTrait } from "../shared/skin-traits.js";
 
 export const skinDecorMixin = {
@@ -38,8 +39,28 @@ export const skinDecorMixin = {
   // The collapsed header no longer sticks (0.16): the offset below the Home Assistant bar was wrong in views with tabs and pushed it over the keys.
   _bindStickyHeader() { if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true); this._stickFn = null; },
 
+  // Skin "thermal": every short text in segment letters (the normal text stays as aria-label; longer texts or characters the
+  // segment font lacks keep the normal font). Walks all text nodes, skipping form fields, so keys, labels, tabs and tiles are covered.
+  _segNames(root) {
+    if (!this._trait("segFont")) return;
+    const card = root.querySelector("ha-card");
+    if (!card) return;
+    const skip = "select, option, textarea, input, style, script, svg, [data-seg]";
+    const walker = card.ownerDocument.createTreeWalker(card, 4);
+    const nodes = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) { if (n.nodeValue.trim() && !n.parentElement.closest(skip)) nodes.push(n); }
+    nodes.forEach((n) => {
+      const svg = segSvg(n.nodeValue, n.parentElement.closest(".tile") ? 16 : 12);
+      if (!svg) return;
+      const sp = card.ownerDocument.createElement("span");
+      sp.dataset.seg = "1"; sp.setAttribute("aria-label", n.nodeValue.trim()); sp.innerHTML = svg;
+      n.replaceWith(sp);
+    });
+  },
+
   _bindSkinDecor(root) {
     this._bindStickyHeader(root);
+    this._segNames(root);
     root.querySelectorAll("button[data-swpwr]").forEach((el) => el.addEventListener("click", () => {
       const { hub, device } = el.dataset;
       const on = el.getAttribute("aria-pressed") !== "true";

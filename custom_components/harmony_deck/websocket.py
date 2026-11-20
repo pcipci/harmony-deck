@@ -203,6 +203,9 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
         settings["directDevices"] = clean_direct(settings["directDevices"])
     if "directSuggest" in settings:
         settings["directSuggest"] = clean_suggest(settings["directSuggest"])
+    if "roomSkins" in settings:
+        raw = settings["roomSkins"] if isinstance(settings["roomSkins"], dict) else {}
+        settings["roomSkins"] = {k[:80]: v[:40] for k, v in raw.items() if isinstance(k, str) and isinstance(v, str) and v}
     if "volumeCap" in settings:
         try:
             settings["volumeCap"] = min(max(int(settings["volumeCap"]), 10), 100)

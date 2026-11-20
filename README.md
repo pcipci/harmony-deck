@@ -36,7 +36,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume (a slider instead of +/- in the remote) and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
-| **Looks** | 13 skins incl. the effect skins Terminal (green phosphor glass with interference) and Tube radio (pilot lamps that flicker, sunken brass buttons, magic eye); tile and key styles, coloured icons, light and dark |
+| **Looks** | 15 skins incl. the effect skins Terminal, Tube radio, Thermal (heat vision, segment letters), Nixie (number tubes, toggle switches) and Nostromo (amber ship computer); an own skin per room; tile and key styles, coloured icons, light and dark |
 | **Hints** | One gear in the tab row: it takes the colour of the most serious hint (hub not reachable, player differs from the activity …), pulses until seen and shows the count; its window lists the hints with their action above the settings; its Info entry opens an Info area with the hubs, the linked network devices (platform, address, state, capabilities) as a table and which keys of the running activity go direct or over Harmony; gear, help and profile share one window |
 | **Profiles** | Different settings for different people or tablets |
 | **Entities** | Activities, devices and actions of each hub as lists, a button per action, a device per linked network device, differences per hub, lock entities, repair hints and diagnostics |
@@ -102,7 +102,7 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), an amber magic eye that follows the volume, sunken brass buttons with a lamp behind, keys with a state as lit dark glass, faint lamp flicker, a dial with the room and the running activity, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion".
+Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), an amber magic eye that follows the volume, sunken brass buttons with a lamp behind, keys with a state as lit dark glass, faint lamp flicker, a dial with the room and the running activity, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion". 0.17 adds **Thermal** (heat vision with segment letters), **Nixie** (number tubes, brass toggle switches) and **Nostromo** (amber ship computer); since 0.18 each room can have its own skin.
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Skin Terminal">
@@ -147,7 +147,7 @@ Everything can also be set in the visual editors. YAML options win over the sett
 | Option | Meaning |
 |---|---|
 | `entity` | one hub (`remote.…`), empty = all hubs as tabs |
-| `skin` | `homebase`, `remote`, `device`, `light`, `pebble`, `paper`, `clay`, `glass`, `nord`, `catppuccin`, `synthwave`, `terminal`, `radio` |
+| `skin` | `homebase`, `dark`, `light`, `pebble`, `paper`, `clay`, `glass`, `nord`, `catppuccin`, `synthwave`, `terminal`, `radio`, `thermal`, `nixie`, `nostromo` |
 | `language` | `de`, `en`, `ru` (default: language of Home Assistant) |
 | `columns` | tiles per row (default 3) |
 | `tile_style` | `icon_text`, `icon`, `text` |

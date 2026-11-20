@@ -143,9 +143,9 @@ export const dataMixin = {
 
   _adb(entity, command) {
     this._buzz();
-    const send = () => this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+    const send = () => this._call("androidtv", "adb_command", { entity_id: entity, command });
     if (this._fireAsleep(entity) && !/keyevent (223|224)\b/.test(String(command))) {
-      this._hass.callService("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
+      this._call("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
       setTimeout(send, 800);
       return;
     }

@@ -107,7 +107,7 @@ export const SKINS = {
   nixie: {
     "--hr-card-bg": "#2b1a10", "--hr-tile-bg": "#120a08", "--hr-key-bg": "#e3d5b0", "--hr-panel-bg": "#24150c", "--hr-accent": "#ff9a3a", "--hr-on-accent": "#1a0e06",
     "--hr-text": "#f0d9a8", "--hr-muted": "#c8964a", "--hr-opt-bg": "#120a08", "--hr-select-bg": "#120a08", "color-scheme": "dark",
-    "--hr-radius": "999px", "--hr-tile-radius": "40px", "--hr-rocker-radius": "30px", "--hr-rk-radius": "22px",
+    "--hr-radius": "5px", "--hr-tile-radius": "26px", "--hr-rocker-radius": "8px", "--hr-rk-radius": "5px", "--hr-seg-radius": "6px", "--hr-dpad-radius": "20px", "--hr-ok-radius": "50%", "--hr-d-big": "8px", "--hr-d-small": "3px",
   },
   // Nostromo: amber monochrome ship computer.
   nostromo: {

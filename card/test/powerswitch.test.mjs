@@ -4,7 +4,7 @@ import { skinDecorMixin } from "../src/deck/skin-decor.js";
 import { deviceStateMixin } from "../src/deck/device-state.js";
 
 const calls = [];
-const o = { ...deviceStateMixin, _settings: () => ({}), _rerender() {}, _buzz() {}, _holdOpt: () => ({}), _hass: { callService: (...a) => calls.push(a) } };
+const o = { ...deviceStateMixin, _call(d, s, x) { this._hass.callService(d, s, x); }, _settings: () => ({}), _rerender() {}, _buzz() {}, _holdOpt: () => ({}), _hass: { callService: (...a) => calls.push(a) } };
 o._swPowerSend("remote.wz", "LG-Fernseher", true);
 o._swPowerSend("remote.wz", "LG-Fernseher", false);
 assert.deepEqual(calls, [
@@ -36,7 +36,7 @@ assert.equal(st("unavailable")._powerState("r", "TV"), null);
 assert.equal({ ...deviceStateMixin, _settings: () => ({}), _hass: { states: {} } }._powerState("r", "TV"), null);
 
 // direct commands: Off goes to the player when it is reachable and can turn off, On always over Harmony
-const player = (state, features, extra = {}) => ({ ...deviceStateMixin, _holdOpt: () => ({}),
+const player = (state, features, extra = {}) => ({ ...deviceStateMixin, _call(d, s, x) { this._hass.callService(d, s, x); }, _holdOpt: () => ({}),
   _settings: () => ({ directDevices: { r: { TV: { entity: "media_player.tv", volumeDirect: false } } } }),
   _hass: { states: { "media_player.tv": { state, attributes: { supported_features: features, ...extra } } }, callService: (...a) => direct.push(a) } });
 const direct = [];

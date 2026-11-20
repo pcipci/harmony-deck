@@ -48,7 +48,7 @@ export const helpMixin = {
     const devs = this._devicesOf(hubId);
     for (const it of this._helpItems(h, act).visible) {
       if (it.device === fire || busy.has(it.device) || !(devs[it.device] || []).includes("PowerOff")) continue;
-      this._hass.callService("remote", "send_command", { entity_id: hubId, device: it.device, command: "PowerOff" });
+      this._call("remote", "send_command", { entity_id: hubId, device: it.device, command: "PowerOff" });
       await new Promise((r) => setTimeout(r, 500));
     }
   },
@@ -61,9 +61,9 @@ export const helpMixin = {
     const f = this._fireInfo(hub);
     const fireLive = !!f && (f.mode === "on" || f.mode === "playing");
     if (b.dataset.hold === "fire") { this._adb(b.dataset.entity || f?.entity, "input keyevent 223"); this._offRelated(hub); }
-    else if (hh?.current && hh.current !== "PowerOff") this._hass.callService("remote", "turn_off", { entity_id: hub });
+    else if (hh?.current && hh.current !== "PowerOff") this._call("remote", "turn_off", { entity_id: hub });
     else if (fireLive) { this._adb(f.entity, "input keyevent 223"); this._offRelated(hub); }
-    else this._hass.callService("remote", "turn_off", { entity_id: hub });
+    else this._call("remote", "turn_off", { entity_id: hub });
     (this._offPend ||= {})[hub] = Date.now();
     setTimeout(() => this._rerender(), 8200);
     setTimeout(() => this._rerender(), 350); // let the red flash be seen first
@@ -178,9 +178,9 @@ export const helpMixin = {
       this._buzz(25);
       const h = this._hubs().find((x) => x.id === b.dataset.helpall);
       for (const it of this._helpItems(h, b.dataset.act).visible) {
-        if (it.power) this._hass.callService("remote", "send_command", { entity_id: h.id, device: it.device, command: it.power });
+        if (it.power) this._call("remote", "send_command", { entity_id: h.id, device: it.device, command: it.power });
         else if (it.adb) this._adb(it.adb, "input keyevent 224");
-        if (it.input) { await new Promise((r) => setTimeout(r, 900)); this._hass.callService("remote", "send_command", { entity_id: h.id, device: it.device, command: it.input }); }
+        if (it.input) { await new Promise((r) => setTimeout(r, 900)); this._call("remote", "send_command", { entity_id: h.id, device: it.device, command: it.input }); }
         await new Promise((r) => setTimeout(r, 400));
       }
     }));

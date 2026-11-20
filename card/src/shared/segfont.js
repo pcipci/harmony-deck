@@ -3,7 +3,11 @@
 
 const S = { a: [2, 2, 18, 2], b: [20, 4, 20, 18], c: [20, 22, 20, 36], d: [2, 38, 18, 38], e: [0, 22, 0, 36], f: [0, 4, 0, 18], g1: [2, 20, 10, 20], g2: [12, 20, 18, 20], h: [2, 4, 9, 17], i: [10, 4, 10, 18], j: [18, 4, 11, 17], k: [2, 36, 9, 23], l: [10, 22, 10, 36], m: [18, 36, 11, 23] };
 const G = { A: "abcefg1g2", B: "abcdig2l", C: "adef", D: "abcdil", E: "adefg1", F: "aefg1", G: "acdefg2", H: "bcefg1g2", I: "adil", J: "bcde", K: "efg1jm", L: "def", M: "efbchj", N: "efbchm", O: "abcdef", P: "abefg1g2", Q: "abcdefm", R: "abefg1g2m", S: "afg1g2cd", T: "ail", U: "bcdef", V: "efkj", W: "efcbkm", X: "hjkm", Y: "hjl", Z: "ajkd", 0: "abcdef", 1: "bc", 2: "abdeg1g2", 3: "abcdg2", 4: "bcfg1g2", 5: "acdfg1g2", 6: "acdefg1g2", 7: "abc", 8: "abcdefg1g2", 9: "abcdfg1g2", "-": "g1g2", "+": "g1g2il", " ": "", ":": ".", "/": "jk", "\\": "hm", "_": "d", "(": "adef", ")": "abcd" };
-const UM = { "Ä": "A", "Ö": "O", "Ü": "U" };
+// Cyrillic: look-alikes reuse the Latin glyph, the others get their own segment sets.
+const CY = { "А": "A", "В": "B", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O", "Р": "P", "С": "C", "Т": "T", "Х": "X", "У": "Y", "З": "3", "Э": "E" };
+for (const k in CY) G[k] = G[CY[k]];
+Object.assign(G, { "Б": "acdefg1g2", "Г": "aef", "Д": "abcdel", "Ж": "hjkmg1g2il", "И": "bcefjk", "Й": "bcefjk", "Л": "bcjk", "П": "abcef", "Ф": "ilbcefg1g2", "Ц": "bcdefl", "Ч": "bcfg1g2", "Ш": "bcdefil", "Щ": "bcdefil", "Ъ": "ailcdg2", "Ы": "efg1g2lcd", "Ь": "efg1g2cd", "Ю": "efg1abcd", "Я": "abcg1g2k", "Ё": "adefg1" });
+const UM = { "Ä": "A", "Ö": "O", "Ü": "U", "Ё": "Ё", "Й": "Й" };
 export const SEG_MAX = 40;
 
 // Returns an svg string (colour = currentColor) or null when the text has to stay in the normal font.
@@ -23,5 +27,5 @@ export function segSvg(text, h = 18) {
     x += 28;
   }
   if (trail) x += 34;
-  return `<svg class="segtxt" viewBox="-2 -6 ${x + 2} 50" height="${h}" width="${Math.round(((x + 2) * h) / 50)}" fill="currentColor" stroke="currentColor" stroke-width="4.4" stroke-linecap="square" aria-hidden="true">${out}</svg>`;
+  return `<svg class="segtxt" viewBox="-2 -6 ${x + 2} 50" height="${h}" width="${Math.round(((x + 2) * h) / 50)}" fill="currentColor" stroke="currentColor" stroke-width="5.4" stroke-linecap="square" aria-hidden="true">${out}</svg>`;
 }

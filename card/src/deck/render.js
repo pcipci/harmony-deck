@@ -50,7 +50,8 @@ export const renderMixin = {
     const sel = vis.find((h) => h.id === this._hubSel);
     const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${this._roomName(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
     this._tabsShown = !!tabs;
-    const blocks = sel ? this._hubHtml(sel, t, 0, tabs) : "";
+    const warn = this._hubDownHtml(t);
+    const blocks = warn + (sel ? this._hubHtml(sel, t, 0, tabs) : "");
     // Hold the card height while the markup is replaced, so the page does not shrink for a moment and the browser keeps the scroll position.
     const held = this.offsetHeight;
     if (held) this.style.minHeight = `${held}px`;

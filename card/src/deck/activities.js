@@ -83,10 +83,10 @@ export const activitiesMixin = {
 
   // Events of the activity tiles.
   _bindActivities(root) {
-    root.querySelectorAll("[data-sync]").forEach((b) => b.addEventListener("click", () => { this._buzz(25); this._hass.callService("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act }); }));
+    root.querySelectorAll("[data-sync]").forEach((b) => b.addEventListener("click", () => { this._buzz(25); this._call("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act }); }));
     root.querySelectorAll(".tile[data-locked]").forEach((b) => {
       let tm = null;
-      b.addEventListener("pointerdown", () => { b.classList.add("holding"); tm = setTimeout(() => { this._buzz(40); this._hass.callService("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act }); }, 700); });
+      b.addEventListener("pointerdown", () => { b.classList.add("holding"); tm = setTimeout(() => { this._buzz(40); this._call("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act }); }, 700); });
       ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(tm); b.classList.remove("holding"); }));
     });
     // Not allowed by the security lock: no start, a short hint instead.
@@ -118,9 +118,9 @@ export const activitiesMixin = {
     // A sleeping Fire TV that belongs to the activity is woken first (the hub's commands would only wake it).
     const h = this._hubs().find((x) => x.id === hub);
     const fire = h ? this._setupOf(h, activity).map((it) => this._linkedFire(hub, it.device)).find(Boolean) : null;
-    const go = () => this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+    const go = () => this._call("remote", "turn_on", { entity_id: hub, activity });
     if (fire && this._fireAsleep(fire.entity)) {
-      this._hass.callService("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
+      this._call("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
       setTimeout(go, 600);
     } else go();
     const apply = () => {

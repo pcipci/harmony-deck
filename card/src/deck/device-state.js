@@ -64,8 +64,8 @@ export const deviceStateMixin = {
   // Send one command of a Harmony device: directly if possible, else over the hub.
   _sendCmd(hub, device, command, extra = {}) {
     const route = this._directRoute(hub, device, command);
-    if (route) { this._hass.callService("media_player", route.service, { entity_id: this._reach(hub, device).entity, ...route.data }); return; }
-    this._hass.callService("remote", "send_command", { entity_id: hub, device, command, ...extra, ...this._holdOpt() });
+    if (route) { this._call("media_player", route.service, { entity_id: this._reach(hub, device).entity, ...route.data }); return; }
+    this._call("remote", "send_command", { entity_id: hub, device, command, ...extra, ...this._holdOpt() });
   },
 
   // Target state of a switch that was just pressed and is not confirmed by the device yet (null = nothing pending).

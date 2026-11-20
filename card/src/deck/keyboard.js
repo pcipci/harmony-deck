@@ -117,7 +117,7 @@ export const keyboardMixin = {
       inp.value = ""; inp.disabled = true; this._buzz(25);
       try {
         for (let i = 0; i < cmds.length; i += 40) {
-          await this._hass.callService("remote", "send_command", { entity_id: f.dataset.hub, device: f.dataset.device, command: cmds.slice(i, i + 40), delay_secs: 0.15, ...this._holdOpt() });
+          await this._call("remote", "send_command", { entity_id: f.dataset.hub, device: f.dataset.device, command: cmds.slice(i, i + 40), delay_secs: 0.15, ...this._holdOpt() });
         }
         if (msg) msg.textContent = skipped.size ? fmtText(t.textSkipped, [cmds.length, [...skipped].join(" ")]) : fmtText(t.textSent, [cmds.length]);
       } finally { inp.disabled = false; }

@@ -75,6 +75,7 @@
   "numbers": "Zifferntasten",
   "skin": "Aussehen",
   "palette": "Farbpalette",
+  "hubDown": "Hub gerade nicht erreichbar, es wird weiter versucht",
   "roomOnly": "Nur für diesen Raum",
   "skins": {
     "homebase": "Homebase",

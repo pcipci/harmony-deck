@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.0
+
+### Added
+- **Quiet hub errors:** when a Harmony hub drops the connection ("connection lost"), the card no longer shows Home Assistant's red error. Commands are retried in the background (queued per hub, in order); if the hub stays away, one calm hint appears in the card ("Hub not reachable right now, still trying") and disappears when it answers again.
+- **Nixie:** the keys are graphite rectangles with a chrome edge, placed in the grid. Keys that are sent directly (Fire TV over ADB) have a dim glowing legend, a pressed or active key glows bright. Devices with a known power state show a toggle switch (lamp, hex nut, lever) instead of On/Off/Toggle. Tubes, digits and the frames of activities follow the same chrome look.
+
+### Changed
+- **Thermal:** thicker segment letters, and Cyrillic (Russian) names are drawn in the segment font too.
+- **Lock mark** follows the skin colours (Thermal, Nostromo, Terminal, Tube radio, Nixie).
+
 ## 0.18.2
 
 ### Fixed

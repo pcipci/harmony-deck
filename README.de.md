@@ -109,6 +109,12 @@ Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm 
   <img src="docs/images/skin-radio.png" width="32%" alt="Look Röhrenradio">
 </p>
 
+<p align="center">
+  <img src="docs/images/skin-thermal.png" width="32%" alt="Look Wärmebild">
+  <img src="docs/images/skin-nixie.png" width="32%" alt="Look Nixie">
+  <img src="docs/images/skin-nostromo.png" width="32%" alt="Look Nostromo">
+</p>
+
 ## Aktionen und Netzwerksteuerung
 
 **Aktionen** sind eigene Tasten: ein Schritt („Kerzen umschalten“) oder eine Sequenz aus Harmony-Tasten, Pausen, Home-Assistant-Aktionen, „Warten bis“ und „Wenn“. Sie laufen in der Integration und werden auch bei geschlossener Seite fertig. Jede Aktion ist zusätzlich eine **Taste** (button-Entität) am Gerät des Hubs (Drücken = Start; abgelehnt, solange eine andere Aktion läuft), der Sensor **Aktionen** listet sie auf.

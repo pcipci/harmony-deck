@@ -28,6 +28,7 @@ import { actionEditorMixin } from "./action-editor.js";
 import { actionsMixin } from "./actions.js";
 import { activitiesMixin } from "./activities.js";
 import { bindMixin } from "./bind.js";
+import { callMixin } from "./call.js";
 import { dataMixin } from "./data.js";
 import { deviceStateMixin } from "./device-state.js";
 import { devicesMixin } from "./devices.js";
@@ -109,6 +110,6 @@ export class HarmonyDeckCard extends HTMLElement {
 }
 
 // The functions of the card live in one module per area; here they are attached to the class.
-for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
   Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
 }

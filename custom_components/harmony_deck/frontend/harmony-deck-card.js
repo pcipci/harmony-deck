@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.18.2";
+  var VERSION = "0.19.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1455,7 +1455,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindActivities(root) {
       root.querySelectorAll("[data-sync]").forEach((b) => b.addEventListener("click", () => {
         this._buzz(25);
-        this._hass.callService("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act });
+        this._call("remote", "turn_on", { entity_id: b.dataset.sync, activity: b.dataset.act });
       }));
       root.querySelectorAll(".tile[data-locked]").forEach((b) => {
         let tm = null;
@@ -1463,7 +1463,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           b.classList.add("holding");
           tm = setTimeout(() => {
             this._buzz(40);
-            this._hass.callService("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act });
+            this._call("remote", "turn_on", { entity_id: b.dataset.hub, activity: b.dataset.act });
           }, 700);
         });
         ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => {
@@ -1512,9 +1512,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _startActivity(hub, activity) {
       const h = this._hubs().find((x) => x.id === hub);
       const fire = h ? this._setupOf(h, activity).map((it) => this._linkedFire(hub, it.device)).find(Boolean) : null;
-      const go = () => this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+      const go = () => this._call("remote", "turn_on", { entity_id: hub, activity });
       if (fire && this._fireAsleep(fire.entity)) {
-        this._hass.callService("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
+        this._call("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
         setTimeout(go, 600);
       } else go();
       const apply = () => {
@@ -1554,6 +1554,56 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindActionEditor(root);
       this._bindKeys(root);
       this._bindLockMark(root);
+    }
+  };
+
+  // src/deck/call.js
+  var WAITS = [0, 700, 1600];
+  var HINT_MS = 15e3;
+  var callMixin = {
+    _call(domain, service, data = {}) {
+      const key = data.entity_id || domain;
+      const harmony = domain === "remote" && service === "send_command";
+      const run = async () => {
+        const waits = this._retryWaits || WAITS;
+        for (let i = 0; i < waits.length; i++) {
+          if (waits[i]) await new Promise((r) => setTimeout(r, waits[i]));
+          try {
+            await this._hass.callService(domain, service, data, void 0, false);
+            if (domain === "remote") this._hubOk(key);
+            return true;
+          } catch (e) {
+            if (i === waits.length - 1) {
+              if (domain === "remote") this._hubFail(key);
+              return false;
+            }
+          }
+        }
+        return false;
+      };
+      if (!harmony) return run();
+      this._callQ = this._callQ || {};
+      const p = (this._callQ[key] || Promise.resolve()).then(run, run);
+      this._callQ[key] = p;
+      return p;
+    },
+    _hubFail(key) {
+      this._hubDown = { ...this._hubDown || {}, [key]: Date.now() };
+      clearTimeout(this._hubDownTm);
+      this._hubDownTm = setTimeout(() => {
+        this._hubDown = {};
+        this._rerender?.();
+      }, HINT_MS);
+      this._rerender?.();
+    },
+    _hubOk(key) {
+      if (!this._hubDown?.[key]) return;
+      const { [key]: gone, ...rest } = this._hubDown;
+      this._hubDown = rest;
+      this._rerender?.();
+    },
+    _hubDownHtml(t) {
+      return this._hubDown && Object.keys(this._hubDown).length ? `<div class="hubwarn" role="status"><ha-icon icon="mdi:lan-disconnect"></ha-icon><span>${t.hubDown}</span></div>` : "";
     }
   };
 
@@ -1717,9 +1767,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     _adb(entity, command) {
       this._buzz();
-      const send = () => this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+      const send = () => this._call("androidtv", "adb_command", { entity_id: entity, command });
       if (this._fireAsleep(entity) && !/keyevent (223|224)\b/.test(String(command))) {
-        this._hass.callService("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
+        this._call("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
         setTimeout(send, 800);
         return;
       }
@@ -1826,10 +1876,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _sendCmd(hub, device, command, extra = {}) {
       const route = this._directRoute(hub, device, command);
       if (route) {
-        this._hass.callService("media_player", route.service, { entity_id: this._reach(hub, device).entity, ...route.data });
+        this._call("media_player", route.service, { entity_id: this._reach(hub, device).entity, ...route.data });
         return;
       }
-      this._hass.callService("remote", "send_command", { entity_id: hub, device, command, ...extra, ...this._holdOpt() });
+      this._call("remote", "send_command", { entity_id: hub, device, command, ...extra, ...this._holdOpt() });
     },
     // Target state of a switch that was just pressed and is not confirmed by the device yet (null = nothing pending).
     _powerPending(hub, dev) {
@@ -2984,7 +3034,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const devs = this._devicesOf(hubId);
       for (const it of this._helpItems(h, act).visible) {
         if (it.device === fire || busy.has(it.device) || !(devs[it.device] || []).includes("PowerOff")) continue;
-        this._hass.callService("remote", "send_command", { entity_id: hubId, device: it.device, command: "PowerOff" });
+        this._call("remote", "send_command", { entity_id: hubId, device: it.device, command: "PowerOff" });
         await new Promise((r) => setTimeout(r, 500));
       }
     },
@@ -2998,11 +3048,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (b.dataset.hold === "fire") {
         this._adb(b.dataset.entity || f?.entity, "input keyevent 223");
         this._offRelated(hub);
-      } else if (hh?.current && hh.current !== "PowerOff") this._hass.callService("remote", "turn_off", { entity_id: hub });
+      } else if (hh?.current && hh.current !== "PowerOff") this._call("remote", "turn_off", { entity_id: hub });
       else if (fireLive) {
         this._adb(f.entity, "input keyevent 223");
         this._offRelated(hub);
-      } else this._hass.callService("remote", "turn_off", { entity_id: hub });
+      } else this._call("remote", "turn_off", { entity_id: hub });
       (this._offPend ||= {})[hub] = Date.now();
       setTimeout(() => this._rerender(), 8200);
       setTimeout(() => this._rerender(), 350);
@@ -3140,11 +3190,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._buzz(25);
         const h = this._hubs().find((x) => x.id === b.dataset.helpall);
         for (const it of this._helpItems(h, b.dataset.act).visible) {
-          if (it.power) this._hass.callService("remote", "send_command", { entity_id: h.id, device: it.device, command: it.power });
+          if (it.power) this._call("remote", "send_command", { entity_id: h.id, device: it.device, command: it.power });
           else if (it.adb) this._adb(it.adb, "input keyevent 224");
           if (it.input) {
             await new Promise((r) => setTimeout(r, 900));
-            this._hass.callService("remote", "send_command", { entity_id: h.id, device: it.device, command: it.input });
+            this._call("remote", "send_command", { entity_id: h.id, device: it.device, command: it.input });
           }
           await new Promise((r) => setTimeout(r, 400));
         }
@@ -3508,7 +3558,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._buzz(25);
         try {
           for (let i = 0; i < cmds.length; i += 40) {
-            await this._hass.callService("remote", "send_command", { entity_id: f.dataset.hub, device: f.dataset.device, command: cmds.slice(i, i + 40), delay_secs: 0.15, ...this._holdOpt() });
+            await this._call("remote", "send_command", { entity_id: f.dataset.hub, device: f.dataset.device, command: cmds.slice(i, i + 40), delay_secs: 0.15, ...this._holdOpt() });
           }
           if (msg) msg.textContent = skipped.size ? fmtText(t.textSkipped, [cmds.length, [...skipped].join(" ")]) : fmtText(t.textSent, [cmds.length]);
         } finally {
@@ -3874,10 +3924,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       "--hr-opt-bg": "#120a08",
       "--hr-select-bg": "#120a08",
       "color-scheme": "dark",
-      "--hr-radius": "999px",
-      "--hr-tile-radius": "40px",
-      "--hr-rocker-radius": "30px",
-      "--hr-rk-radius": "22px"
+      "--hr-radius": "5px",
+      "--hr-tile-radius": "26px",
+      "--hr-rocker-radius": "8px",
+      "--hr-rk-radius": "5px",
+      "--hr-seg-radius": "6px",
+      "--hr-dpad-radius": "20px",
+      "--hr-ok-radius": "50%",
+      "--hr-d-big": "8px",
+      "--hr-d-small": "3px"
     },
     // Nostromo: amber monochrome ship computer.
     nostromo: {
@@ -3941,7 +3996,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     radio: { powerKnob: true, keyHoldMs: 120, dial: true, premium: true },
     terminal: { glass: true, premium: true, noColorIcons: true },
     thermal: { premium: true, keyHoldMs: 220, segFont: true, noColorIcons: true },
-    nixie: { premium: true, toggles: true },
+    nixie: { premium: true, toggles: true, powerKnob: true },
     nostromo: { premium: true, noColorIcons: true },
     glass: { blurOption: true }
   };
@@ -4525,7 +4580,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const sel = vis.find((h) => h.id === this._hubSel);
       const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${this._roomName(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
       this._tabsShown = !!tabs;
-      const blocks = sel ? this._hubHtml(sel, t, 0, tabs) : "";
+      const warn = this._hubDownHtml(t);
+      const blocks = warn + (sel ? this._hubHtml(sel, t, 0, tabs) : "");
       const held = this.offsetHeight;
       if (held) this.style.minHeight = `${held}px`;
       this.shadowRoot.innerHTML = `${this._style()}
@@ -5277,7 +5333,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   // src/shared/segfont.js
   var S = { a: [2, 2, 18, 2], b: [20, 4, 20, 18], c: [20, 22, 20, 36], d: [2, 38, 18, 38], e: [0, 22, 0, 36], f: [0, 4, 0, 18], g1: [2, 20, 10, 20], g2: [12, 20, 18, 20], h: [2, 4, 9, 17], i: [10, 4, 10, 18], j: [18, 4, 11, 17], k: [2, 36, 9, 23], l: [10, 22, 10, 36], m: [18, 36, 11, 23] };
   var G = { A: "abcefg1g2", B: "abcdig2l", C: "adef", D: "abcdil", E: "adefg1", F: "aefg1", G: "acdefg2", H: "bcefg1g2", I: "adil", J: "bcde", K: "efg1jm", L: "def", M: "efbchj", N: "efbchm", O: "abcdef", P: "abefg1g2", Q: "abcdefm", R: "abefg1g2m", S: "afg1g2cd", T: "ail", U: "bcdef", V: "efkj", W: "efcbkm", X: "hjkm", Y: "hjl", Z: "ajkd", 0: "abcdef", 1: "bc", 2: "abdeg1g2", 3: "abcdg2", 4: "bcfg1g2", 5: "acdfg1g2", 6: "acdefg1g2", 7: "abc", 8: "abcdefg1g2", 9: "abcdfg1g2", "-": "g1g2", "+": "g1g2il", " ": "", ":": ".", "/": "jk", "\\": "hm", "_": "d", "(": "adef", ")": "abcd" };
-  var UM = { "Ä": "A", "Ö": "O", "Ü": "U" };
+  var CY = { "А": "A", "В": "B", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O", "Р": "P", "С": "C", "Т": "T", "Х": "X", "У": "Y", "З": "3", "Э": "E" };
+  for (const k in CY) G[k] = G[CY[k]];
+  Object.assign(G, { "Б": "acdefg1g2", "Г": "aef", "Д": "abcdel", "Ж": "hjkmg1g2il", "И": "bcefjk", "Й": "bcefjk", "Л": "bcjk", "П": "abcef", "Ф": "ilbcefg1g2", "Ц": "bcdefl", "Ч": "bcfg1g2", "Ш": "bcdefil", "Щ": "bcdefil", "Ъ": "ailcdg2", "Ы": "efg1g2lcd", "Ь": "efg1g2cd", "Ю": "efg1abcd", "Я": "abcg1g2k", "Ё": "adefg1" });
+  var UM = { "Ä": "A", "Ö": "O", "Ü": "U", "Ё": "Ё", "Й": "Й" };
   var SEG_MAX = 40;
   function segSvg(text, h = 18) {
     const str = String(text ?? "").trim().toUpperCase().replace("ß", "SS").replace("…", "...");
@@ -5309,7 +5368,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       x += 28;
     }
     if (trail) x += 34;
-    return `<svg class="segtxt" viewBox="-2 -6 ${x + 2} 50" height="${h}" width="${Math.round((x + 2) * h / 50)}" fill="currentColor" stroke="currentColor" stroke-width="4.4" stroke-linecap="square" aria-hidden="true">${out}</svg>`;
+    return `<svg class="segtxt" viewBox="-2 -6 ${x + 2} 50" height="${h}" width="${Math.round((x + 2) * h / 50)}" fill="currentColor" stroke="currentColor" stroke-width="5.4" stroke-linecap="square" aria-hidden="true">${out}</svg>`;
   }
 
   // src/deck/skin-decor.js
@@ -5708,20 +5767,43 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
       ${R2} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
+      ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
+      ${T2} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T2} .lockmark.free { color: #1fa83c; }
+      ${R2} .lockmark.on, ${X} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R2} .lockmark.free, ${X} .lockmark.free { color: #9c8450; }
       ${R2} .ib.gear .gbadge, ${X} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
       ${X} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
       ${X} .grid { counter-reset: nx; }
-      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
+      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 1px solid #9a9a9a; border-radius: 26px 26px 6px 6px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
       ${X} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
       ${X} .tile.on, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
       ${X} .tile.on::before, ${X} .tile.dev.sel::before, ${X} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
       ${X} .tile.on span, ${X} .tile.dev.sel span, ${X} .tile.dev.inuse span { color: #ffd9a0; }
-      ${X} .key, ${X} .rocker { border: 2px solid #c8a24a; background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; box-shadow: 0 4px 0 #6b4a1a, 0 6px 8px rgba(0,0,0,.5); transition: transform .12s ease, box-shadow .12s ease; }
-      ${X} .key ha-icon, ${X} .rocker ha-icon { color: #2a170a !important; }
-      ${X} .key.sel:not(.mute), ${X} .key.on:not(.mute), ${X} .key.muted, ${X} .ic-row.on, ${X} .appcell.svc.on, ${X} .key.lit, ${X} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border-color: #8a6a2a; box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.5); }
+      /* keys: graphite rectangles with a chrome edge and an engraved legend; direct keys (sent straight to the device) have a dim glowing legend, active ones glow bright and sit pressed in */
+      ${X} .key:not(.color), ${X} .rocker { border: 1px solid #9a9a9a; background: linear-gradient(180deg, #2c2c2e, #161617); color: #d8ccb0; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); transition: transform .12s ease, box-shadow .12s ease; }
+      ${X} .key:not(.color) ha-icon, ${X} .rocker ha-icon { color: #d8ccb0 !important; }
+      ${X} .key[data-adb]:not(.color):not(.appcell), ${X} .key.ic-row:not(.color) { color: #e59a4a; text-shadow: 0 0 6px rgba(255,130,30,.55); border-color: #b08a5a; }
+      ${X} .key[data-adb]:not(.color):not(.appcell) ha-icon, ${X} .key.ic-row:not(.color) ha-icon { color: #e59a4a !important; filter: drop-shadow(0 0 4px rgba(255,130,30,.6)); }
+      ${X} .key.sel:not(.mute):not(.color), ${X} .key.on:not(.mute):not(.color), ${X} .key.muted, ${X} .ic-row.on, ${X} .appcell.svc.on, ${X} .key.lit:not(.color), ${X} .key:active:not(.color) { transform: translateY(2px); color: #ffb25a !important; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.8); border-color: #e8d8b8; background: linear-gradient(180deg, #161617, #1f1f20) !important; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5); }
+      ${X} .key.sel:not(.color) ha-icon, ${X} .key.on:not(.color) ha-icon, ${X} .key.muted ha-icon, ${X} .ic-row.on ha-icon, ${X} .key.lit ha-icon, ${X} .key:active ha-icon { color: #ffb25a !important; filter: drop-shadow(0 0 5px #ff7a1a); }
+      ${X} .rocker .rk.mute.round, ${X} .key.mute.round { background: linear-gradient(180deg, #2c2c2e, #161617) !important; color: #d8ccb0 !important; border: 1px solid #9a9a9a; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); }
+      ${X} .rocker .rk.mute.round.muted, ${X} .key.mute.round.muted { background: linear-gradient(180deg, #161617, #1f1f20) !important; color: #ffb25a !important; border-color: #e8d8b8; transform: translateY(2px); text-shadow: 0 0 8px #ff7a1a; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5) !important; }
+      ${X} .rocker .rk.mute.round ha-icon, ${X} .key.mute.round ha-icon { color: inherit !important; }
+      ${X} .key.color { border: 1px solid rgba(255,255,255,.4); }
+      /* On/Off of a device with a known state: a toggle switch (brass hex nut, chrome lever, lamp) */
+      ${X} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${X} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
+      ${X} .pwio { display: flex; gap: 10px; } ${X} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; } ${X} .key.pwio span { font: 700 10px Georgia, serif; } ${X} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; gap: 6px; }
+      ${X} .pwknob { position: relative; flex: none; width: 64px; height: 48px; background: radial-gradient(circle at 50% 50%, #120a04 0 7px, transparent 7.5px) 15px 18px / 34px 30px no-repeat; }
+      ${X} .pwknob::before { content: ""; position: absolute; left: 15px; bottom: 0; width: 34px; height: 30px; z-index: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); }
+      ${X} .pwknob::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
+      ${X} .pwknob.on::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
+      ${X} .pwknob .knob { position: absolute; left: 26px; bottom: 14px; z-index: 2; width: 12px; height: 32px; min-height: 0; padding: 0; border: none; border-radius: 0; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; box-shadow: none; filter: none; }
+      ${X} .pwknob .knob ha-icon { display: none; } ${X} .pwknob.on .knob { transform: rotate(30deg); }
+      ${X} .pwknob.pend::after { animation: nxpend .6s ease-in-out infinite alternate; }
+      @keyframes nxpend { from { opacity: .35; } to { opacity: 1; } }
       ${X} .appcell.svc { --c: #120a08 !important; --fg: #ffb84a !important; }
       ${X} .volslider.h { -webkit-appearance: none; appearance: none; height: 20px; border: 2px solid #8a8a8a; border-radius: 10px; background: #0d0704; }
       ${X} .volslider.h::-webkit-slider-runnable-track { height: 20px; background: transparent; } ${X} .volslider.h::-moz-range-track { height: 20px; background: transparent; }
@@ -5779,7 +5861,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R2} .key.ic-row.on:not(.mute) *, ${R2} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -6344,6 +6426,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
+      .hubwarn { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 8px 12px; border-radius: var(--hr-tile-radius, 12px); font-size: 13px; background: color-mix(in srgb, var(--hr-accent, #ff9800) 16%, transparent); border: 1px solid color-mix(in srgb, var(--hr-accent, #ff9800) 55%, transparent); color: var(--hr-text, inherit); } .hubwarn ha-icon { --mdc-icon-size: 18px; color: var(--hr-accent, #ff9800); flex: none; }
       ha-card.fadein { animation: hdfadein .25s ease; }
       @keyframes hdfadein { from { opacity: 0; } to { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { ha-card.fadein { animation: none; } }
@@ -6537,7 +6620,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

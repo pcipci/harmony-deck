@@ -563,6 +563,7 @@ export const styleMixin = {
       .tile.dev small, .key.svc small, .hubtabs small { font-size: max(11px, 0.68em); }
       @keyframes pulse { 50% { opacity: 0.55; } }
       @media (max-width: 420px) { .tile { min-height: 74px; } .panel { --c1: 56px; --c3: 56px; gap: 6px; } .panel.mid3 { --c3: 66px; } .panel.wide3 { --c3: 78px; } }
+      .hubwarn { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 8px 12px; border-radius: var(--hr-tile-radius, 12px); font-size: 13px; background: color-mix(in srgb, var(--hr-accent, #ff9800) 16%, transparent); border: 1px solid color-mix(in srgb, var(--hr-accent, #ff9800) 55%, transparent); color: var(--hr-text, inherit); } .hubwarn ha-icon { --mdc-icon-size: 18px; color: var(--hr-accent, #ff9800); flex: none; }
       ha-card.fadein { animation: hdfadein .25s ease; }
       @keyframes hdfadein { from { opacity: 0; } to { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { ha-card.fadein { animation: none; } }

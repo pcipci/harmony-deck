@@ -73,20 +73,43 @@ export const SKIN_CSS_NEW = `
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
       ${R} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
+      ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
+      ${T} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T} .lockmark.free { color: #1fa83c; }
+      ${R} .lockmark.on, ${X} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R} .lockmark.free, ${X} .lockmark.free { color: #9c8450; }
       ${R} .ib.gear .gbadge, ${X} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
       ${X} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
       ${X} .grid { counter-reset: nx; }
-      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
+      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 1px solid #9a9a9a; border-radius: 26px 26px 6px 6px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
       ${X} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
       ${X} .tile.on, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
       ${X} .tile.on::before, ${X} .tile.dev.sel::before, ${X} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
       ${X} .tile.on span, ${X} .tile.dev.sel span, ${X} .tile.dev.inuse span { color: #ffd9a0; }
-      ${X} .key, ${X} .rocker { border: 2px solid #c8a24a; background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; box-shadow: 0 4px 0 #6b4a1a, 0 6px 8px rgba(0,0,0,.5); transition: transform .12s ease, box-shadow .12s ease; }
-      ${X} .key ha-icon, ${X} .rocker ha-icon { color: #2a170a !important; }
-      ${X} .key.sel:not(.mute), ${X} .key.on:not(.mute), ${X} .key.muted, ${X} .ic-row.on, ${X} .appcell.svc.on, ${X} .key.lit, ${X} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border-color: #8a6a2a; box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.5); }
+      /* keys: graphite rectangles with a chrome edge and an engraved legend; direct keys (sent straight to the device) have a dim glowing legend, active ones glow bright and sit pressed in */
+      ${X} .key:not(.color), ${X} .rocker { border: 1px solid #9a9a9a; background: linear-gradient(180deg, #2c2c2e, #161617); color: #d8ccb0; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); transition: transform .12s ease, box-shadow .12s ease; }
+      ${X} .key:not(.color) ha-icon, ${X} .rocker ha-icon { color: #d8ccb0 !important; }
+      ${X} .key[data-adb]:not(.color):not(.appcell), ${X} .key.ic-row:not(.color) { color: #e59a4a; text-shadow: 0 0 6px rgba(255,130,30,.55); border-color: #b08a5a; }
+      ${X} .key[data-adb]:not(.color):not(.appcell) ha-icon, ${X} .key.ic-row:not(.color) ha-icon { color: #e59a4a !important; filter: drop-shadow(0 0 4px rgba(255,130,30,.6)); }
+      ${X} .key.sel:not(.mute):not(.color), ${X} .key.on:not(.mute):not(.color), ${X} .key.muted, ${X} .ic-row.on, ${X} .appcell.svc.on, ${X} .key.lit:not(.color), ${X} .key:active:not(.color) { transform: translateY(2px); color: #ffb25a !important; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.8); border-color: #e8d8b8; background: linear-gradient(180deg, #161617, #1f1f20) !important; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5); }
+      ${X} .key.sel:not(.color) ha-icon, ${X} .key.on:not(.color) ha-icon, ${X} .key.muted ha-icon, ${X} .ic-row.on ha-icon, ${X} .key.lit ha-icon, ${X} .key:active ha-icon { color: #ffb25a !important; filter: drop-shadow(0 0 5px #ff7a1a); }
+      ${X} .rocker .rk.mute.round, ${X} .key.mute.round { background: linear-gradient(180deg, #2c2c2e, #161617) !important; color: #d8ccb0 !important; border: 1px solid #9a9a9a; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); }
+      ${X} .rocker .rk.mute.round.muted, ${X} .key.mute.round.muted { background: linear-gradient(180deg, #161617, #1f1f20) !important; color: #ffb25a !important; border-color: #e8d8b8; transform: translateY(2px); text-shadow: 0 0 8px #ff7a1a; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5) !important; }
+      ${X} .rocker .rk.mute.round ha-icon, ${X} .key.mute.round ha-icon { color: inherit !important; }
+      ${X} .key.color { border: 1px solid rgba(255,255,255,.4); }
+      /* On/Off of a device with a known state: a toggle switch (brass hex nut, chrome lever, lamp) */
+      ${X} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${X} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
+      ${X} .pwio { display: flex; gap: 10px; } ${X} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; } ${X} .key.pwio span { font: 700 10px Georgia, serif; } ${X} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; gap: 6px; }
+      ${X} .pwknob { position: relative; flex: none; width: 64px; height: 48px; background: radial-gradient(circle at 50% 50%, #120a04 0 7px, transparent 7.5px) 15px 18px / 34px 30px no-repeat; }
+      ${X} .pwknob::before { content: ""; position: absolute; left: 15px; bottom: 0; width: 34px; height: 30px; z-index: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); }
+      ${X} .pwknob::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
+      ${X} .pwknob.on::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
+      ${X} .pwknob .knob { position: absolute; left: 26px; bottom: 14px; z-index: 2; width: 12px; height: 32px; min-height: 0; padding: 0; border: none; border-radius: 0; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; box-shadow: none; filter: none; }
+      ${X} .pwknob .knob ha-icon { display: none; } ${X} .pwknob.on .knob { transform: rotate(30deg); }
+      ${X} .pwknob.pend::after { animation: nxpend .6s ease-in-out infinite alternate; }
+      @keyframes nxpend { from { opacity: .35; } to { opacity: 1; } }
       ${X} .appcell.svc { --c: #120a08 !important; --fg: #ffb84a !important; }
       ${X} .volslider.h { -webkit-appearance: none; appearance: none; height: 20px; border: 2px solid #8a8a8a; border-radius: 10px; background: #0d0704; }
       ${X} .volslider.h::-webkit-slider-runnable-track { height: 20px; background: transparent; } ${X} .volslider.h::-moz-range-track { height: 20px; background: transparent; }
@@ -144,5 +167,5 @@ export const SKIN_CSS_NEW = `
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R} .key.ic-row.on:not(.mute) *, ${R} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
 `;

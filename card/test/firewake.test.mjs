@@ -4,7 +4,7 @@ import { dataMixin } from "../src/deck/data.js";
 
 const run = (attrs, state, command) => {
   const calls = [];
-  const o = { ...dataMixin, _buzz() {}, _hass: { states: { "media_player.fire": { state, attributes: attrs } }, callService: (...a) => calls.push(a[2].command) } };
+  const o = { ...dataMixin, _call(d, s, x) { this._hass.callService(d, s, x); }, _buzz() {}, _hass: { states: { "media_player.fire": { state, attributes: attrs } }, callService: (...a) => calls.push(a[2].command) } };
   o._adb("media_player.fire", command);
   return calls;
 };

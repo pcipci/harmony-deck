@@ -75,6 +75,7 @@
   "numbers": "Number keys",
   "skin": "Look",
   "palette": "Palette",
+  "hubDown": "Hub not reachable right now, still trying",
   "roomOnly": "Only for this room",
   "skins": {
     "homebase": "Homebase",

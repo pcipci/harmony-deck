@@ -134,9 +134,22 @@ export const dataMixin = {
     return names.find((n) => known.includes(n)) || null;
   },
 
+  // The Fire TV sleeps in standby or in the screensaver; then the first key only wakes it. So wake it first, wait a moment and send the key.
+  _fireAsleep(entity) {
+    const st = this._hass?.states?.[entity];
+    if (!st) return false;
+    return ["standby", "off"].includes(st.state) || /screensaver|daydream|somnambulator|dreams/i.test(String(st.attributes?.app_id || st.attributes?.app_name || ""));
+  },
+
   _adb(entity, command) {
     this._buzz();
-    this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+    const send = () => this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+    if (this._fireAsleep(entity) && !/keyevent (223|224)\b/.test(String(command))) {
+      this._hass.callService("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
+      setTimeout(send, 800);
+      return;
+    }
+    send();
   },
 
   _buzz(ms = 15) { if (this._vibrateOn() && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) { /* not supported */ } },

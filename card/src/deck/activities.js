@@ -115,7 +115,14 @@ export const activitiesMixin = {
 
   // Starts an activity and folds the header away (option collapse_header).
   _startActivity(hub, activity) {
-    this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+    // A sleeping Fire TV that belongs to the activity is woken first (the hub's commands would only wake it).
+    const h = this._hubs().find((x) => x.id === hub);
+    const fire = h ? this._setupOf(h, activity).map((it) => this._linkedFire(hub, it.device)).find(Boolean) : null;
+    const go = () => this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+    if (fire && this._fireAsleep(fire.entity)) {
+      this._hass.callService("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
+      setTimeout(go, 600);
+    } else go();
     const apply = () => {
       if (this._collapseOn()) { this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [hub]: true }; this._scrollRemote = true; this._scrollAt = Date.now(); }
       this._rerender();

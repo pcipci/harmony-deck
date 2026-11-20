@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.16.2";
+  var VERSION = "0.16.3";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1510,7 +1510,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // Starts an activity and folds the header away (option collapse_header).
     _startActivity(hub, activity) {
-      this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+      const h = this._hubs().find((x) => x.id === hub);
+      const fire = h ? this._setupOf(h, activity).map((it) => this._linkedFire(hub, it.device)).find(Boolean) : null;
+      const go = () => this._hass.callService("remote", "turn_on", { entity_id: hub, activity });
+      if (fire && this._fireAsleep(fire.entity)) {
+        this._hass.callService("androidtv", "adb_command", { entity_id: fire.entity, command: "input keyevent 224" });
+        setTimeout(go, 600);
+      } else go();
       const apply = () => {
         if (this._collapseOn()) {
           this._hdrCollapsed = { ...this._hdrCollapsed || {}, [hub]: true };
@@ -1703,9 +1709,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!known) return names[0];
       return names.find((n) => known.includes(n)) || null;
     },
+    // The Fire TV sleeps in standby or in the screensaver; then the first key only wakes it. So wake it first, wait a moment and send the key.
+    _fireAsleep(entity) {
+      const st = this._hass?.states?.[entity];
+      if (!st) return false;
+      return ["standby", "off"].includes(st.state) || /screensaver|daydream|somnambulator|dreams/i.test(String(st.attributes?.app_id || st.attributes?.app_name || ""));
+    },
     _adb(entity, command) {
       this._buzz();
-      this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+      const send = () => this._hass.callService("androidtv", "adb_command", { entity_id: entity, command });
+      if (this._fireAsleep(entity) && !/keyevent (223|224)\b/.test(String(command))) {
+        this._hass.callService("androidtv", "adb_command", { entity_id: entity, command: "input keyevent 224" });
+        setTimeout(send, 800);
+        return;
+      }
+      send();
     },
     _buzz(ms = 15) {
       if (this._vibrateOn() && navigator.vibrate) try {
@@ -5426,10 +5444,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
       /* 0.16.1: calmer flicker (slow and smooth), thin sunken rims, pressed state keys, hold-to-switch effects */
       ${T} .tile.dev.inuse { animation: skphos2 5s ease-in-out infinite; }
-      @keyframes skphos2 { 0%, 100% { opacity: 1; box-shadow: 0 0 16px 2px rgba(61,255,107,.65); } 50% { opacity: .55; box-shadow: 0 0 0 0 rgba(61,255,107,0); } }
+      @keyframes skphos2 { 0%, 100% { box-shadow: inset 0 0 20px 3px rgba(61,255,107,.42); } 50% { box-shadow: inset 0 0 6px 0 rgba(61,255,107,.1); } }
       ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 6s ease-in-out infinite; }
       ${R} .tile.dev.inuse { animation: rinuse 5s ease-in-out infinite; }
-      @keyframes rinuse { 0%, 100% { filter: brightness(1.1); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 22px 5px rgba(255,150,30,.75), 0 3px 6px rgba(0,0,0,.6); } 50% { filter: brightness(.7); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 6px 0 rgba(255,150,30,.2), 0 3px 6px rgba(0,0,0,.6); } }
+      @keyframes rinuse { 0%, 100% { filter: none; box-shadow: inset 0 0 26px 4px rgba(255,170,60,.6), 0 3px 6px rgba(0,0,0,.6); } 50% { filter: none; box-shadow: inset 0 0 12px 0 rgba(0,0,0,.8), 0 3px 6px rgba(0,0,0,.6); } }
       ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 5.5s ease-in-out infinite; }
       @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.7); } 70% { filter: brightness(1.2); } }
       ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel, ${R} .appcell.svc { border: 2px solid #4a3414 !important;
@@ -5442,6 +5460,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .rocker .rk.mute.round.muted, ${R} .key.muted { box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65) !important; }
       /* dial: only the activity */
       ${R} .skin-dial b { display: none; }
+      ${R} .tile:not(.on):not(.locked):not(.edit-tile):not(.dev.sel)::after { opacity: 1; background: repeating-linear-gradient(0deg, rgba(255,190,90,.17) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(255,190,90,.17) 0 1px, transparent 1px 8px); }
       /* keys without a memory: while pressed they glow around the edge, gone on release */
       ${R} .key.lit, ${R} .key:active, ${R} .mini.lit, ${R} .tile.lit { box-shadow: 0 1px 0 #6b4a1a, 0 0 0 3px rgba(255,184,74,.45), 0 0 18px 6px rgba(255,150,30,.75) !important; }
       /* power knob switching: the lamp pulses until the device confirms */
@@ -5456,13 +5475,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes rheat { from { filter: brightness(.2) saturate(.6); box-shadow: inset 0 0 14px rgba(0,0,0,.6); } 60% { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(.7); box-shadow: 0 0 24px 8px rgba(255,235,170,.9); } }
       /* Terminal: state keys are green blocks too */
       ${T} .key.on, ${T} .ic-row.on, ${T} .appcell.svc.on { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.on *, ${T} .ic-row.on *, ${T} .appcell.svc.on * { color: #021a05 !important; text-shadow: none; filter: none; }
-      /* settings switches: a round brass button to press (out = off, pressed in with an amber ring and lit = on), like Mute */
-      ${R} .sw:has(> input) { width: 46px; height: 46px; margin-left: 6px; flex: none; position: relative; }
-      ${R} .sw:has(> input) i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 4px 0 #3b2a14, 0 6px 6px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s, filter .12s; }
-      ${R} .sw:has(> input) i::before { content: ""; position: absolute; inset: 14px; width: auto; height: auto; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transform: none; }
-      ${R} .sw:has(> input) i::after { display: none; }
-      ${R} .sw:has(> input) input:checked + i { transform: translateY(3px); filter: brightness(.88); box-shadow: inset 0 3px 6px rgba(0,0,0,.6), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65); }
-      ${R} .sw:has(> input) input:checked + i::before { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); left: auto; transform: none; }
+      /* settings switches: a small round brass button to press (out = off, pressed in with an amber ring = on), no dot */
+      ${R} .sw:has(> input) { width: 34px; height: 34px; margin-left: 6px; flex: none; position: relative; }
+      ${R} .sw:has(> input) i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 3px 0 #3b2a14, 0 4px 5px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s, filter .12s; }
+      ${R} .sw:has(> input) i::before, ${R} .sw:has(> input) i::after, ${R} .sw:has(> input) input:checked + i::before, ${R} .sw:has(> input) input:checked + i::after { display: none; }
+      ${R} .sw:has(> input) input:checked + i { transform: translateY(2px); filter: brightness(.9); box-shadow: inset 0 2px 5px rgba(0,0,0,.6), 0 0 0 2px #2a170a, 0 0 0 4px #ffb84a, 0 0 12px 3px rgba(255,150,30,.6); }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;
 
@@ -6194,7 +6211,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._eyeUpdate(hubs);
       if (key === this._key || this._holdingAct || this._volDrag) return;
       this._key = key;
+      const keep = this._scrollRemote ? null : this._scrollState();
       this._render(hubs);
+      if (keep) {
+        keep();
+        requestAnimationFrame(keep);
+      }
     }
     connectedCallback() {
       this._onKey = this._onKey || ((e) => this._keydown(e));

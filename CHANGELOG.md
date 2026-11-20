@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.3
+
+### Fixed
+- **"Switch a running activity by holding" was lost:** the integration did not store this setting (it was missing in its list of keys), so it was gone after a reload. A test now checks that every switch of the card settings is stored.
+- **The card jumped to the top** once after pressing a key: a redraw because of a changed device state did not keep the scroll position. Every redraw keeps it now (except the deliberate jump to the remote).
+- **Fire TV in standby or screensaver:** the first direct key or app only woke the device and nothing else happened. The card now sends "Wake" first, waits a moment and then sends the key; starting an activity wakes a sleeping linked Fire TV first as well.
+
+### Changed
+- **Tube radio:** the settings switch is smaller and has no dark dot in either state; inactive activity tiles are dark glass with a visible grille; devices of the running activity glow inside the glass instead of around it.
+- **Terminal:** devices of the running activity pulse inside the tile (phosphor glow), no glow outside.
+
+### Notes
+- Not yet tested on real hardware.
+
 ## 0.16.2
 
 ### Added

@@ -86,7 +86,10 @@ export class HarmonyDeckCard extends HTMLElement {
     this._eyeUpdate(hubs);
     if (key === this._key || this._holdingAct || this._volDrag) return;
     this._key = key;
+    // Every redraw keeps the scroll position (a state change must not throw the page back to the top); jumps to the remote are asked for explicitly.
+    const keep = this._scrollRemote ? null : this._scrollState();
     this._render(hubs);
+    if (keep) { keep(); requestAnimationFrame(keep); }
   }
 
   connectedCallback() {

@@ -115,7 +115,7 @@ Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm 
   <img src="docs/images/skin-nostromo.png" width="32%" alt="Look Nostromo">
 </p>
 
-**Glas** (dunkle Acrylplatten mit eckigen Ecken, die von hinten in der Farbe ihrer Funktion leuchten; die Einstellung *Leuchtart* wählt *Platte leuchtet*, *Schrift leuchtet* oder *Mischung*) und **Knetmasse** (pralle Blasen, die sich beim Drücken quetschen und zurückfedern, Mulden für Nichtverfügbares, eine korallenrote Blase für die laufende Aktivität, ein Schalter mit wanderndem Bläschen):
+**Glas** (dunkle Acrylplatten mit eckigen Ecken, die von hinten in der Farbe ihrer Funktion leuchten; ein Lämpchen hinter jeder Platte leuchtet sie ungleichmäßig an, Hintergrund standardmäßig schwarz (Einstellung *Hintergrund*: Textur, Aluminium oder Platine); die Einstellung *Leuchtart* wählt *Platte leuchtet*, *Schrift leuchtet* oder *Mischung*) und **Knetmasse** (pralle Blasen, die sich beim Drücken quetschen und zurückfedern, Mulden für Nichtverfügbares, eine korallenrote Blase für die laufende Aktivität, ein Schalter mit wanderndem Bläschen):
 
 <p align="center">
   <img src="docs/images/skin-glass.png" width="32%" alt="Look Glas">

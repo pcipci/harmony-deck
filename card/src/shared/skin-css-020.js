@@ -6,37 +6,69 @@ const G = 'ha-card[data-skin="glass"]';
 const C = 'ha-card[data-skin="clay"]';
 const X = 'ha-card[data-skin="nixie"]';
 
-// Things that are pressed / shown as steady state in a lit plate (glass) or as a coral bubble (clay)
+// Things that are pressed (glass: lit strongly, fades out after release) / belong to the running activity (weakly lit) / selected (brightly lit)
 const PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
-const ACTIVE = [".tile.on", ".actbtn.acton", ".key.sel", ".mini.sel", ".tile.dev.sel", ".tile.going"];
+const ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
+const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico"];
 const on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
 const onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
 
-// The three light styles for something lit: text colour and halo, strength in --gl-mix (share of the function colour in the plate)
-const lit = (list, mix, ink = "var(--gi)") => `
-      ${on(G, list)} { background: color-mix(in srgb, var(--gc) ${mix}, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important;
-        box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 26%, transparent), 0 0 14px color-mix(in srgb, var(--gc) 32%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
-      ${G}.gl-a :is(${list.join(", ")}) { color: ${ink} !important; text-shadow: none; }
-      ${G}.gl-b :is(${list.join(", ")}) { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 9px var(--gc); }
-      ${G}.gl-c :is(${list.join(", ")}) { color: #fff !important; text-shadow: 0 0 5px color-mix(in srgb, var(--gc) 90%, #000), 0 0 11px var(--gc); }
-      ${G}.gl-b :is(${list.join(", ")}) ha-icon, ${G}.gl-c :is(${list.join(", ")}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); }`;
+// Lit plate: a lamp sits behind the plate at an uneven spot (--lx/--ly) and lights it from there. k = strength of the lamp per light style.
+const SPOT = "radial-gradient(ellipse 55% 140% at var(--lx, 50%) var(--ly, 50%), color-mix(in srgb, color-mix(in srgb, var(--gc) 85%, #fff) calc(var(--k) * 1%), transparent) 0, color-mix(in srgb, var(--gc) calc(var(--k) * .6%), transparent) 45%, color-mix(in srgb, var(--gc) calc(var(--k) * .15%), transparent) 100%)";
+const SHEEN = "linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%)";
+const lit = (list, kA, kB, kC, tone) => {
+  const l = list.join(", ");
+  const hi = (shadow) => `color: #fff !important; text-shadow: ${shadow};`;
+  const halo = "0 0 5px #fff, 0 0 14px color-mix(in srgb, var(--gc) 60%, #fff), 0 0 26px var(--gc)";
+  const soft = "0 0 6px color-mix(in srgb, var(--gc) 70%, transparent)";
+  const mid = "color: color-mix(in srgb, var(--gc) 35%, #fff) !important;";
+  const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? hi("0 0 8px #fff") : `${mid} text-shadow: none;`;
+  const textBC = tone === "belong" ? `${mid} text-shadow: ${soft};` : hi(halo);
+  return `
+      ${on(G, list)} { background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; border-top-color: rgba(255,255,255,${tone === "belong" ? ".5" : ".85"}) !important;
+        box-shadow: inset 0 0 22px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, transparent), 0 0 ${tone === "belong" ? 12 : 24}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 22 : 50}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
+      ${G}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G}.gl-b :is(${l}) { --k: ${kB}; ${textBC} } ${G}.gl-c :is(${l}) { --k: ${kC}; ${textBC} }
+      ${G}.gl-b :is(${l}) ha-icon, ${G}.gl-c :is(${l}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); } ${G} :is(${l}) ha-icon { color: inherit !important; }`;
+};
+
+// Volume: ten lamps behind the glass; lamp i is lit from level 10*i, colours run from calm green to warm red
+const LAMPS = ["#35f08a", "#5ae87a", "#8ee068", "#c4dc55", "#e8cf4a", "#ffbd47", "#ffa24a", "#ff864c", "#ff6a50", "#ff5a4a"];
+const lamps = (vertical) => LAMPS.map((c, i) => {
+  const at = vertical ? `50% ${100 - (5 + 10 * i)}%` : `${5 + 10 * i}% 50%`;
+  const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * 1%)`;
+  return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px), radial-gradient(circle at ${at}, rgba(255,255,255,.2) 0 2.5px, transparent 3.5px)`;
+}).join(", ");
+const LAMPS_H = lamps(false);
+const LAMPS_V = lamps(true);
+
+// Plain surfaces (settings, profile window, info tables, help): the same square plate
+const SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
+const FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
+const BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk"];
 
 export const SKIN_CSS_020 = `
-      /* ---------- Glas: dark acrylic plates, light from behind ---------- */
-      ${G} { --gl-green: #2dff7a; --gl-blue: #3da5ff; --gl-red: #ff5a4a; --gl-amber: #ffb340; --gl-rest: #aab6bf; --gl-base: #131a20; --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff;
-        font-family: "Segoe UI", Roboto, Arial, sans-serif; background-color: #0a0f14; background-image: radial-gradient(circle at 20% 0, #13202b, #070a0e 70%); color: var(--hr-text); }
+      /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
+      ${G} { --gl-green: #35f08a; --gl-blue: #4aa8ff; --gl-red: #ff6a5a; --gl-amber: #ffb340; --gl-violet: #9b7bff; --gl-rest: #aab6bf; --gl-base: rgba(14,20,26,.78); --gc: var(--gl-blue); --gi: #fff; --k: 0;
+        font-family: "Segoe UI", Roboto, Arial, sans-serif; background-color: #07090c; background-image: radial-gradient(ellipse at 50% 0, #1a2028, #07090c 70%); color: var(--hr-text); }
       ${G} * { backdrop-filter: none; }
-      /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, amber = running */
-      ${G} .key[data-cmd*="Ok"], ${G} .key[data-cmd*="Select"], ${G} .key[data-cmd*="Play"], ${G} .key[data-cmd*="Enter"], ${G} .d.ok, ${G} .pbtn.pri { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
-      ${G} .key[data-cmd*="Power"], ${G} .key[data-cmd*="Stop"], ${G} .key[data-cmd*="Record"], ${G} .key.pon, ${G} .key.warn, ${G} .tile.off, ${G} .editdone.warn { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; }
-      ${G} .tile:not(.dev), ${G} .actbtn, ${G} .key.sel, ${G} .mini.sel { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; }
-      ${G} .tile.dev.inuse { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
-      ${G} .tile.dev.sel { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
-      ${G} .hint-row.r { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; } ${G} .hint-row.o { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; } ${G} .hint-row.b { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
-      /* the resting plate: dark, light grey lettering */
-      ${onNot(G, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead"], ":not(.ghost):not(.svc)")} {
-        border: 1px solid rgba(255,255,255,.16) !important; border-radius: 2px !important; background: var(--gl-base) !important; background-image: none !important; color: var(--hr-text);
-        box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: background .3s, box-shadow .3s, color .3s, border-color .3s; }
+      /* background (setting): black (default), black with fine carbon weave, aluminium, circuit board */
+      ${G}.gb-carbon { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px), radial-gradient(ellipse at 50% 0, #1a2028, #07090c 70%); --gl-base: rgba(14,20,26,.66); }
+      ${G}.gb-alu { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.05) 1px 3px), linear-gradient(180deg, #6a737c, #3b4249 40%, #555e67 60%, #2a3036); --gl-base: rgba(14,20,26,.62); }
+      ${G}.gb-board { background-color: #0b3a2c; background-image: repeating-linear-gradient(0deg, rgba(255,214,120,.09) 0 1px, transparent 1px 16px), repeating-linear-gradient(90deg, rgba(255,214,120,.07) 0 1px, transparent 1px 22px), radial-gradient(circle at 20% 30%, rgba(255,214,120,.1) 0 2px, transparent 3px), linear-gradient(135deg, #0e4a38, #072a20); background-size: auto, auto, 44px 44px, auto; --gl-base: rgba(8,20,18,.68); }
+      /* where the lamp sits behind each plate (uneven, stable per position) */
+      ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
+      ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+3) { --lx: 40%; --ly: 30%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+4) { --lx: 78%; --ly: 45%; }
+      ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+5) { --lx: 30%; --ly: 65%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n) { --lx: 60%; --ly: 35%; }
+      /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, violet = running / selected, amber = hint */
+      ${G} .key[data-cmd*="Ok"], ${G} .key[data-cmd*="Select"], ${G} .key[data-cmd*="Play"], ${G} .key[data-cmd*="Enter"], ${G} .d.ok, ${G} .pbtn.pri { --gc: var(--gl-green); --gi: #05261a; }
+      ${G} .key[data-cmd*="Power"], ${G} .key[data-cmd*="Stop"], ${G} .key[data-cmd*="Record"], ${G} .key.pon, ${G} .key.warn, ${G} .tile.off, ${G} .editdone.warn { --gc: var(--gl-red); --gi: #fff; }
+      ${G} .tile:not(.dev), ${G} .actbtn, ${G} .tile.dev.inuse, ${G} .tile.dev.sel, ${G} .key.sel, ${G} .mini.sel, ${G} .etabs button, ${G} .favkind button, ${G} .hubtabs button.sel .ico { --gc: var(--gl-violet); --gi: #fff; }
+      ${G} .tile.off { --gc: var(--gl-red); }
+      ${G} .hint-row.r { --gc: var(--gl-red); --gi: #fff; } ${G} .hint-row.o { --gc: var(--gl-amber); --gi: #2a1700; } ${G} .hint-row.b { --gc: var(--gl-blue); --gi: #fff; }
+      /* the resting plate: dark, half transparent, light edge on top, light grey lettering; after a press the light fades out over a second */
+      ${onNot(G, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
+        border: 1px solid rgba(255,255,255,.2) !important; border-top: 2px solid rgba(255,255,255,.55) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text);
+        box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: box-shadow 1s ease-out, text-shadow 1s ease-out, color 1s ease-out, border-color 1s ease-out; }
       ${G} .key:not(.ghost):not(.svc), ${G} .kk, ${G} .pill, ${G} .chip, ${G} .d, ${G} .actbtn, ${G} .tile { color: var(--gl-rest); }
       ${G} .key ha-icon, ${G} .kk ha-icon, ${G} .pill ha-icon, ${G} .chip ha-icon, ${G} .d ha-icon, ${G} .actbtn ha-icon, ${G} .tile ha-icon, ${G} .tile.dev ha-icon, ${G} .colorful .cell ha-icon, ${G} .colorful .rocker .rk ha-icon, ${G} .colorful .power .key ha-icon { color: inherit !important; }
       ${G} .tile.off ha-icon { color: var(--gl-red) !important; }
@@ -46,24 +78,26 @@ export const SKIN_CSS_020 = `
       ${G} .color.red { border-bottom: 3px solid var(--gl-red) !important; } ${G} .color.green { border-bottom: 3px solid var(--gl-green) !important; } ${G} .color.yellow { border-bottom: 3px solid var(--gl-amber) !important; } ${G} .color.blue { border-bottom: 3px solid var(--gl-blue) !important; }
       ${G} .tile:active, ${G} .tile.on { transform: none; }
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
-      /* pressed plates: lit as strong as the light style says; steady state (running) dimmer */
-      ${lit(PRESSED, "var(--gl-p)")}
-      ${lit(ACTIVE, "var(--gl-pa)", "#fff")}
-      ${G}.gl-a { --gl-p: 70%; --gl-pa: 42%; } ${G}.gl-b { --gl-p: 22%; --gl-pa: 13%; } ${G}.gl-c { --gl-p: 46%; --gl-pa: 28%; }
-      ${G}.gl-a .hint-row { --gl-h: 55%; } ${G}.gl-b .hint-row { --gl-h: 18%; } ${G}.gl-c .hint-row { --gl-h: 36%; }
-      ${G} .tile.on { box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 22%, transparent), 0 0 10px color-mix(in srgb, var(--gc) 24%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
-      ${G}.gl-a .tile.on :is(span, small, ha-icon), ${G}.gl-a .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
-      ${G}.gl-b .tile.on :is(span, small), ${G}.gl-b .actbtn.acton span { color: var(--gb) !important; } ${G}.gl-b .tile.on, ${G}.gl-b .actbtn.acton { opacity: 1; }
-      ${G}.gl-c .tile.on :is(span, small, ha-icon), ${G}.gl-c .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
+      /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
+      ${lit(ACTIVE, 45, 8, 32, "belong")}
+      ${lit(SEL, 100, 28, 62, "sel")}
+      ${lit(PRESSED, 95, 30, 70, "press")}
       /* hint and info lines: the whole plate lights in the colour of the message */
-      ${G} .hint-row { background: color-mix(in srgb, var(--gc) var(--gl-h, 36%), var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; padding: 8px 10px; }
-      ${G}.gl-a .hint-row, ${G}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G}.gl-b .hint-row, ${G}.gl-b .hint-row > ha-icon { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
+      ${G} .hint-row { padding: 8px 10px; --k: 36; background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; }
+      ${G}.gl-a .hint-row { --k: 60; } ${G}.gl-b .hint-row { --k: 16; } ${G}.gl-c .hint-row { --k: 38; }
+      ${G}.gl-a .hint-row, ${G}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G}.gl-b .hint-row, ${G}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 40%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
       ${G}.gl-c .hint-row, ${G}.gl-c .hint-row > ha-icon { color: #fff !important; text-shadow: 0 0 5px var(--gc); }
       ${G} .hint-row button { border-radius: 2px; background: rgba(255,255,255,.14); color: inherit; border: 1px solid rgba(255,255,255,.35); }
-      /* device page: green plate + one square = belongs to the running activity, blue + white frame + three squares = shown */
-      ${G} .tile.dev.inuse::before, ${G} .tile.dev.sel::before { content: ""; position: absolute; left: 7px; top: 14px; width: 5px; height: 5px; background: #fff; box-shadow: 0 0 5px #fff; pointer-events: none; }
-      ${G} .tile.dev.sel::before { box-shadow: 8px 0 0 #fff, 4px -8px 0 #fff, 0 0 5px #fff; }
-      ${G} .tile.dev.sel { border-color: #fff !important; box-shadow: inset 0 0 0 1px #fff, 0 0 14px color-mix(in srgb, var(--gc) 35%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
+      /* device page: no squares or dots, only light (belongs = weak violet, shown = bright violet) */
+      ${G} .tile.dev.inuse::after, ${G} .tile.dev.inuse::before, ${G} .tile.dev.sel::after, ${G} .tile.dev.sel::before { display: none; }
+      /* plain surfaces, fields, tabs and buttons of the settings, the profile window, hints and info tables: the same square plate */
+      ${on(G, SURF)} { border: 1px solid rgba(255,255,255,.18) !important; border-top: 2px solid rgba(255,255,255,.4) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text); box-shadow: 0 4px 8px rgba(0,0,0,.35); }
+      ${on(G, FIELD)} { border: 1px solid rgba(255,255,255,.24) !important; border-radius: 2px !important; background: rgba(6,9,12,.72) !important; color: var(--hr-text); color-scheme: dark; box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
+      ${G} select option, ${G} select optgroup { background-color: #12181e; color: var(--hr-text); }
+      ${G} .etabs button.sel, ${G} .favkind button.sel { font-weight: 700; }
+      ${G} :is(.pbadge, .gbadge, .fdot, .sdot, .dmark, .badge) { border-radius: 2px !important; }
+      ${G} :is(.pbadge, .gbadge) { background: var(--gl-base); border: 1px solid rgba(255,255,255,.3); }
+      ${G} .editbar select, ${G} .irow.prow select, ${G} .hlink select { border-radius: 2px; }
       /* hold ("all off"): the whole plate brightens from within, no rising bar */
       ${G} .tile.holdsw::after, ${G} .tile.locked::after { transform: none !important; opacity: 0; background: color-mix(in srgb, var(--gl-red) 70%, transparent) !important; transition: opacity .7s linear; }
       ${G} .tile.holdsw.holding::after, ${G} .tile.locked.holding::after { opacity: 1; }
@@ -71,35 +105,33 @@ export const SKIN_CSS_020 = `
       @keyframes glhold { from { opacity: 0; } to { opacity: 1; } }
       /* header: plates with large white, softly glowing symbols */
       ${G} .hubtabs button { border-radius: 2px; background: none; }
-      ${G} .hubtabs .ico { width: 36px; height: 36px; background: #1d2832 !important; border-color: rgba(255,255,255,.28) !important; }
+      ${G} .hubtabs .ico { width: 36px; height: 36px; }
       ${G} .hubtabs ha-icon, ${G} .ib ha-icon { --mdc-icon-size: 22px; color: #fff; filter: drop-shadow(0 0 4px rgba(255,255,255,.7)); }
-      ${G} .hubtabs button.sel .ico { background: color-mix(in srgb, var(--gl-amber) 38%, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gl-amber) 60%, transparent) !important; }
-      ${G} .ib { background: #1d2832 !important; border: 1px solid rgba(255,255,255,.28) !important; color: #fff; }
+      ${G} .ib { color: #fff; }
       ${G} .ib.gear[class*="sev-"] ha-icon { color: var(--gc, #fff); }
-      ${G} .etabs button, ${G} .favkind button, ${G} .editdone, ${G} .editcancel { border-radius: 2px; }
-      ${G} .seg .th { background: color-mix(in srgb, var(--gl-amber) 55%, var(--gl-base)); border-radius: 2px; box-shadow: 0 0 10px rgba(255,179,64,.3); }
+      ${G} .seg .th { background: color-mix(in srgb, var(--gl-violet) 55%, #0e1318); border-radius: 2px; box-shadow: 0 0 10px rgba(155,123,255,.4); }
       ${G} .seg .lab.a { color: #fff; }
-      /* Ja/Nein: an acrylic plate that turns red or green, no sliding */
-      ${G} .sw i { border-radius: 2px; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); }
-      ${G} .sw i::after { content: "\\2715"; inset: 0; top: 0; left: 0; width: auto; height: auto; border-radius: 0; background: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #ffd9d3; transform: none !important; }
-      ${G} .sw input:checked + i { background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
-      ${G} .sw input:checked + i::after { content: "\\2713"; color: #d9ffe8; }
+      /* Ja/Nein: a plate that lights red or green, no symbol, no sliding */
+      ${G} .sw i { border-radius: 2px; --gc: var(--gl-red); --k: 55; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
+      ${G} .sw i::after { display: none !important; }
+      ${G} .sw input:checked + i { --gc: var(--gl-green); animation: glflash .35s ease-out 1; }
       @keyframes glflash { 0% { filter: brightness(1.9); } 100% { filter: none; } }
-      /* volume: a plate that changes colour with the level (quiet greenish to loud red), no bar */
+      /* volume: ten lamps behind the glass, soft overlapping halos; colour from calm green to warm red */
       ${G} .volslider { -webkit-appearance: none; appearance: none; background: transparent; accent-color: var(--gl-green); }
-      ${G} .volslider::-webkit-slider-runnable-track { border-radius: 2px; border: 1px solid rgba(255,255,255,.28); background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); box-shadow: 0 4px 8px rgba(0,0,0,.45); }
-      ${G} .volslider.h::-webkit-slider-runnable-track { height: 52px; } ${G} .volslider.v::-webkit-slider-runnable-track { width: 100%; }
-      ${G} .volslider::-webkit-slider-thumb { -webkit-appearance: none; background: #fff; box-shadow: 0 0 8px #fff; border-radius: 0; }
+      ${G} .volslider.h::-webkit-slider-runnable-track { height: 52px; border-radius: 2px; border: 1px solid rgba(255,255,255,.3); border-top: 2px solid rgba(255,255,255,.6); background: ${LAMPS_H}, linear-gradient(180deg, rgba(255,255,255,.12), transparent 50%), rgba(8,12,16,.78); overflow: hidden; }
+      ${G} .volslider.v::-webkit-slider-runnable-track { width: 100%; border-radius: 2px; border: 1px solid rgba(255,255,255,.3); background: ${LAMPS_V}, rgba(8,12,16,.78); }
+      ${G} .volslider::-webkit-slider-thumb { -webkit-appearance: none; background: rgba(255,255,255,.55); box-shadow: 0 0 6px #fff; border-radius: 0; }
       ${G} .volslider.h::-webkit-slider-thumb { width: 3px; height: 52px; } ${G} .volslider.v::-webkit-slider-thumb { height: 3px; width: 44px; }
-      ${G} .volslider::-moz-range-track { border-radius: 2px; background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); border: 1px solid rgba(255,255,255,.28); height: 52px; }
-      ${G} .volslider::-moz-range-thumb { background: #fff; border: none; border-radius: 0; width: 3px; height: 52px; }
-      /* device with a known power state: one plate that is red (off) or green (on), like the Ja/Nein plate */
+      ${G} .volslider.h::-moz-range-track { height: 52px; border-radius: 2px; background: ${LAMPS_H}, rgba(8,12,16,.78); border: 1px solid rgba(255,255,255,.3); }
+      ${G} .volslider.v::-moz-range-track { border-radius: 2px; background: ${LAMPS_V}, rgba(8,12,16,.78); border: 1px solid rgba(255,255,255,.3); }
+      ${G} .volslider::-moz-range-thumb { background: rgba(255,255,255,.55); border: none; border-radius: 0; width: 3px; height: 52px; }
+      /* device with a known power state: one plate that is red (off) or green (on), no symbol */
       ${G} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${G} .pwlab { flex: 1; min-width: 0; color: var(--gl-rest); font-weight: 600; }
       ${G} .pwio { display: flex; gap: 10px; } ${G} .key.pwio { width: 52px; min-height: 44px; flex-direction: column; gap: 1px; padding: 0; }
       ${G} .pwknob { flex: none; width: 68px; height: 44px; position: relative; }
-      ${G} .pwknob .knob { width: 100%; height: 100%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 2px; color: #ffd9d3; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); transition: background .3s, box-shadow .3s; }
-      ${G} .pwknob.on .knob { color: #d9ffe8; background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
-      ${G} .pwknob .knob ha-icon { color: inherit !important; --mdc-icon-size: 22px; } ${G} .pwknob.pend .knob { animation: glpend .6s ease-in-out infinite alternate; }
+      ${G} .pwknob .knob { --gc: var(--gl-red); --k: 55; width: 100%; height: 100%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 2px; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
+      ${G} .pwknob.on .knob { --gc: var(--gl-green); animation: glflash .35s ease-out 1; }
+      ${G} .pwknob .knob ha-icon { display: none; } ${G} .pwknob.pend .knob { animation: glpend .6s ease-in-out infinite alternate; }
       @keyframes glpend { from { filter: brightness(.8); } to { filter: brightness(1.6); } }
       @media (prefers-reduced-motion: reduce) { ${G} *, ${G} *::after { animation: none !important; transition: none !important; } }
 
@@ -158,6 +190,16 @@ export const SKIN_CSS_020 = `
       ${C} .ib { border-radius: 50% !important; }
       ${C} .hint-row, ${C} .helpbox, ${C} .infopanel { background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; border-radius: 20px; }
       ${C} .hint-row button { border-radius: 999px; background: var(--cl-green); color: var(--hr-text); box-shadow: inset -2px -3px 6px var(--cl-shade), inset 2px 3px 4px rgba(255,255,255,.9), 0 3px 4px rgba(50,80,40,.3); }
+      /* no red dot on device tiles (the pink rim / coral bubble says it), room tabs keep room for their shadow */
+      ${C} .tile.dev.inuse::after, ${C} .tile.dev.sel::after { display: none; }
+      ${C} .hubtabs { padding: 2px 12px 10px 4px; }
+      /* settings, profile window, info tables, help: surfaces are dents, fields are dents, tabs and buttons are bubbles */
+      ${on(C, SURF)} { border: none !important; border-radius: 18px !important; background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; color: var(--hr-text); }
+      ${on(C, FIELD)} { border: none !important; border-radius: 14px !important; background: #a9c79f !important; color: var(--hr-text); box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
+      ${on(C, BTN)} { border: none !important; border-radius: 999px !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), var(--cl-green) !important; color: var(--hr-text); box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 4px 6px rgba(50,80,40,.3) !important; }
+      ${C} .etabs button.sel, ${C} .favkind button.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.pbadge, .gbadge) { border-radius: 999px; }
+      ${C} :is(.helpbox, .infopanel, .hint-row, .profdlg) ha-icon { color: var(--hr-text) !important; }
       ${C} .sdot.lit { box-shadow: inset -1px -1px 2px rgba(110,20,5,.4), 0 0 6px var(--hr-accent); }
       /* device with a known power state: a dent with a bubble that travels and turns coral */
       ${C} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${C} .pwlab { flex: 1; min-width: 0; color: var(--hr-text); font-weight: 600; }

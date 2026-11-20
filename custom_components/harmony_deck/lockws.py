@@ -113,6 +113,7 @@ def _result(hass: HomeAssistant, connection: websocket_api.ActiveConnection) -> 
         "skin": settings.get("skin"),
         "roomSkins": settings.get("roomSkins") or {},
         "glassLook": settings.get("glassLook"),
+        "glassBg": settings.get("glassBg"),
         "admin": bool(connection.user and connection.user.is_admin),
         "available": _manager(hass) is not None,
     }

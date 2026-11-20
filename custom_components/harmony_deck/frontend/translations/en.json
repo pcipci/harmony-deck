@@ -190,6 +190,8 @@
   "iconAuto": "Automatic",
   "glassLook": "Light style",
   "glassLooks": { "a": "Plate lights", "b": "Text lights", "c": "Mix" },
+  "glassBg": "Background",
+  "glassBgs": {"dark": "Black", "carbon": "Black with texture", "alu": "Aluminium", "board": "Circuit board"},
   "keyStyle": "Key shape",
   "keyStyles": {
     "skin": "As the look",
@@ -319,6 +321,7 @@
     "actIcon": "The symbol of the key.",
     "actScope": "“Always” shows the key in every activity. If you pick an activity, it only appears there.",
     "glassLook": "Only for the Glass look. Plate lights: the whole acrylic plate glows in the function colour. Text lights: the plate stays dark, only the lettering glows with a halo. Mix: plate half tinted, light lettering with a halo.",
+    "glassBg": "Only for the Glass look. Black is the default. With texture: a fine carbon weave. Aluminium and circuit board show more material behind the plates.",
     "jumpRunning": "When the card opens it jumps to the room where something is running (activity, Fire TV or a linked device). If several run, the one used last wins. If everything is off you see the default view.",
     "offRelated": "Applies to this room. When you switch the Fire TV off with its power key or the red off button, everything the Fire TV activity switches on (e.g. TV, amplifier) goes off too, if the device has a PowerOff command. Devices another running activity needs, and devices hidden in the help, stay on.",
     "helpManual": "Some devices are not switched by the hub itself (in the hub: “switch on by hand”). With this switch the help mentions them in one line so you do not forget them.",

@@ -116,7 +116,7 @@ Two effect skins go further than colours: **Terminal** (green phosphor screen, s
   <img src="docs/images/skin-nostromo.png" width="32%" alt="Skin Nostromo">
 </p>
 
-**Glass** (dark acrylic plates with square corners that light from behind in the colour of their function; the setting *Light style* chooses *Plate lights*, *Text lights* or *Mix*) and **Clay** (puffy bubbles that squash when pressed and spring back, dents for unavailable things, a coral bubble for the running activity, a switch with a travelling bubble):
+**Glass** (dark acrylic plates with square corners that light from behind in the colour of their function; a lamp behind each plate lights it from an uneven spot, black background by default with a *Background* setting for texture, aluminium or circuit board; the setting *Light style* chooses *Plate lights*, *Text lights* or *Mix*) and **Clay** (puffy bubbles that squash when pressed and spring back, dents for unavailable things, a coral bubble for the running activity, a switch with a travelling bubble):
 
 <p align="center">
   <img src="docs/images/skin-glass.png" width="32%" alt="Skin Glass">

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.20.0";
+  var VERSION = "0.20.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -4052,6 +4052,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return a === "fill" || a === "icon" ? a : "ring";
     },
     // Look of the Glas skin: a = plate lights, b = text lights, c = mix (default).
+    _glassBg() {
+      const g = this._config.glass_bg ?? this._settings().glassBg;
+      return ["dark", "carbon", "alu", "board"].includes(g) ? g : "dark";
+    },
     _glassLook() {
       const g = this._config.glass_look ?? this._settings().glassLook;
       return ["a", "b", "c"].includes(g) ? g : "c";
@@ -4610,7 +4614,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const held = this.offsetHeight;
       if (held) this.style.minHeight = `${held}px`;
       this.shadowRoot.innerHTML = `${this._style()}
-      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
+      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} gb-${this._glassBg()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
         ${this._edit ? `<div class="edittool"><div class="edmode">${this._edModeHtml(t)}</div>
           ${this._cancelAsk ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>` : `<div class="editrow">${this._editMode === "profiles" ? "" : `<button class="editcancel" data-edit="cancel" title="${esc(t.cancelTip)}"><ha-icon icon="mdi:close"></ha-icon><span>${t.cancel}</span></button>`}<button class="editdone" data-edit="off"><ha-icon icon="mdi:check"></ha-icon><span>${t.done}</span></button></div>`}</div>` : ""}
         ${this._skinHead(skin, sel)}${blocks || `<p class="empty">${t.empty}</p>`}${this._skinTail(skin)}
@@ -5040,6 +5044,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
           ${this._trait("glassLook") ? this._selRow(t.glassLook, "data-glasslook", t.glassLooks, this._glassLook()) : ""}
+          ${this._trait("glassLook") ? this._selRow(t.glassBg, "data-glassbg", t.glassBgs, this._glassBg()) : ""}
           ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
         ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -5173,7 +5178,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-keystyle]": "key_style",
         "[data-labels]": "labels",
         "[data-glow]": "glow",
-        "[data-glasslook]": "glass_look"
+        "[data-glasslook]": "glass_look",
+        "[data-glassbg]": "glass_bg"
       };
       const locked = /* @__PURE__ */ new Map();
       Object.entries(keys).forEach(([sel, key]) => {
@@ -5214,6 +5220,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-hubname]": "hubName",
         "[data-hubvis]": "hubVis",
         "[data-glasslook]": "glassLook",
+        "[data-glassbg]": "glassBg",
         '[data-setting="jumpRunning"]': "jumpRunning",
         "[data-offrel]": "offRelated",
         '[data-setting="helpManual"]': "helpManual",
@@ -5335,6 +5342,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
       root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
       root.querySelector("select[data-glasslook]")?.addEventListener("change", (e) => this._saveSettings({ glassLook: e.target.value }));
+      root.querySelector("select[data-glassbg]")?.addEventListener("change", (e) => this._saveSettings({ glassBg: e.target.value }));
       root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
       const applyLook = (hub, key) => {
         const rs = { ...this._settings().roomSkins || {} };
@@ -5749,32 +5757,60 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var C = 'ha-card[data-skin="clay"]';
   var X = 'ha-card[data-skin="nixie"]';
   var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
-  var ACTIVE = [".tile.on", ".actbtn.acton", ".key.sel", ".mini.sel", ".tile.dev.sel", ".tile.going"];
+  var ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
+  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico"];
   var on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
   var onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
-  var lit = (list, mix, ink = "var(--gi)") => `
-      ${on(G2, list)} { background: color-mix(in srgb, var(--gc) ${mix}, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important;
-        box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 26%, transparent), 0 0 14px color-mix(in srgb, var(--gc) 32%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
-      ${G2}.gl-a :is(${list.join(", ")}) { color: ${ink} !important; text-shadow: none; }
-      ${G2}.gl-b :is(${list.join(", ")}) { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 9px var(--gc); }
-      ${G2}.gl-c :is(${list.join(", ")}) { color: #fff !important; text-shadow: 0 0 5px color-mix(in srgb, var(--gc) 90%, #000), 0 0 11px var(--gc); }
-      ${G2}.gl-b :is(${list.join(", ")}) ha-icon, ${G2}.gl-c :is(${list.join(", ")}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); }`;
+  var SPOT = "radial-gradient(ellipse 55% 140% at var(--lx, 50%) var(--ly, 50%), color-mix(in srgb, color-mix(in srgb, var(--gc) 85%, #fff) calc(var(--k) * 1%), transparent) 0, color-mix(in srgb, var(--gc) calc(var(--k) * .6%), transparent) 45%, color-mix(in srgb, var(--gc) calc(var(--k) * .15%), transparent) 100%)";
+  var SHEEN = "linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%)";
+  var lit = (list, kA, kB, kC, tone) => {
+    const l = list.join(", ");
+    const hi = (shadow) => `color: #fff !important; text-shadow: ${shadow};`;
+    const halo = "0 0 5px #fff, 0 0 14px color-mix(in srgb, var(--gc) 60%, #fff), 0 0 26px var(--gc)";
+    const soft = "0 0 6px color-mix(in srgb, var(--gc) 70%, transparent)";
+    const mid = "color: color-mix(in srgb, var(--gc) 35%, #fff) !important;";
+    const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? hi("0 0 8px #fff") : `${mid} text-shadow: none;`;
+    const textBC = tone === "belong" ? `${mid} text-shadow: ${soft};` : hi(halo);
+    return `
+      ${on(G2, list)} { background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; border-top-color: rgba(255,255,255,${tone === "belong" ? ".5" : ".85"}) !important;
+        box-shadow: inset 0 0 22px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, transparent), 0 0 ${tone === "belong" ? 12 : 24}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 22 : 50}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
+      ${G2}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G2}.gl-b :is(${l}) { --k: ${kB}; ${textBC} } ${G2}.gl-c :is(${l}) { --k: ${kC}; ${textBC} }
+      ${G2}.gl-b :is(${l}) ha-icon, ${G2}.gl-c :is(${l}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); } ${G2} :is(${l}) ha-icon { color: inherit !important; }`;
+  };
+  var LAMPS = ["#35f08a", "#5ae87a", "#8ee068", "#c4dc55", "#e8cf4a", "#ffbd47", "#ffa24a", "#ff864c", "#ff6a50", "#ff5a4a"];
+  var lamps = (vertical) => LAMPS.map((c, i) => {
+    const at = vertical ? `50% ${100 - (5 + 10 * i)}%` : `${5 + 10 * i}% 50%`;
+    const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * 1%)`;
+    return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px), radial-gradient(circle at ${at}, rgba(255,255,255,.2) 0 2.5px, transparent 3.5px)`;
+  }).join(", ");
+  var LAMPS_H = lamps(false);
+  var LAMPS_V = lamps(true);
+  var SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
+  var FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
+  var BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk"];
   var SKIN_CSS_020 = `
-      /* ---------- Glas: dark acrylic plates, light from behind ---------- */
-      ${G2} { --gl-green: #2dff7a; --gl-blue: #3da5ff; --gl-red: #ff5a4a; --gl-amber: #ffb340; --gl-rest: #aab6bf; --gl-base: #131a20; --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff;
-        font-family: "Segoe UI", Roboto, Arial, sans-serif; background-color: #0a0f14; background-image: radial-gradient(circle at 20% 0, #13202b, #070a0e 70%); color: var(--hr-text); }
+      /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
+      ${G2} { --gl-green: #35f08a; --gl-blue: #4aa8ff; --gl-red: #ff6a5a; --gl-amber: #ffb340; --gl-violet: #9b7bff; --gl-rest: #aab6bf; --gl-base: rgba(14,20,26,.78); --gc: var(--gl-blue); --gi: #fff; --k: 0;
+        font-family: "Segoe UI", Roboto, Arial, sans-serif; background-color: #07090c; background-image: radial-gradient(ellipse at 50% 0, #1a2028, #07090c 70%); color: var(--hr-text); }
       ${G2} * { backdrop-filter: none; }
-      /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, amber = running */
-      ${G2} .key[data-cmd*="Ok"], ${G2} .key[data-cmd*="Select"], ${G2} .key[data-cmd*="Play"], ${G2} .key[data-cmd*="Enter"], ${G2} .d.ok, ${G2} .pbtn.pri { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
-      ${G2} .key[data-cmd*="Power"], ${G2} .key[data-cmd*="Stop"], ${G2} .key[data-cmd*="Record"], ${G2} .key.pon, ${G2} .key.warn, ${G2} .tile.off, ${G2} .editdone.warn { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; }
-      ${G2} .tile:not(.dev), ${G2} .actbtn, ${G2} .key.sel, ${G2} .mini.sel { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; }
-      ${G2} .tile.dev.inuse { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
-      ${G2} .tile.dev.sel { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
-      ${G2} .hint-row.r { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; } ${G2} .hint-row.o { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; } ${G2} .hint-row.b { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
-      /* the resting plate: dark, light grey lettering */
-      ${onNot(G2, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead"], ":not(.ghost):not(.svc)")} {
-        border: 1px solid rgba(255,255,255,.16) !important; border-radius: 2px !important; background: var(--gl-base) !important; background-image: none !important; color: var(--hr-text);
-        box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: background .3s, box-shadow .3s, color .3s, border-color .3s; }
+      /* background (setting): black (default), black with fine carbon weave, aluminium, circuit board */
+      ${G2}.gb-carbon { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px), radial-gradient(ellipse at 50% 0, #1a2028, #07090c 70%); --gl-base: rgba(14,20,26,.66); }
+      ${G2}.gb-alu { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.05) 1px 3px), linear-gradient(180deg, #6a737c, #3b4249 40%, #555e67 60%, #2a3036); --gl-base: rgba(14,20,26,.62); }
+      ${G2}.gb-board { background-color: #0b3a2c; background-image: repeating-linear-gradient(0deg, rgba(255,214,120,.09) 0 1px, transparent 1px 16px), repeating-linear-gradient(90deg, rgba(255,214,120,.07) 0 1px, transparent 1px 22px), radial-gradient(circle at 20% 30%, rgba(255,214,120,.1) 0 2px, transparent 3px), linear-gradient(135deg, #0e4a38, #072a20); background-size: auto, auto, 44px 44px, auto; --gl-base: rgba(8,20,18,.68); }
+      /* where the lamp sits behind each plate (uneven, stable per position) */
+      ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
+      ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+3) { --lx: 40%; --ly: 30%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+4) { --lx: 78%; --ly: 45%; }
+      ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+5) { --lx: 30%; --ly: 65%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n) { --lx: 60%; --ly: 35%; }
+      /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, violet = running / selected, amber = hint */
+      ${G2} .key[data-cmd*="Ok"], ${G2} .key[data-cmd*="Select"], ${G2} .key[data-cmd*="Play"], ${G2} .key[data-cmd*="Enter"], ${G2} .d.ok, ${G2} .pbtn.pri { --gc: var(--gl-green); --gi: #05261a; }
+      ${G2} .key[data-cmd*="Power"], ${G2} .key[data-cmd*="Stop"], ${G2} .key[data-cmd*="Record"], ${G2} .key.pon, ${G2} .key.warn, ${G2} .tile.off, ${G2} .editdone.warn { --gc: var(--gl-red); --gi: #fff; }
+      ${G2} .tile:not(.dev), ${G2} .actbtn, ${G2} .tile.dev.inuse, ${G2} .tile.dev.sel, ${G2} .key.sel, ${G2} .mini.sel, ${G2} .etabs button, ${G2} .favkind button, ${G2} .hubtabs button.sel .ico { --gc: var(--gl-violet); --gi: #fff; }
+      ${G2} .tile.off { --gc: var(--gl-red); }
+      ${G2} .hint-row.r { --gc: var(--gl-red); --gi: #fff; } ${G2} .hint-row.o { --gc: var(--gl-amber); --gi: #2a1700; } ${G2} .hint-row.b { --gc: var(--gl-blue); --gi: #fff; }
+      /* the resting plate: dark, half transparent, light edge on top, light grey lettering; after a press the light fades out over a second */
+      ${onNot(G2, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
+        border: 1px solid rgba(255,255,255,.2) !important; border-top: 2px solid rgba(255,255,255,.55) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text);
+        box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: box-shadow 1s ease-out, text-shadow 1s ease-out, color 1s ease-out, border-color 1s ease-out; }
       ${G2} .key:not(.ghost):not(.svc), ${G2} .kk, ${G2} .pill, ${G2} .chip, ${G2} .d, ${G2} .actbtn, ${G2} .tile { color: var(--gl-rest); }
       ${G2} .key ha-icon, ${G2} .kk ha-icon, ${G2} .pill ha-icon, ${G2} .chip ha-icon, ${G2} .d ha-icon, ${G2} .actbtn ha-icon, ${G2} .tile ha-icon, ${G2} .tile.dev ha-icon, ${G2} .colorful .cell ha-icon, ${G2} .colorful .rocker .rk ha-icon, ${G2} .colorful .power .key ha-icon { color: inherit !important; }
       ${G2} .tile.off ha-icon { color: var(--gl-red) !important; }
@@ -5784,24 +5820,26 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G2} .color.red { border-bottom: 3px solid var(--gl-red) !important; } ${G2} .color.green { border-bottom: 3px solid var(--gl-green) !important; } ${G2} .color.yellow { border-bottom: 3px solid var(--gl-amber) !important; } ${G2} .color.blue { border-bottom: 3px solid var(--gl-blue) !important; }
       ${G2} .tile:active, ${G2} .tile.on { transform: none; }
       ${G2} .tile.locked, ${G2} .key:disabled, ${G2} .actbtn.miss { opacity: .55; }
-      /* pressed plates: lit as strong as the light style says; steady state (running) dimmer */
-      ${lit(PRESSED, "var(--gl-p)")}
-      ${lit(ACTIVE, "var(--gl-pa)", "#fff")}
-      ${G2}.gl-a { --gl-p: 70%; --gl-pa: 42%; } ${G2}.gl-b { --gl-p: 22%; --gl-pa: 13%; } ${G2}.gl-c { --gl-p: 46%; --gl-pa: 28%; }
-      ${G2}.gl-a .hint-row { --gl-h: 55%; } ${G2}.gl-b .hint-row { --gl-h: 18%; } ${G2}.gl-c .hint-row { --gl-h: 36%; }
-      ${G2} .tile.on { box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 22%, transparent), 0 0 10px color-mix(in srgb, var(--gc) 24%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
-      ${G2}.gl-a .tile.on :is(span, small, ha-icon), ${G2}.gl-a .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
-      ${G2}.gl-b .tile.on :is(span, small), ${G2}.gl-b .actbtn.acton span { color: var(--gb) !important; } ${G2}.gl-b .tile.on, ${G2}.gl-b .actbtn.acton { opacity: 1; }
-      ${G2}.gl-c .tile.on :is(span, small, ha-icon), ${G2}.gl-c .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
+      /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
+      ${lit(ACTIVE, 45, 8, 32, "belong")}
+      ${lit(SEL, 100, 28, 62, "sel")}
+      ${lit(PRESSED, 95, 30, 70, "press")}
       /* hint and info lines: the whole plate lights in the colour of the message */
-      ${G2} .hint-row { background: color-mix(in srgb, var(--gc) var(--gl-h, 36%), var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; padding: 8px 10px; }
-      ${G2}.gl-a .hint-row, ${G2}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G2}.gl-b .hint-row, ${G2}.gl-b .hint-row > ha-icon { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
+      ${G2} .hint-row { padding: 8px 10px; --k: 36; background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; }
+      ${G2}.gl-a .hint-row { --k: 60; } ${G2}.gl-b .hint-row { --k: 16; } ${G2}.gl-c .hint-row { --k: 38; }
+      ${G2}.gl-a .hint-row, ${G2}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G2}.gl-b .hint-row, ${G2}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 40%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
       ${G2}.gl-c .hint-row, ${G2}.gl-c .hint-row > ha-icon { color: #fff !important; text-shadow: 0 0 5px var(--gc); }
       ${G2} .hint-row button { border-radius: 2px; background: rgba(255,255,255,.14); color: inherit; border: 1px solid rgba(255,255,255,.35); }
-      /* device page: green plate + one square = belongs to the running activity, blue + white frame + three squares = shown */
-      ${G2} .tile.dev.inuse::before, ${G2} .tile.dev.sel::before { content: ""; position: absolute; left: 7px; top: 14px; width: 5px; height: 5px; background: #fff; box-shadow: 0 0 5px #fff; pointer-events: none; }
-      ${G2} .tile.dev.sel::before { box-shadow: 8px 0 0 #fff, 4px -8px 0 #fff, 0 0 5px #fff; }
-      ${G2} .tile.dev.sel { border-color: #fff !important; box-shadow: inset 0 0 0 1px #fff, 0 0 14px color-mix(in srgb, var(--gc) 35%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
+      /* device page: no squares or dots, only light (belongs = weak violet, shown = bright violet) */
+      ${G2} .tile.dev.inuse::after, ${G2} .tile.dev.inuse::before, ${G2} .tile.dev.sel::after, ${G2} .tile.dev.sel::before { display: none; }
+      /* plain surfaces, fields, tabs and buttons of the settings, the profile window, hints and info tables: the same square plate */
+      ${on(G2, SURF)} { border: 1px solid rgba(255,255,255,.18) !important; border-top: 2px solid rgba(255,255,255,.4) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text); box-shadow: 0 4px 8px rgba(0,0,0,.35); }
+      ${on(G2, FIELD)} { border: 1px solid rgba(255,255,255,.24) !important; border-radius: 2px !important; background: rgba(6,9,12,.72) !important; color: var(--hr-text); color-scheme: dark; box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
+      ${G2} select option, ${G2} select optgroup { background-color: #12181e; color: var(--hr-text); }
+      ${G2} .etabs button.sel, ${G2} .favkind button.sel { font-weight: 700; }
+      ${G2} :is(.pbadge, .gbadge, .fdot, .sdot, .dmark, .badge) { border-radius: 2px !important; }
+      ${G2} :is(.pbadge, .gbadge) { background: var(--gl-base); border: 1px solid rgba(255,255,255,.3); }
+      ${G2} .editbar select, ${G2} .irow.prow select, ${G2} .hlink select { border-radius: 2px; }
       /* hold ("all off"): the whole plate brightens from within, no rising bar */
       ${G2} .tile.holdsw::after, ${G2} .tile.locked::after { transform: none !important; opacity: 0; background: color-mix(in srgb, var(--gl-red) 70%, transparent) !important; transition: opacity .7s linear; }
       ${G2} .tile.holdsw.holding::after, ${G2} .tile.locked.holding::after { opacity: 1; }
@@ -5809,35 +5847,33 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes glhold { from { opacity: 0; } to { opacity: 1; } }
       /* header: plates with large white, softly glowing symbols */
       ${G2} .hubtabs button { border-radius: 2px; background: none; }
-      ${G2} .hubtabs .ico { width: 36px; height: 36px; background: #1d2832 !important; border-color: rgba(255,255,255,.28) !important; }
+      ${G2} .hubtabs .ico { width: 36px; height: 36px; }
       ${G2} .hubtabs ha-icon, ${G2} .ib ha-icon { --mdc-icon-size: 22px; color: #fff; filter: drop-shadow(0 0 4px rgba(255,255,255,.7)); }
-      ${G2} .hubtabs button.sel .ico { background: color-mix(in srgb, var(--gl-amber) 38%, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gl-amber) 60%, transparent) !important; }
-      ${G2} .ib { background: #1d2832 !important; border: 1px solid rgba(255,255,255,.28) !important; color: #fff; }
+      ${G2} .ib { color: #fff; }
       ${G2} .ib.gear[class*="sev-"] ha-icon { color: var(--gc, #fff); }
-      ${G2} .etabs button, ${G2} .favkind button, ${G2} .editdone, ${G2} .editcancel { border-radius: 2px; }
-      ${G2} .seg .th { background: color-mix(in srgb, var(--gl-amber) 55%, var(--gl-base)); border-radius: 2px; box-shadow: 0 0 10px rgba(255,179,64,.3); }
+      ${G2} .seg .th { background: color-mix(in srgb, var(--gl-violet) 55%, #0e1318); border-radius: 2px; box-shadow: 0 0 10px rgba(155,123,255,.4); }
       ${G2} .seg .lab.a { color: #fff; }
-      /* Ja/Nein: an acrylic plate that turns red or green, no sliding */
-      ${G2} .sw i { border-radius: 2px; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); }
-      ${G2} .sw i::after { content: "\\2715"; inset: 0; top: 0; left: 0; width: auto; height: auto; border-radius: 0; background: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #ffd9d3; transform: none !important; }
-      ${G2} .sw input:checked + i { background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
-      ${G2} .sw input:checked + i::after { content: "\\2713"; color: #d9ffe8; }
+      /* Ja/Nein: a plate that lights red or green, no symbol, no sliding */
+      ${G2} .sw i { border-radius: 2px; --gc: var(--gl-red); --k: 55; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
+      ${G2} .sw i::after { display: none !important; }
+      ${G2} .sw input:checked + i { --gc: var(--gl-green); animation: glflash .35s ease-out 1; }
       @keyframes glflash { 0% { filter: brightness(1.9); } 100% { filter: none; } }
-      /* volume: a plate that changes colour with the level (quiet greenish to loud red), no bar */
+      /* volume: ten lamps behind the glass, soft overlapping halos; colour from calm green to warm red */
       ${G2} .volslider { -webkit-appearance: none; appearance: none; background: transparent; accent-color: var(--gl-green); }
-      ${G2} .volslider::-webkit-slider-runnable-track { border-radius: 2px; border: 1px solid rgba(255,255,255,.28); background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); box-shadow: 0 4px 8px rgba(0,0,0,.45); }
-      ${G2} .volslider.h::-webkit-slider-runnable-track { height: 52px; } ${G2} .volslider.v::-webkit-slider-runnable-track { width: 100%; }
-      ${G2} .volslider::-webkit-slider-thumb { -webkit-appearance: none; background: #fff; box-shadow: 0 0 8px #fff; border-radius: 0; }
+      ${G2} .volslider.h::-webkit-slider-runnable-track { height: 52px; border-radius: 2px; border: 1px solid rgba(255,255,255,.3); border-top: 2px solid rgba(255,255,255,.6); background: ${LAMPS_H}, linear-gradient(180deg, rgba(255,255,255,.12), transparent 50%), rgba(8,12,16,.78); overflow: hidden; }
+      ${G2} .volslider.v::-webkit-slider-runnable-track { width: 100%; border-radius: 2px; border: 1px solid rgba(255,255,255,.3); background: ${LAMPS_V}, rgba(8,12,16,.78); }
+      ${G2} .volslider::-webkit-slider-thumb { -webkit-appearance: none; background: rgba(255,255,255,.55); box-shadow: 0 0 6px #fff; border-radius: 0; }
       ${G2} .volslider.h::-webkit-slider-thumb { width: 3px; height: 52px; } ${G2} .volslider.v::-webkit-slider-thumb { height: 3px; width: 44px; }
-      ${G2} .volslider::-moz-range-track { border-radius: 2px; background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); border: 1px solid rgba(255,255,255,.28); height: 52px; }
-      ${G2} .volslider::-moz-range-thumb { background: #fff; border: none; border-radius: 0; width: 3px; height: 52px; }
-      /* device with a known power state: one plate that is red (off) or green (on), like the Ja/Nein plate */
+      ${G2} .volslider.h::-moz-range-track { height: 52px; border-radius: 2px; background: ${LAMPS_H}, rgba(8,12,16,.78); border: 1px solid rgba(255,255,255,.3); }
+      ${G2} .volslider.v::-moz-range-track { border-radius: 2px; background: ${LAMPS_V}, rgba(8,12,16,.78); border: 1px solid rgba(255,255,255,.3); }
+      ${G2} .volslider::-moz-range-thumb { background: rgba(255,255,255,.55); border: none; border-radius: 0; width: 3px; height: 52px; }
+      /* device with a known power state: one plate that is red (off) or green (on), no symbol */
       ${G2} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${G2} .pwlab { flex: 1; min-width: 0; color: var(--gl-rest); font-weight: 600; }
       ${G2} .pwio { display: flex; gap: 10px; } ${G2} .key.pwio { width: 52px; min-height: 44px; flex-direction: column; gap: 1px; padding: 0; }
       ${G2} .pwknob { flex: none; width: 68px; height: 44px; position: relative; }
-      ${G2} .pwknob .knob { width: 100%; height: 100%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 2px; color: #ffd9d3; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); transition: background .3s, box-shadow .3s; }
-      ${G2} .pwknob.on .knob { color: #d9ffe8; background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
-      ${G2} .pwknob .knob ha-icon { color: inherit !important; --mdc-icon-size: 22px; } ${G2} .pwknob.pend .knob { animation: glpend .6s ease-in-out infinite alternate; }
+      ${G2} .pwknob .knob { --gc: var(--gl-red); --k: 55; width: 100%; height: 100%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 2px; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
+      ${G2} .pwknob.on .knob { --gc: var(--gl-green); animation: glflash .35s ease-out 1; }
+      ${G2} .pwknob .knob ha-icon { display: none; } ${G2} .pwknob.pend .knob { animation: glpend .6s ease-in-out infinite alternate; }
       @keyframes glpend { from { filter: brightness(.8); } to { filter: brightness(1.6); } }
       @media (prefers-reduced-motion: reduce) { ${G2} *, ${G2} *::after { animation: none !important; transition: none !important; } }
 
@@ -5896,6 +5932,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${C} .ib { border-radius: 50% !important; }
       ${C} .hint-row, ${C} .helpbox, ${C} .infopanel { background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; border-radius: 20px; }
       ${C} .hint-row button { border-radius: 999px; background: var(--cl-green); color: var(--hr-text); box-shadow: inset -2px -3px 6px var(--cl-shade), inset 2px 3px 4px rgba(255,255,255,.9), 0 3px 4px rgba(50,80,40,.3); }
+      /* no red dot on device tiles (the pink rim / coral bubble says it), room tabs keep room for their shadow */
+      ${C} .tile.dev.inuse::after, ${C} .tile.dev.sel::after { display: none; }
+      ${C} .hubtabs { padding: 2px 12px 10px 4px; }
+      /* settings, profile window, info tables, help: surfaces are dents, fields are dents, tabs and buttons are bubbles */
+      ${on(C, SURF)} { border: none !important; border-radius: 18px !important; background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; color: var(--hr-text); }
+      ${on(C, FIELD)} { border: none !important; border-radius: 14px !important; background: #a9c79f !important; color: var(--hr-text); box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
+      ${on(C, BTN)} { border: none !important; border-radius: 999px !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), var(--cl-green) !important; color: var(--hr-text); box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 4px 6px rgba(50,80,40,.3) !important; }
+      ${C} .etabs button.sel, ${C} .favkind button.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.pbadge, .gbadge) { border-radius: 999px; }
+      ${C} :is(.helpbox, .infopanel, .hint-row, .profdlg) ha-icon { color: var(--hr-text) !important; }
       ${C} .sdot.lit { box-shadow: inset -1px -1px 2px rgba(110,20,5,.4), 0 0 6px var(--hr-accent); }
       /* device with a known power state: a dent with a bubble that travels and turns coral */
       ${C} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${C} .pwlab { flex: 1; min-width: 0; color: var(--hr-text); font-weight: 600; }
@@ -7221,6 +7267,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._key = key;
       const sel0 = hubs.find((h) => h.id === this._hubSel);
       const skin = skinKey(this._config.skin || d?.roomSkins?.[sel0?.id] || d?.skin || "homebase");
+      const glassBg = ["dark", "carbon", "alu", "board"].includes(this._config.glass_bg) ? this._config.glass_bg : ["dark", "carbon", "alu", "board"].includes(d?.glassBg) ? d.glassBg : "dark";
       const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
       const vars = Object.entries({ ...SKINS[skin], ...this._config.skin_vars || {} }).map(([k, v]) => `${k}:${v}`).join(";");
       const sel = hubs.find((h) => h.id === this._hubSel);
@@ -7228,7 +7275,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const body = !d ? `<p class="empty">…</p>` : d.available === false ? `<p class="empty">${esc(t.sec.notAvailable)}</p>` : !sel ? `<p class="empty">${esc(t.sec.noHubs)}</p>` : this._hubHtml(sel, t);
       const keep = this._scrollKeep();
       this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;

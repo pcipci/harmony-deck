@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.20.1
+
+### Changed
+- **Glass look reworked after the first device test:** black background by default; new setting *Background* (black, black with fine carbon texture, aluminium, circuit board). Plates are half transparent with a light edge on top; a lamp sits behind each plate and lights it from an uneven spot. Running = violet, hints = amber; green, blue and red stay for the function keys. One rule for every plate (activities, devices, room tabs, settings tabs): rest, belongs to the running activity (weakly lit), selected (bright, white lettering with a halo). No squares, dots or frames any more, the selection is shown by light only. After a key is released the light fades out over about one second (not with reduced motion). Yes/No switch and power plate have no symbol, only the red or green plate. The volume slider is ten lamps behind the glass with soft overlapping halos. Settings, selects, inputs, tabs, profile window, info tables, help and badges are square plates in the same style.
+- **Clay look:** the red dot on device tiles is gone (the pink rim says it, the shown device is a full coral bubble); the selected room tab bubble is no longer clipped; settings, profile window, info tables and help are dents, fields are dents, tabs and buttons are bubbles.
+- **Skin checklist:** `docs/SKIN_CHECKLIST.md` now covers settings, profile window, hints, info tables, badges, security card, devices of several activities, key feedback and contrast. QA also cycles the Glass background.
+
 ## 0.20.0
 
 ### Added

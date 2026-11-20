@@ -190,3 +190,6 @@ Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erla
 | Schloss auf Kachel oder Taste | gesperrt (Sperre oder Verknüpfung) |
 | Rotes Schloss in der Statuszeile | Sperre wirksam |
 | Offenes Schloss mit Uhrzeit | freigegeben bis zu dieser Zeit |
+
+### 0.20.1
+Glas: neue Einstellung *Hintergrund* (Schwarz, Schwarz mit Textur, Aluminium, Platine). Die Platten sind halbtransparent und werden von einem Lämpchen dahinter angeleuchtet. Ruhe, gehört zur laufenden Aktivität (schwaches Violett) und gewählt (helles Violett, weiße Schrift mit Halo) gelten gleich für Aktivitäten, Geräte und Tabs. Tasten leuchten nach dem Loslassen aus. Die Lautstärke sind zehn Lämpchen hinter dem Glas. Knetmasse: kein Punkt mehr auf Gerätekacheln, Raum-Tab nicht mehr abgeschnitten, Einstellungen und Fenster sind Mulden und Blasen.

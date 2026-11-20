@@ -31,6 +31,7 @@ export const securityViewMixin = {
     // Same choice as the main card: card YAML, then the skin of the room shown, then the shared skin.
     const sel0 = hubs.find((h) => h.id === this._hubSel);
     const skin = skinKey(this._config.skin || d?.roomSkins?.[sel0?.id] || d?.skin || "homebase");
+    const glassBg = ["dark", "carbon", "alu", "board"].includes(this._config.glass_bg) ? this._config.glass_bg : ["dark", "carbon", "alu", "board"].includes(d?.glassBg) ? d.glassBg : "dark";
     const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
     const vars = Object.entries({ ...SKINS[skin], ...(this._config.skin_vars || {}) }).map(([k, v]) => `${k}:${v}`).join(";");
     const sel = hubs.find((h) => h.id === this._hubSel);
@@ -41,7 +42,7 @@ export const securityViewMixin = {
       : this._hubHtml(sel, t);
     const keep = this._scrollKeep();
     this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;

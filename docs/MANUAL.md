@@ -190,3 +190,6 @@ Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allow
 | Lock on a tile or key | locked (by the lock or a link) |
 | Red lock in the status line | Lock active |
 | Open lock with a time | released until that time |
+
+### 0.20.1
+Glass: new setting *Background* (black, black with texture, aluminium, circuit board). Plates are half transparent and lit by a lamp behind them. Rest, belongs to the running activity (weak violet) and selected (bright violet, white lettering with a halo) are the same for activities, devices and tabs. Keys fade out after you release them. Volume is ten lamps behind the glass. Clay: no dot on device tiles, room tab no longer clipped, settings and windows are dents and bubbles.

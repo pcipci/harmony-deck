@@ -23,6 +23,10 @@ export const SKIN_CSS_NEW = `
       ${W} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
       ${W} .tile.dev.inuse * { color: #ffa060 !important; }
       ${W} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
+      /* heat dots: one = belongs to the running activity, three = shown (selected) */
+      ${W} .tile.dev.inuse::after { display: none; }
+      ${W} .tile.dev.inuse::before, ${W} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W} .tile.dev.sel::before { background-image: ${tri(3)}; }
       ${W} .tile.on, ${W} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
       ${W} .tile.on *, ${W} .tile.going * { color: #ff3a2a !important; }
       ${W} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
@@ -73,6 +77,11 @@ export const SKIN_CSS_NEW = `
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
       ${R} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      /* Fire TV not reachable: a clearly readable dashed badge instead of a dim black square */
+      ${W} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T} .fdot.f-unknown, ${R} .fdot.f-unknown, ${X} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
+      ${W} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T} .fdot.f-unknown { color: #3dff6b; } ${R} .fdot.f-unknown, ${X} .fdot.f-unknown { color: #2a170a; }
+      ${W} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T} .fdot.f-unknown ha-icon, ${R} .fdot.f-unknown ha-icon, ${X} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
+      ${T} .editdone.warn, ${T} .key.warn { color: #021a05; }
       ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
       ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
       ${T} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T} .lockmark.free { color: #1fa83c; }
@@ -86,6 +95,8 @@ export const SKIN_CSS_NEW = `
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
       ${X} .tile.on, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
+      /* a stored 'fill' active style must not paint the lit tube orange (digit and name would vanish) */
+      ${X} .tile.on, ${X} .tile.going, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { background: linear-gradient(180deg, #1a0d06, #050302) !important; }
       ${X} .tile.on::before, ${X} .tile.dev.sel::before, ${X} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
       ${X} .tile.on span, ${X} .tile.dev.sel span, ${X} .tile.dev.inuse span { color: #ffd9a0; }
       /* keys: graphite rectangles with a chrome edge and an engraved legend; direct keys (sent straight to the device) have a dim glowing legend, active ones glow bright and sit pressed in */
@@ -156,6 +167,10 @@ export const SKIN_CSS_NEW = `
       ${N} .seg { background: #0d0700; border: 1px solid #7a5200; border-radius: 0; } ${N} .seg .th { border-radius: 0; background: #ffb000; } ${N} .seg .lab.a { color: #1a0f00 !important; text-shadow: none; }
       ${N} .hmenu { background: #120a00; border: 1px solid #ffb000; border-radius: 0; } ${N} select, ${N} .profchip { background-color: #120a00; border: 1px solid #7a5200; border-radius: 0; color: #ffb000; }
       ${N} .hubtabs button.sel { background: #ffb000; color: #1a0f00; text-shadow: none; }
+      ${N} .hubtabs button.sel .ico { background: #1a0f00; box-shadow: 0 0 0 1px #1a0f00; }
+      /* amber fills always carry dark ink, icons included (the generic amber icon rule would make them invisible) */
+      ${N} .favkind button.sel, ${N} .favkind button.sel *, ${N} .editdone, ${N} .editdone *, ${N} .hint-row button, ${N} .hint-row button *, ${N} .helpall, ${N} .helpall *, ${N} .pbtn.pri, ${N} .pbtn.pri *, ${N} .seg .lab.a, ${N} .seg .lab.a * { color: #1a0f00 !important; text-shadow: none; filter: none; }
+      ${N} .editdone, ${N} .hint-row button, ${N} .helpall, ${N} .pbtn.pri { background: #ffb000; border-color: #ffb000; }
       @keyframes nxcur { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
       @keyframes nxtype { from { max-width: 0; } to { max-width: 30ch; } }
       @keyframes nxglow { 0%, 100% { box-shadow: inset 0 0 8px rgba(255,176,0,.3); } 50% { box-shadow: inset 0 0 18px rgba(255,176,0,.6); } }

@@ -138,7 +138,8 @@ class Differences(_Watching, HubEntity, SensorEntity):
 
     @property
     def native_value(self) -> int:
-        return len(watcher(self.hass).differences.get(self._remote or "", []))
+        # Quiet notes (device setting offCheck "quiet") are listed in the attributes but not counted.
+        return len([i for i in watcher(self.hass).differences.get(self._remote or "", []) if not i.get("quiet")])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

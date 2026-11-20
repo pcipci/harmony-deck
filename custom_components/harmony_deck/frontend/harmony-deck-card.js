@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.19.0";
+  var VERSION = "0.19.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2295,7 +2295,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
       if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
       if (item.page === "firetv") {
-        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}${this._ddOffCheckHtml(link, d, t)}</div>`;
       }
       const caps = item.caps || [];
       const has = (c) => caps.includes(c);
@@ -2318,7 +2318,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
-      ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
+      ${this._ddInputsHtml(item, link, () => item.sources, d, t)}${this._ddOffCheckHtml(link, d, t)}
       ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
     },
     // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
@@ -2348,6 +2348,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         return `<label class="erow"><span>${esc(i.input)} <small>${esc(fmtText(t.ddInputUsed, [i.activities.join(", ")]))}</small></span><select data-ddinput="${esc(i.input)}" data-dev="${esc(device)}">${opts}</select></label>`;
       }).join("");
       return `<div class="dname">${t.ddInputs}</div>${rows}<div class="ehint">${t.ddInputsHint}</div>`;
+    },
+    // How the check treats the device when it should be off but is on (0.19.1): watch, quiet note or ignore.
+    _ddOffCheckHtml(link, device, t) {
+      const cur = link.offCheck || "watch";
+      const opts = [["watch", t.ddOffWatch], ["quiet", t.ddOffQuiet], ["ignore", t.ddOffIgnore]].map(([v, label]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${esc(label)}</option>`).join("");
+      return `<div class="egrp"><label class="erow"><span>${t.ddOffCheck}</span><select data-ddoff data-dev="${esc(device)}">${opts}</select></label><div class="ehint">${t.ddOffCheckHint}</div></div>`;
     },
     _bindDirectDev(root) {
       root.querySelectorAll("[data-ddpage]").forEach((b) => b.addEventListener("click", () => {
@@ -2405,6 +2411,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         else delete inputs[s.dataset.ddinput];
         this._ddSave(hub, s.dataset.dev, { inputs });
       }));
+      root.querySelectorAll("select[data-ddoff]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, { offCheck: s.value === "watch" ? void 0 : s.value })));
       root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
     }
   };
@@ -3257,12 +3264,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const errs = this._info?.diagnostics?.errors || [];
       if (errs.length) out.push({ sev: "r", key: "diag", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(errs.join("; "))}</span></div>` });
       for (const l of this._linkHints(h, t)) out.push({ sev: "o", key: `link:${l.key}`, html: l.html });
-      (this._mm?.[h.id] || []).forEach((it, i) => out.push({ sev: "o", key: `mm:${it.device}:${it.kind}:${it.want}`, html: this._mmRow(h, it, i, t) }));
+      (this._mm?.[h.id] || []).forEach((it, i) => out.push({ sev: it.quiet ? "q" : "o", key: `mm:${it.device}:${it.kind}:${it.want}`, html: this._mmRow(h, it, i, t) }));
       return out;
     },
     // The gear: always in the same place; it takes the colour of the most serious hint, pulses while there is something unseen and shows the count.
+    // Quiet notes (sev "q") are only listed in the window, they neither colour nor count.
     _gearBtn(h, t) {
-      const hints = this._hintsOf(h, t);
+      const hints = this._hintsOf(h, t).filter((x) => x.sev !== "q");
       const sev = hints.some((x) => x.sev === "r") ? "r" : hints.some((x) => x.sev === "o") ? "o" : hints.length ? "b" : "";
       const sig = hints.map((x) => x.key).join("|");
       const fresh = sev && this._hintSeen?.[h.id] !== sig;
@@ -3635,13 +3643,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _mmHubs() {
       return Object.keys(this._settings().directDevices || {}).filter((h) => Object.keys(this._settings().directDevices[h] || {}).length);
     },
-    // Part of the redraw key: what the check depends on (activity and the states of the linked entities).
+    // Part of the redraw key: what the check depends on (activity, the states of the linked entities, their offCheck).
     _mmKey(hubs) {
       return hubs.map((h) => {
         const links = this._settings().directDevices?.[h.id];
         return links ? [h.current, Object.values(links).map((l) => {
           const s = this._hass.states?.[l.entity];
-          return [l.entity, s?.state, s?.attributes?.source];
+          return [l.entity, s?.state, s?.attributes?.source, s?.attributes?.app_id, l.offCheck];
         })] : null;
       });
     },
@@ -3654,14 +3662,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._mmTimer = setTimeout(() => this._mmLoad(hubs.map((h) => h.id)), WAIT);
     },
     async _mmLoad(ids) {
-      const next = {};
+      const next = { ...this._mm || {} };
       for (const id of ids.filter((h) => this._mmHubs().includes(h))) {
+        let res = null;
         try {
-          next[id] = (await this._hass.callWS({ type: "harmony_deck/direct/check", hub: id })).items || [];
+          res = await this._hass.callWS({ type: "harmony_deck/direct/check", hub: id });
         } catch (e) {
-          next[id] = [];
+        }
+        next[id] = res?.items || [];
+        if (res?.recheck > 0) {
+          clearTimeout(this._mmGrace?.[id]);
+          (this._mmGrace ||= {})[id] = setTimeout(() => this._mmLoad([id]), res.recheck * 1e3 + 500);
         }
       }
+      for (const id of Object.keys(next)) if (!this._mmHubs().includes(id)) delete next[id];
       if (JSON.stringify(next) !== JSON.stringify(this._mm || {})) {
         this._mm = next;
         this._key = "";
@@ -3669,7 +3683,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
     },
     // One target/actual difference as a hint row with its fix (shown in the gear window since 0.16).
+    // "quiet" (device setting offCheck, 0.19.1): only a plain note, without warning colour and fix.
     _mmRow(h, it, i, t) {
+      if (it.quiet) return `<div class="hint-row"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(fmtText(t.mmQuietOff, [it.device]))}</span></div>`;
       const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
       const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
       return `<div class="hint-row o"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
@@ -5372,6 +5388,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   }
 
   // src/deck/skin-decor.js
+  var TWO_MIN = 12;
+  function splitTwo(text) {
+    const str = String(text ?? "").trim();
+    if (str.length < TWO_MIN) return null;
+    const cuts = [];
+    for (let i = 1; i < str.length - 1; i++) {
+      if (str[i] === "-" || str[i] === " ") cuts.push(i);
+    }
+    if (!cuts.length) return null;
+    const mid = str.length / 2;
+    const at = cuts.reduce((best, c) => Math.abs(c - mid) < Math.abs(best - mid) ? c : best, cuts[0]);
+    const first = (str[at] === "-" ? str.slice(0, at + 1) : str.slice(0, at)).trim(), second = str.slice(at + 1).trim();
+    return first && second ? [first, second] : null;
+  }
   var skinDecorMixin = {
     _skinHead(skin, h) {
       if (!skinTrait(skin, "dial")) return "";
@@ -5418,7 +5448,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         if (n.nodeValue.trim() && !n.parentElement.closest(skip)) nodes.push(n);
       }
       nodes.forEach((n) => {
-        const svg = segSvg(n.nodeValue, n.parentElement.closest(".tile") ? 16 : 12);
+        const inTile = !!n.parentElement.closest(".tile");
+        let svg = segSvg(n.nodeValue, inTile ? 16 : 12);
+        const two = inTile && svg ? splitTwo(n.nodeValue) : null;
+        if (two) {
+          const a = segSvg(two[0], 16), b = segSvg(two[1], 16);
+          if (a && b) svg = `${a}<br>${b}`;
+        }
         if (!svg) return;
         const sp = card.ownerDocument.createElement("span");
         sp.dataset.segtxt = "1";
@@ -5717,6 +5753,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
       ${W} .tile.dev.inuse * { color: #ffa060 !important; }
       ${W} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
+      /* heat dots: one = belongs to the running activity, three = shown (selected) */
+      ${W} .tile.dev.inuse::after { display: none; }
+      ${W} .tile.dev.inuse::before, ${W} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W} .tile.dev.sel::before { background-image: ${tri(3)}; }
       ${W} .tile.on, ${W} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
       ${W} .tile.on *, ${W} .tile.going * { color: #ff3a2a !important; }
       ${W} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
@@ -5767,6 +5807,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
       ${R2} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      /* Fire TV not reachable: a clearly readable dashed badge instead of a dim black square */
+      ${W} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
+      ${W} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X} .fdot.f-unknown { color: #2a170a; }
+      ${W} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
+      ${T2} .editdone.warn, ${T2} .key.warn { color: #021a05; }
       ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
       ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
       ${T2} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T2} .lockmark.free { color: #1fa83c; }
@@ -5780,6 +5825,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
       ${X} .tile.on, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
+      /* a stored 'fill' active style must not paint the lit tube orange (digit and name would vanish) */
+      ${X} .tile.on, ${X} .tile.going, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { background: linear-gradient(180deg, #1a0d06, #050302) !important; }
       ${X} .tile.on::before, ${X} .tile.dev.sel::before, ${X} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
       ${X} .tile.on span, ${X} .tile.dev.sel span, ${X} .tile.dev.inuse span { color: #ffd9a0; }
       /* keys: graphite rectangles with a chrome edge and an engraved legend; direct keys (sent straight to the device) have a dim glowing legend, active ones glow bright and sit pressed in */
@@ -5850,6 +5897,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${N} .seg { background: #0d0700; border: 1px solid #7a5200; border-radius: 0; } ${N} .seg .th { border-radius: 0; background: #ffb000; } ${N} .seg .lab.a { color: #1a0f00 !important; text-shadow: none; }
       ${N} .hmenu { background: #120a00; border: 1px solid #ffb000; border-radius: 0; } ${N} select, ${N} .profchip { background-color: #120a00; border: 1px solid #7a5200; border-radius: 0; color: #ffb000; }
       ${N} .hubtabs button.sel { background: #ffb000; color: #1a0f00; text-shadow: none; }
+      ${N} .hubtabs button.sel .ico { background: #1a0f00; box-shadow: 0 0 0 1px #1a0f00; }
+      /* amber fills always carry dark ink, icons included (the generic amber icon rule would make them invisible) */
+      ${N} .favkind button.sel, ${N} .favkind button.sel *, ${N} .editdone, ${N} .editdone *, ${N} .hint-row button, ${N} .hint-row button *, ${N} .helpall, ${N} .helpall *, ${N} .pbtn.pri, ${N} .pbtn.pri *, ${N} .seg .lab.a, ${N} .seg .lab.a * { color: #1a0f00 !important; text-shadow: none; filter: none; }
+      ${N} .editdone, ${N} .hint-row button, ${N} .helpall, ${N} .pbtn.pri { background: #ffb000; border-color: #ffb000; }
       @keyframes nxcur { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
       @keyframes nxtype { from { max-width: 0; } to { max-width: 30ch; } }
       @keyframes nxglow { 0%, 100% { box-shadow: inset 0 0 8px rgba(255,176,0,.3); } 50% { box-shadow: inset 0 0 18px rgba(255,176,0,.6); } }

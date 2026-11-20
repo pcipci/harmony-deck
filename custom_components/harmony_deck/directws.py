@@ -50,7 +50,10 @@ async def ws_overview(hass: HomeAssistant, connection: websocket_api.ActiveConne
 async def ws_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     """Differences between the current activity and the linked devices of a hub (nothing is switched)."""
     hubs, _ = collect_hubs(hass, await load_confs(hass))
-    connection.send_result(msg["id"], {"items": direct.check(hass, msg["hub"], hubs.get(msg["hub"]) or {})})
+    items = direct.check(hass, msg["hub"], hubs.get(msg["hub"]) or {})
+    left = direct.grace_left(hass, msg["hub"])
+    # "recheck": seconds until the grace time after an activity change is over, so the card asks once more.
+    connection.send_result(msg["id"], {"items": items, **({"recheck": round(left, 1)} if left > 0 else {})})
 
 
 def _locked(hass: HomeAssistant, hub: str) -> bool:

@@ -9,11 +9,11 @@ const WAIT = 4000;     // ms the state must stay as it is, so a device that is s
 export const mismatchMixin = {
   _mmHubs() { return Object.keys(this._settings().directDevices || {}).filter((h) => Object.keys(this._settings().directDevices[h] || {}).length); },
 
-  // Part of the redraw key: what the check depends on (activity and the states of the linked entities).
+  // Part of the redraw key: what the check depends on (activity, the states of the linked entities, their offCheck).
   _mmKey(hubs) {
     return hubs.map((h) => {
       const links = this._settings().directDevices?.[h.id];
-      return links ? [h.current, Object.values(links).map((l) => { const s = this._hass.states?.[l.entity]; return [l.entity, s?.state, s?.attributes?.source]; })] : null;
+      return links ? [h.current, Object.values(links).map((l) => { const s = this._hass.states?.[l.entity]; return [l.entity, s?.state, s?.attributes?.source, s?.attributes?.app_id, l.offCheck]; })] : null;
     });
   },
 
@@ -27,15 +27,22 @@ export const mismatchMixin = {
   },
 
   async _mmLoad(ids) {
-    const next = {};
+    const next = { ...(this._mm || {}) };
     for (const id of ids.filter((h) => this._mmHubs().includes(h))) {
-      try { next[id] = (await this._hass.callWS({ type: "harmony_deck/direct/check", hub: id })).items || []; } catch (e) { next[id] = []; }
+      let res = null;
+      try { res = await this._hass.callWS({ type: "harmony_deck/direct/check", hub: id }); } catch (e) { /* no answer: nothing shown */ }
+      next[id] = res?.items || [];
+      // Shortly after an activity change "should be off" waits (0.19.1); look once more when that time is over.
+      if (res?.recheck > 0) { clearTimeout(this._mmGrace?.[id]); (this._mmGrace ||= {})[id] = setTimeout(() => this._mmLoad([id]), res.recheck * 1000 + 500); }
     }
+    for (const id of Object.keys(next)) if (!this._mmHubs().includes(id)) delete next[id];
     if (JSON.stringify(next) !== JSON.stringify(this._mm || {})) { this._mm = next; this._key = ""; this.hass = this._hass; }
   },
 
   // One target/actual difference as a hint row with its fix (shown in the gear window since 0.16).
+  // "quiet" (device setting offCheck, 0.19.1): only a plain note, without warning colour and fix.
   _mmRow(h, it, i, t) {
+    if (it.quiet) return `<div class="hint-row"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(fmtText(t.mmQuietOff, [it.device]))}</span></div>`;
     const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
     const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
     return `<div class="hint-row o"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;

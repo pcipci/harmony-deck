@@ -2,7 +2,8 @@
 
 Listens to the hubs' remotes and the linked media players. After a change it waits until things stayed the same
 for a moment (as the card does), then works out the summary (direct.summary) and the differences per hub
-(direct.check) and tells its listeners (the sensors "Network control" and "Differences").
+(direct.check) and tells its listeners (the sensors "Network control" and "Differences"). It also notes when a
+hub's activity changes (grace time of "should be off", 0.19.1) and checks once more when that time is over.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from typing import Any, Callable
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 
-from . import direct
+from . import direct, mismatch
 from .const import DOMAIN
 
 QUIET = 4.0     # seconds without a change before checking
@@ -27,6 +28,7 @@ class DirectWatcher:
         self._watched: tuple[str, ...] = ()
         self._unwatch: CALLBACK_TYPE | None = None
         self._timer: CALLBACK_TYPE | None = None
+        self._grace: CALLBACK_TYPE | None = None
 
     def add_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
         self._listeners.append(listener)
@@ -49,8 +51,22 @@ class DirectWatcher:
         self._schedule(0)
 
     @callback
-    def _changed(self, _event: Event) -> None:
+    def _changed(self, event: Event) -> None:
+        old, new = event.data.get("old_state"), event.data.get("new_state")
+        entity = event.data.get("entity_id")
+        if entity in direct.config(self.hass) and old is not None and new is not None \
+                and old.attributes.get("current_activity") != new.attributes.get("current_activity"):
+            # The activity changed: "should be off" waits (mismatch.GRACE); check once more when that time is over.
+            direct.activity_changed(self.hass, entity)
+            if self._grace:
+                self._grace()
+            self._grace = async_call_later(self.hass, mismatch.GRACE + 1, self._grace_over)
         self._schedule(QUIET)
+
+    @callback
+    def _grace_over(self, _now: Any = None) -> None:
+        self._grace = None
+        self._schedule(0)
 
     @callback
     def _schedule(self, delay: float) -> None:
@@ -75,7 +91,9 @@ class DirectWatcher:
             self._unwatch()
         if self._timer:
             self._timer()
-        self._unwatch = self._timer = None
+        if self._grace:
+            self._grace()
+        self._unwatch = self._timer = self._grace = None
         self._watched = ()
 
 

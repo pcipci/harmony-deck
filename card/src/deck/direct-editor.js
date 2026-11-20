@@ -114,7 +114,7 @@ export const directEditorMixin = {
     const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
     if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
     if (item.page === "firetv") {
-      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}${this._ddOffCheckHtml(link, d, t)}</div>`;
     }
     const caps = item.caps || [];
     const has = (c) => caps.includes(c);
@@ -138,7 +138,7 @@ export const directEditorMixin = {
     return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
-      ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
+      ${this._ddInputsHtml(item, link, () => item.sources, d, t)}${this._ddOffCheckHtml(link, d, t)}
       ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
   },
 
@@ -171,6 +171,13 @@ export const directEditorMixin = {
       return `<label class="erow"><span>${esc(i.input)} <small>${esc(fmtText(t.ddInputUsed, [i.activities.join(", ")]))}</small></span><select data-ddinput="${esc(i.input)}" data-dev="${esc(device)}">${opts}</select></label>`;
     }).join("");
     return `<div class="dname">${t.ddInputs}</div>${rows}<div class="ehint">${t.ddInputsHint}</div>`;
+  },
+
+  // How the check treats the device when it should be off but is on (0.19.1): watch, quiet note or ignore.
+  _ddOffCheckHtml(link, device, t) {
+    const cur = link.offCheck || "watch";
+    const opts = [["watch", t.ddOffWatch], ["quiet", t.ddOffQuiet], ["ignore", t.ddOffIgnore]].map(([v, label]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${esc(label)}</option>`).join("");
+    return `<div class="egrp"><label class="erow"><span>${t.ddOffCheck}</span><select data-ddoff data-dev="${esc(device)}">${opts}</select></label><div class="ehint">${t.ddOffCheckHint}</div></div>`;
   },
 
   _bindDirectDev(root) {
@@ -212,6 +219,7 @@ export const directEditorMixin = {
       if (s.value) inputs[s.dataset.ddinput] = s.value; else delete inputs[s.dataset.ddinput];
       this._ddSave(hub, s.dataset.dev, { inputs });
     }));
+    root.querySelectorAll("select[data-ddoff]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, { offCheck: s.value === "watch" ? undefined : s.value })));
     root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
   },
 };

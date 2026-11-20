@@ -3,6 +3,20 @@
 import { segSvg } from "../shared/segfont.js";
 import { skinTrait } from "../shared/skin-traits.js";
 
+// A long name with a hyphen or space ("Panasonic-Mini-System") is split there into two larger lines instead of one tiny one.
+const TWO_MIN = 12;
+export function splitTwo(text) {
+  const str = String(text ?? "").trim();
+  if (str.length < TWO_MIN) return null;
+  const cuts = [];
+  for (let i = 1; i < str.length - 1; i++) { if (str[i] === "-" || str[i] === " ") cuts.push(i); }
+  if (!cuts.length) return null;
+  const mid = str.length / 2;
+  const at = cuts.reduce((best, c) => (Math.abs(c - mid) < Math.abs(best - mid) ? c : best), cuts[0]);
+  const first = (str[at] === "-" ? str.slice(0, at + 1) : str.slice(0, at)).trim(), second = str.slice(at + 1).trim();
+  return first && second ? [first, second] : null;
+}
+
 export const skinDecorMixin = {
   _skinHead(skin, h) {
     if (!skinTrait(skin, "dial")) return "";
@@ -50,7 +64,10 @@ export const skinDecorMixin = {
     const nodes = [];
     for (let n = walker.nextNode(); n; n = walker.nextNode()) { if (n.nodeValue.trim() && !n.parentElement.closest(skip)) nodes.push(n); }
     nodes.forEach((n) => {
-      const svg = segSvg(n.nodeValue, n.parentElement.closest(".tile") ? 16 : 12);
+      const inTile = !!n.parentElement.closest(".tile");
+      let svg = segSvg(n.nodeValue, inTile ? 16 : 12);
+      const two = inTile && svg ? splitTwo(n.nodeValue) : null;
+      if (two) { const a = segSvg(two[0], 16), b = segSvg(two[1], 16); if (a && b) svg = `${a}<br>${b}`; }
       if (!svg) return;
       const sp = card.ownerDocument.createElement("span");
       sp.dataset.segtxt = "1"; sp.setAttribute("aria-label", n.nodeValue.trim()); sp.innerHTML = svg;

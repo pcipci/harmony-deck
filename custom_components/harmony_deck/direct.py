@@ -8,6 +8,7 @@ which adapter answered. Version 0.7 ships no extension yet; the list is the plac
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any, Protocol
 
 from homeassistant.core import Context, HomeAssistant
@@ -324,14 +325,39 @@ def _inputs(hass: HomeAssistant, info: dict[str, Any], device: str, link: dict[s
     return list(out.values())
 
 
+def activity_changed(hass: HomeAssistant, hub: str) -> None:
+    """Remember when the activity of a hub changed (for the grace time of the check)."""
+    hass.data.setdefault(DOMAIN, {}).setdefault("activity_changed", {})[hub] = time.monotonic()
+
+
+def since_change(hass: HomeAssistant, hub: str) -> float | None:
+    """Seconds since the activity of a hub changed, None if not seen since the start."""
+    stamp = ((hass.data.get(DOMAIN) or {}).get("activity_changed") or {}).get(hub)
+    return None if stamp is None else time.monotonic() - stamp
+
+
+def grace_left(hass: HomeAssistant, hub: str) -> float:
+    """Seconds until "should be off" is checked again after an activity change (0 = now)."""
+    since = since_change(hass, hub)
+    return 0.0 if since is None else max(0.0, mismatch.GRACE - since)
+
+
+def _check_state(hass: HomeAssistant, entity: str) -> dict[str, Any]:
+    snap = snapshot(hass, entity)
+    state = hass.states.get(entity)
+    if state is not None and mismatch.standby_like(state.state, dict(state.attributes)):
+        snap["standby"] = True
+    return snap
+
+
 def check(hass: HomeAssistant, hub: str, info: dict[str, Any]) -> list[dict[str, Any]]:
     """Differences between what the current activity needs and what the linked devices report."""
     links = config(hass).get(hub) or {}
     remote = hass.states.get(hub)
     activity = remote.attributes.get("current_activity") if remote else None
-    states = {d: snapshot(hass, l["entity"]) for d, l in links.items()}
+    states = {d: _check_state(hass, l["entity"]) for d, l in links.items()}
     sources = {d: _sources(hass, l["entity"]) for d, l in links.items()}
-    found = mismatch.check(activity, info.get("setup") or {}, links, states, sources)
+    found = mismatch.check(activity, info.get("setup") or {}, links, states, sources, since_change(hass, hub))
     for item in found:
         item["can"] = directdev.OPS[item["fix"]] in caps(hass, links[item["device"]]["entity"])
     return found

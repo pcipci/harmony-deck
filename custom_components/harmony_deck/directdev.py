@@ -7,7 +7,8 @@ what infrared cannot do (read the state, set a volume level, pick a source). Sto
     {"remote.living_room": {"LG TV": {"entity": "media_player.tv", "volumeDirect": false,
                                       "inputs": {"InputHdmi2": "Fire TV"}}}}
 
-"inputs" says which source of the player belongs to a Harmony input (for the input check in mismatch.py).
+"inputs" says which source of the player belongs to a Harmony input (for the input check in mismatch.py);
+"offCheck" ("quiet" / "ignore", 0.19.1) how the check treats the device when it should be off.
 
 Everything else in Harmony Deck (card, step "Device", infrared volume) asks only for capabilities (CAPS) and
 never for a kind of device. Which capabilities an entity has is read here from what Home Assistant reports;
@@ -84,6 +85,8 @@ def clean_device(raw: Any) -> dict[str, Any] | None:
                 if isinstance(k, str) and k and isinstance(v, str) and v.strip()}
         if kept:
             out["inputs"] = kept
+    if raw.get("offCheck") in ("quiet", "ignore"):     # "watch" is the default and not stored
+        out["offCheck"] = raw["offCheck"]
     fire = clean_fire(raw.get("fire"))
     if fire is not None:
         out["fire"] = fire

@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "custom_components"))
 
-from harmony_deck.directdev import clean_device  # noqa: E402
-from harmony_deck.mismatch import check, guess_source  # noqa: E402
+from harmony_deck.directdev import clean_config, clean_device  # noqa: E402
+from harmony_deck.mismatch import GRACE, check, guess_source, standby_like  # noqa: E402
 
 SETUP = {
     "Fire TV": [{"device": "LG TV", "power": True, "input": "InputHdmi2"}, {"device": "Amazon Fire TV Cube", "power": True, "input": None},
@@ -55,3 +55,58 @@ def test_input_against_activity():
 def test_inputs_kept_in_link():
     assert clean_device({"entity": "media_player.tv", "inputs": {"InputHdmi2": " Fire  TV ", "x": "", "": "y", "z": 3}}) == \
         {"entity": "media_player.tv", "volumeDirect": False, "inputs": {"InputHdmi2": "Fire TV"}}
+
+
+# 0.19.1: fewer "should be off but is on".
+ON = {"LG TV": {"on": True, "source": "Fire TV"}, "Yamaha": {"on": True}}
+
+
+def test_grace_after_activity_change_only_for_off():
+    # Radio: the TV should be off but is still on
+    assert check("Radio", SETUP, LINKS, ON, since_change=5) == []
+    assert check("Radio", SETUP, LINKS, ON, since_change=GRACE + 1)[0]["fix"] == "off"
+    assert check("Radio", SETUP, LINKS, ON)[0]["fix"] == "off"                      # no change seen: as before
+    # "should be on" is not delayed
+    off = {"LG TV": {"on": False}, "Yamaha": {"on": True}}
+    assert check("Fire TV", SETUP, LINKS, off, since_change=5)[0]["fix"] == "on"
+    # nor the input
+    wrong = {"LG TV": {"on": True, "source": "Blu-ray-Player"}, "Yamaha": {"on": True}}
+    assert check("Fire TV", SETUP, LINKS, wrong, {"LG TV": WEBOS}, since_change=5)[0]["kind"] == "input"
+
+
+def test_standby_like():
+    assert standby_like("idle", {"app_id": "com.amazon.tv.launcher"})
+    assert standby_like("idle", {"app_id": "com.amazon.bueller.photos"})                # Fire TV screensaver
+    assert standby_like("standby", {})
+    assert not standby_like("playing", {"app_id": "com.amazon.tv.launcher"})
+    assert not standby_like("paused", {"app_id": "com.amazon.tv.launcher"})
+    assert not standby_like("idle", {"app_id": "com.netflix.ninja"})
+    assert not standby_like("idle", {})                                                 # unsure: as before
+    assert not standby_like("on", None)
+    # a device on its home screen that should be off is not reported; one that should be on still counts as on
+    assert check("Radio", SETUP, LINKS, {**ON, "LG TV": {"on": True, "standby": True}}) == []
+    assert check("Fire TV", SETUP, LINKS, {"LG TV": {"on": True, "standby": True, "source": "Fire TV"}, "Yamaha": {"on": True}},
+                 {"LG TV": WEBOS}) == []
+
+
+def test_off_check_per_device():
+    def links(mode):
+        return {**LINKS, "LG TV": {"entity": "media_player.tv", **({"offCheck": mode} if mode else {})}}
+    assert check("Radio", SETUP, links(None), ON) == [{"device": "LG TV", "kind": "power", "want": False, "fix": "off"}]
+    assert check("Radio", SETUP, links("watch"), ON) == [{"device": "LG TV", "kind": "power", "want": False, "fix": "off"}]
+    assert check("Radio", SETUP, links("quiet"), ON) == [{"device": "LG TV", "kind": "power", "want": False, "fix": "off", "quiet": True}]
+    assert check("Radio", SETUP, links("quiet"), ON, since_change=5) == []
+    assert check("Radio", SETUP, links("ignore"), ON) == []
+    # the setting only concerns "should be off"
+    off = {"LG TV": {"on": False}, "Yamaha": {"on": True}}
+    assert check("Fire TV", SETUP, links("ignore"), off)[0]["fix"] == "on"
+
+
+def test_off_check_cleaned():
+    base = {"entity": "media_player.tv", "volumeDirect": False}
+    assert clean_device({**base, "offCheck": "quiet"}) == {**base, "offCheck": "quiet"}
+    assert clean_device({**base, "offCheck": "ignore"}) == {**base, "offCheck": "ignore"}
+    assert clean_device({**base, "offCheck": "watch"}) == base                 # default, not stored
+    assert clean_device({**base, "offCheck": "loud"}) == base
+    assert clean_device({**base, "offCheck": 1}) == base
+    assert clean_config({"remote.x": {"TV": {**base, "offCheck": "ignore"}}}) == {"remote.x": {"TV": {**base, "offCheck": "ignore"}}}

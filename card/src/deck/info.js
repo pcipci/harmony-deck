@@ -57,13 +57,14 @@ export const infoMixin = {
     const errs = this._info?.diagnostics?.errors || [];
     if (errs.length) out.push({ sev: "r", key: "diag", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(errs.join("; "))}</span></div>` });
     for (const l of this._linkHints(h, t)) out.push({ sev: "o", key: `link:${l.key}`, html: l.html });
-    (this._mm?.[h.id] || []).forEach((it, i) => out.push({ sev: "o", key: `mm:${it.device}:${it.kind}:${it.want}`, html: this._mmRow(h, it, i, t) }));
+    (this._mm?.[h.id] || []).forEach((it, i) => out.push({ sev: it.quiet ? "q" : "o", key: `mm:${it.device}:${it.kind}:${it.want}`, html: this._mmRow(h, it, i, t) }));
     return out;
   },
 
   // The gear: always in the same place; it takes the colour of the most serious hint, pulses while there is something unseen and shows the count.
+  // Quiet notes (sev "q") are only listed in the window, they neither colour nor count.
   _gearBtn(h, t) {
-    const hints = this._hintsOf(h, t);
+    const hints = this._hintsOf(h, t).filter((x) => x.sev !== "q");
     const sev = hints.some((x) => x.sev === "r") ? "r" : hints.some((x) => x.sev === "o") ? "o" : hints.length ? "b" : "";
     const sig = hints.map((x) => x.key).join("|");
     const fresh = sev && this._hintSeen?.[h.id] !== sig;

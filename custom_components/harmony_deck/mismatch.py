@@ -9,6 +9,10 @@ Rules:
   ("manual"), are left alone. With no activity (PowerOff) every device Harmony switches should be off.
 - An input is compared only when the device should be on, is on, and the activity names an input. The source
   that belongs to that input is the user's choice (stored per device) or, failing that, a guess.
+- 0.19.1, only for "should be off but is on": for GRACE seconds after an activity change nothing is said (the
+  devices settle, Harmony switches them off itself); a player that only shows its home screen or screensaver
+  counts as off (standby_like); per device "offCheck" says "watch" (default), "quiet" (shown as a calm note,
+  item gets "quiet": True) or "ignore" (never said). "Should be on" and inputs stay as they were.
 """
 
 from __future__ import annotations
@@ -19,6 +23,19 @@ from typing import Any
 POWER_OFF = "PowerOff"
 _WORD = re.compile(r"[a-z0-9]+")
 _NOISE = {"input", "eingang"}
+GRACE = 60.0            # seconds after an activity change without "should be off"
+# Home screens and screensavers of Fire TV / Android TV players: on, but nothing is used.
+_IDLE_APPS = {"com.amazon.tv.launcher", "com.amazon.bueller.photos", "com.amazon.ftv.screensaver",
+              "com.google.android.tvlauncher", "com.google.android.leanbacklauncher", "com.google.android.apps.tv.launcherx",
+              "com.google.android.backdrop"}
+
+
+def standby_like(state: Any, attrs: dict[str, Any] | None) -> bool:
+    """True when a player is as good as off: "standby", or idle on its home screen / screensaver. When unsure, False."""
+    if state == "standby":
+        return True
+    app = (attrs or {}).get("app_id")
+    return state in ("idle", "on") and isinstance(app, str) and app in _IDLE_APPS
 
 
 def _alnum(text: Any) -> str:
@@ -55,11 +72,13 @@ def _switched(setup: dict[str, list[dict[str, Any]]]) -> set[str]:
 
 
 def check(activity: str | None, setup: dict[str, list[dict[str, Any]]], links: dict[str, dict[str, Any]],
-          states: dict[str, dict[str, Any]], sources: dict[str, list[str]] | None = None) -> list[dict[str, Any]]:
+          states: dict[str, dict[str, Any]], sources: dict[str, list[str]] | None = None,
+          since_change: float | None = None) -> list[dict[str, Any]]:
     """Differences for the linked devices of one hub, each with the fix the card offers.
 
     links: {device: {"entity", "inputs": {harmony input: source}}}; states: {device: directdev.snapshot};
-    sources: {device: source list of its player}.
+    sources: {device: source list of its player}; since_change: seconds since the activity changed (None = long ago).
+    states may carry "standby": True (standby_like) and links "offCheck".
     Result items: {"device", "kind": "power", "want": bool, "fix": "on" | "off"} or
     {"device", "kind": "input", "input", "source", "want": source, "fix": "source", "value": source}.
     """
@@ -75,8 +94,14 @@ def check(activity: str | None, setup: dict[str, list[dict[str, Any]]], links: d
         if on is None or device in manual or (device not in wanted and device not in switched):
             continue
         want = device in wanted
+        if not want and on:
+            mode = link.get("offCheck") or "watch"
+            if mode == "ignore" or snap.get("standby") or (since_change is not None and since_change < GRACE):
+                continue
+            out.append({"device": device, "kind": "power", "want": False, "fix": "off", **({"quiet": True} if mode == "quiet" else {})})
+            continue
         if on != want:
-            out.append({"device": device, "kind": "power", "want": want, "fix": "on" if want else "off"})
+            out.append({"device": device, "kind": "power", "want": want, "fix": "on"})
             continue
         harmony_input = wanted.get(device, {}).get("input")
         current = snap.get("source")

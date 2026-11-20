@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.19.1
+
+### Added
+- **"Should be off" per device:** on the page of a linked network device a choice "When it should be off": *Report* (as before), *Just a note* (listed in the gear window without warning colour, count or fix button; the sensor "Differences" does not count it) or *Don't check*.
+
+### Changed
+- **Nostromo:** dark text and icons on every amber surface (Done button, hint buttons, "Switch everything off", the room tab's icon, the active side of the Activities/Devices switch). Before, they were amber on amber and could not be seen.
+- **Nixie:** the lit tube (running activity or selected device) stays dark with an orange digit and name even if an old "fill" active style is stored; before it could turn orange with orange text.
+- **Terminal:** the red confirm button (e.g. delete a profile) has dark text instead of white on bright green.
+- **Thermal:** a device that belongs to the running activity shows one heat dot, the selected device three, as in the activity tiles. Long names with a hyphen or space ("Panasonic-Mini-System") are split into two larger lines instead of one tiny one.
+- **Fire TV badge on the room tab** (not reachable) is a readable dashed badge in Thermal, Nostromo, Terminal, Tube radio and Nixie, no longer a dark square.
+- **Fewer "should be off but is on":** for 60 seconds after an activity change this difference is not reported (Harmony is still switching devices off; the card and the sensor check again once the minute is over). "Should be on" and wrong inputs are reported as before.
+- **Home screen counts as off:** a Fire TV / Android TV player that is idle on its home screen or screensaver (e.g. woken by HDMI-CEC), or in standby, no longer counts as "on" when it should be off.
+
 ## 0.19.0
 
 ### Added

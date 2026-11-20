@@ -7,7 +7,8 @@ export const SKIN_TRAITS = {
   thermal: { premium: true, keyHoldMs: 220, segFont: true, noColorIcons: true },
   nixie: { premium: true, toggles: true, powerKnob: true },
   nostromo: { premium: true, noColorIcons: true },
-  glass: { blurOption: true },
+  glass: { premium: true, noColorIcons: true, glassLook: true, powerKnob: true },
+  clay: { premium: true, noColorIcons: true, powerKnob: true },
 };
 
 export const skinTrait = (skin, name, fallback = false) => SKIN_TRAITS[skin]?.[name] ?? fallback;

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.19.1";
+  var VERSION = "0.20.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -327,9 +327,9 @@
     if (!fields.length) return "";
     const v = s.values || {};
     const rows = fields.map((f) => {
-      const on = isOn(v, f.key);
-      const shown = f.key === "tone" ? v.kelvin !== void 0 ? `${v.kelvin} K` : v.color ? hueName(t, v.color[0], v.color[1]) : "" : f.key === "source" ? v.source || "" : f.key === "mute" ? "" : on ? f.fmt(v[f.key]) : "";
-      return `<div class="vrow ${on ? "on" : ""}"><label class="vhead"><span class="sw"><input type="checkbox" data-von="${f.key}" ${on ? "checked" : ""}><i></i></span><span>${t[f.label]}</span>${on && shown ? `<b>${esc(shown)}</b>` : ""}</label>${on ? `<div class="vbody">${bodyHtml(f, card, s.entity, v, t)}</div>` : ""}</div>`;
+      const on2 = isOn(v, f.key);
+      const shown = f.key === "tone" ? v.kelvin !== void 0 ? `${v.kelvin} K` : v.color ? hueName(t, v.color[0], v.color[1]) : "" : f.key === "source" ? v.source || "" : f.key === "mute" ? "" : on2 ? f.fmt(v[f.key]) : "";
+      return `<div class="vrow ${on2 ? "on" : ""}"><label class="vhead"><span class="sw"><input type="checkbox" data-von="${f.key}" ${on2 ? "checked" : ""}><i></i></span><span>${t[f.label]}</span>${on2 && shown ? `<b>${esc(shown)}</b>` : ""}</label>${on2 ? `<div class="vbody">${bodyHtml(f, card, s.entity, v, t)}</div>` : ""}</div>`;
     }).join("");
     return `<div class="esub">${t.valTitle}</div>${rows}<div class="ehint">${t.valHint}</div>`;
   }
@@ -1292,14 +1292,14 @@
       const cur = a.steps[step - 1];
       const stepName = running && cur ? stepLabel(cur, t, this) : "";
       const ent = this._actEntity(a);
-      const on = !running && ent && this._hass.states[ent]?.state === "on";
+      const on2 = !running && ent && this._hass.states[ent]?.state === "on";
       const miss = ent && !this._hass.states[ent];
       const done = state === "done" && Date.now() - Date.parse(seq.finished || 0) < 6e3;
       const label = running ? tile ? `${step}/${total} · ${stepName}` : `${step}/${total}` : a.name;
       const hint = running ? t.actHoldStop : other ? fmtText(t.actBusyNow, [seq.name || "", seq.step || 1, seq.total || 1]) : "";
       const tip = state === "error" ? `${a.name} – ${seq.error || t.actFailed}` : running ? `${a.name} – ${stepName}` : a.steps.length > 1 ? `${a.name}
 ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.name;
-      const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
+      const cls = ["actbtn", tile ? "tile acttile" : "key cell", running ? "running" : "", state === "error" ? "failed" : "", done ? "fin" : "", on2 ? "acton" : "", miss ? "miss" : "", other ? "otherrun" : ""].join(" ");
       const pct2 = running ? Math.round((step - 1) / total * 100) : 0;
       const icon = state === "error" ? "mdi:alert-circle-outline" : running ? "mdi:progress-clock" : done ? "mdi:check" : a.icon;
       return `<button class="${cls}" style="--p:${pct2}%" title="${esc(tip)}" data-actid="${esc(a.id)}" data-hub="${esc(h.id)}" ${running ? "data-holdstop" : ""} data-hinttext="${esc(hint)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${esc(label)}</span>${tile ? '<i class="acttag"></i>' : ""}${a.steps.length > 1 ? `<i class="actmore" role="button" data-actmore="${esc(a.id)}" data-hub="${esc(h.id)}" title="${esc(t.seqOpen)}"><ha-icon icon="mdi:chevron-down"></ha-icon></i>` : ""}${running ? '<i class="actbar"></i>' : ""}</button>`;
@@ -1391,7 +1391,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const secOff = this._secLocked(h.id);
       const offAct = this._fireOfflineAct(h);
       const tiles = shown.map((n) => {
-        const on = !busy && cur === n, going = busy && h.starting === n, hid = hidden.has(n);
+        const on2 = !busy && cur === n, going = busy && h.starting === n, hid = hidden.has(n);
         if (this._edit) {
           return `<label class="tile edit-tile ${hid ? "hid" : ""}"><input type="checkbox" data-vis data-hub="${esc(h.id)}" data-act="${esc(n)}" ${hid ? "" : "checked"}>
           <ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon><span>${esc(n)}</span></label>`;
@@ -1400,13 +1400,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           const st2 = this._tileStyle();
           return `<button class="tile locked seclocked ts-${st2}" title="${esc(`${n} – ${t.secLockTile}`)}" data-seclocked data-hinttext="${esc(t.secLockTile)}">${st2 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st2 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:lock"></ha-icon></button>`;
         }
-        if (n === offAct && !on && !going) {
+        if (n === offAct && !on2 && !going) {
           const st3 = this._tileStyle();
           return `<button class="tile locked offline ts-${st3}" title="${esc(`${n} – ${t.fireOfflineTile}`)}" data-seclocked data-hinttext="${esc(t.fireOfflineTile)}">${st3 === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st3 === "icon" ? "" : `<span>${esc(n)}</span>`}<ha-icon class="lockic" icon="mdi:television-off"></ha-icon></button>`;
         }
         const lk = locks.acts.has(n), st = this._tileStyle();
-        const hs = !lk && this._holdSwitchOn() && !on && !going && !!(cur || h.starting);
-        return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
+        const hs = !lk && this._holdSwitchOn() && !on2 && !going && !!(cur || h.starting);
+        return `<button class="tile ${on2 ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
         ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
       }).join("");
       const aTiles = this._edit ? [] : this._actionTiles(h, cur, t);
@@ -1893,10 +1893,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return p.on;
     },
     // The switch sends On/Off itself and flips at once; the lamp shows "switching" until the device confirms (or 20 s pass).
-    _swPowerSend(hub, device, on) {
-      this._pwrPend = { ...this._pwrPend || {}, [`${hub}/${device}`]: { on, at: Date.now() } };
+    _swPowerSend(hub, device, on2) {
+      this._pwrPend = { ...this._pwrPend || {}, [`${hub}/${device}`]: { on: on2, at: Date.now() } };
       this._buzz();
-      this._sendCmd(hub, device, on ? "PowerOn" : "PowerOff");
+      this._sendCmd(hub, device, on2 ? "PowerOn" : "PowerOff");
       clearTimeout(this._pwrT);
       this._pwrT = setTimeout(() => {
         this._key = "";
@@ -2245,8 +2245,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     _ddStateText(st, t) {
       if (!st) return "";
-      const on = st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown;
-      return [on, st.volume != null ? fmtText(t.ddVolume, [String(st.volume)]) : "", st.source || "", st.app || ""].filter(Boolean).join(" · ");
+      const on2 = st.on === true ? t.ddOn : st.on === false ? t.ddOff : t.ddUnknown;
+      return [on2, st.volume != null ? fmtText(t.ddVolume, [String(st.volume)]) : "", st.source || "", st.app || ""].filter(Boolean).join(" · ");
     },
     // The tab: one line per Harmony device (player, state dot, button to its page) and, if there is one, a suggestion.
     _directDevHtml(h, t) {
@@ -3346,16 +3346,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._ddLoad();
         return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div><div class="ehint">${t.ddLoading}</div></div>`;
       }
-      const stName = (on) => on === true ? t.ddOn : on === false ? t.ddOff : t.ddUnknown;
+      const stName = (on2) => on2 === true ? t.ddOn : on2 === false ? t.ddOff : t.ddUnknown;
       const rows = [];
       for (const h of this._hubs()) {
         for (const [dev, item] of Object.entries(this._dd.hubs?.[h.id] || {})) {
           if (!item.entity) continue;
           const live = this._hass.states?.[item.entity];
-          const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
+          const on2 = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
           const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
           const cell = (label, v, cls = "") => `<td data-l="${esc(label)}" class="${cls}">${v}</td>`;
-          rows.push(`<tr>${cell(t.netColDevice, `<ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b>${this._hubs().length > 1 ? `<small>${esc(h.name)}</small>` : ""}`, "ndev")}${cell(t.netColPlatform, esc(item.platform ? PLATFORMS[item.platform] || item.platform : "–"))}${cell(t.netColAddress, esc(item.host || "–"))}${cell(t.netColState, esc(stName(on)), `nstate ${on === true ? "on" : on === false ? "off" : ""}`)}${cell(t.netColCaps, caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot))}</tr>`);
+          rows.push(`<tr>${cell(t.netColDevice, `<ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b>${this._hubs().length > 1 ? `<small>${esc(h.name)}</small>` : ""}`, "ndev")}${cell(t.netColPlatform, esc(item.platform ? PLATFORMS[item.platform] || item.platform : "–"))}${cell(t.netColAddress, esc(item.host || "–"))}${cell(t.netColState, esc(stName(on2)), `nstate ${on2 === true ? "on" : on2 === false ? "off" : ""}`)}${cell(t.netColCaps, caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot))}</tr>`);
         }
       }
       const head = [t.netColDevice, t.netColPlatform, t.netColAddress, t.netColState, t.netColCaps].map((x) => `<th>${esc(x)}</th>`).join("");
@@ -3801,28 +3801,31 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       "--hr-rk-radius": "8px",
       "--hr-seg-radius": "8px"
     },
-    // Milchglas: frosted glass over a colour gradient, translucent tiles, light blue accent.
+    // Glas: dark acrylic plates that light from behind (function colours green / blue / red / amber), all corners square.
+    // The look itself is in skin-css-020.js; three light styles a/b/c are chosen with the class gl-a / gl-b / gl-c.
     glass: {
-      "--hr-text": "#eef3fb",
-      "--hr-muted": "#b4c0d8",
-      "--hr-panel-sep": "rgba(255,255,255,.28)",
-      "--hr-opt-bg": "#26305a",
+      "--hr-text": "#e9f0f4",
+      "--hr-muted": "#8fa3b2",
+      "--hr-panel-sep": "rgba(255,255,255,.16)",
+      "--hr-opt-bg": "#131a20",
       "color-scheme": "dark",
-      "--hr-tile-bg": "rgba(255,255,255,.13)",
-      "--hr-key-bg": "rgba(255,255,255,.18)",
-      "--hr-radius": "16px",
-      "--hr-tile-radius": "18px",
-      "--hr-panel-bg": "rgba(255,255,255,.06)",
-      "--hr-accent": "#8fd3ff",
-      "--hr-on-accent": "#0a1a2a",
-      "--hr-card-bg": "#1a2548",
-      "--hr-frame": "linear-gradient(135deg, #142a5c, #3b2a78 55%, #0f5c7a)",
-      "--hr-select-bg": "rgba(255,255,255,.14)",
-      "--hr-blur": "blur(14px) saturate(140%)",
-      "--hr-rocker-radius": "22px",
-      "--hr-rk-radius": "16px",
-      "--hr-seg-radius": "14px",
-      "--hr-key-shadow": "inset 0 1px 0 rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.12)"
+      "--hr-tile-bg": "#131a20",
+      "--hr-key-bg": "#131a20",
+      "--hr-radius": "2px",
+      "--hr-tile-radius": "2px",
+      "--hr-panel-bg": "rgba(255,255,255,.03)",
+      "--hr-accent": "#ffb340",
+      "--hr-on-accent": "#2a1700",
+      "--hr-card-bg": "#0d1318",
+      "--hr-select-bg": "#131a20",
+      "--hr-rocker-radius": "2px",
+      "--hr-rk-radius": "2px",
+      "--hr-seg-radius": "2px",
+      "--hr-dpad-radius": "2px",
+      "--hr-ok-radius": "2px",
+      "--hr-d-big": "2px",
+      "--hr-d-small": "2px",
+      "--hr-key-shadow": "none"
     },
     // Knetmasse: modelling clay. Pastel green, thick rounded shapes with a heavy shadow, coral accent.
     clay: {
@@ -4014,7 +4017,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     thermal: { premium: true, keyHoldMs: 220, segFont: true, noColorIcons: true },
     nixie: { premium: true, toggles: true, powerKnob: true },
     nostromo: { premium: true, noColorIcons: true },
-    glass: { blurOption: true }
+    glass: { premium: true, noColorIcons: true, glassLook: true, powerKnob: true },
+    clay: { premium: true, noColorIcons: true, powerKnob: true }
   };
   var skinTrait = (skin, name2, fallback = false) => SKIN_TRAITS[skin]?.[name2] ?? fallback;
 
@@ -4046,6 +4050,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _activeStyle() {
       const a = this._config.active_style ?? this._settings().activeStyle;
       return a === "fill" || a === "icon" ? a : "ring";
+    },
+    // Look of the Glas skin: a = plate lights, b = text lights, c = mix (default).
+    _glassLook() {
+      const g = this._config.glass_look ?? this._settings().glassLook;
+      return ["a", "b", "c"].includes(g) ? g : "c";
     },
     _keyStyle() {
       const k = this._config.key_style ?? this._settings().keyStyle;
@@ -4418,7 +4427,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const admin = this._hass?.user?.is_admin !== false;
       const fixed = this._config.profile;
       const chosen = fixed ? pr.active : this._choiceGet();
-      const item = (v, label, on, icon, off = false) => `<button type="button" class="mentry pitem ${on ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
+      const item = (v, label, on2, icon, off = false) => `<button type="button" class="mentry pitem ${on2 ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on2 ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
       return `<div class="plist">${fixed ? "" : item("", t.profAutoOpt, !chosen, "mdi:auto-fix")}${pr.names.map((n) => item(n, n, n === chosen, "mdi:account-circle-outline", !!fixed)).join("")}${admin ? item("__new", t.profNewEntry, false, "mdi:plus") + item("__edit", t.profEditEntry, false, "mdi:pencil-outline") : ""}</div>`;
     },
     // Profiles tab: which profile is edited, load / rename / delete, save as new, assign users. Dangerous steps ask first.
@@ -4601,7 +4610,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const held = this.offsetHeight;
       if (held) this.style.minHeight = `${held}px`;
       this.shadowRoot.innerHTML = `${this._style()}
-      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
+      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
         ${this._edit ? `<div class="edittool"><div class="edmode">${this._edModeHtml(t)}</div>
           ${this._cancelAsk ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>` : `<div class="editrow">${this._editMode === "profiles" ? "" : `<button class="editcancel" data-edit="cancel" title="${esc(t.cancelTip)}"><ha-icon icon="mdi:close"></ha-icon><span>${t.cancel}</span></button>`}<button class="editdone" data-edit="off"><ha-icon icon="mdi:check"></ha-icon><span>${t.done}</span></button></div>`}</div>` : ""}
         ${this._skinHead(skin, sel)}${blocks || `<p class="empty">${t.empty}</p>`}${this._skinTail(skin)}
@@ -5000,8 +5009,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return body;
     },
     // One row per option: label left, control right; the whole row is a <label>, so tapping anywhere switches or focuses.
-    _swRow(label, attrs, on) {
-      return `<label class="erow swrow"><span>${label}</span><span class="sw"><input type="checkbox" ${attrs} ${on ? "checked" : ""}><i></i></span></label>`;
+    _swRow(label, attrs, on2) {
+      return `<label class="erow swrow"><span>${label}</span><span class="sw"><input type="checkbox" ${attrs} ${on2 ? "checked" : ""}><i></i></span></label>`;
     },
     _selRow(label, attrs, items, cur) {
       return `<label class="erow"><span>${label}</span><select ${attrs}>${Object.entries(items).map(([k, v]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
@@ -5030,7 +5039,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
-          ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._trait("glassLook") ? this._selRow(t.glassLook, "data-glasslook", t.glassLooks, this._glassLook()) : ""}
           ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
         ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -5129,7 +5138,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const l = this._links(h)[0] || {};
       const acts = h.list.filter((n) => n !== "PowerOff");
       const opts = [`<option value="">${t.linkNone}</option>`, ...acts.map((n) => `<option value="${esc(n)}" ${l.activity === n ? "selected" : ""}>${esc(n)}</option>`)].join("");
-      const checks = (name2, items, on) => items.map(([v, label]) => `<label class="chk"><input type="checkbox" data-link="${name2}" value="${esc(v)}" ${(on || []).includes(v) ? "checked" : ""}>${esc(label)}</label>`).join("");
+      const checks = (name2, items, on2) => items.map(([v, label]) => `<label class="chk"><input type="checkbox" data-link="${name2}" value="${esc(v)}" ${(on2 || []).includes(v) ? "checked" : ""}>${esc(label)}</label>`).join("");
       const doms = ["media_player", "remote", "switch", "light", "input_boolean", "binary_sensor"];
       return `<div class="linkbox esec" data-t="acts" data-hub="${esc(h.id)}"><div class="etitle">${t.secLink}</div>
       <label class="erow"><span>${t.linkEntity}</span>${this._entSelect("data-link", Object.keys(this._hass.states || {}).filter((id) => doms.includes(id.split(".")[0])), l.entity || "", t)}</label>
@@ -5163,7 +5172,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-activestyle]": "active_style",
         "[data-keystyle]": "key_style",
         "[data-labels]": "labels",
-        "[data-glow]": "glow"
+        "[data-glow]": "glow",
+        "[data-glasslook]": "glass_look"
       };
       const locked = /* @__PURE__ */ new Map();
       Object.entries(keys).forEach(([sel, key]) => {
@@ -5203,7 +5213,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         '[data-direct="model"]': "directModel",
         "[data-hubname]": "hubName",
         "[data-hubvis]": "hubVis",
-        '[data-setting="noBlur"]': "noBlur",
+        "[data-glasslook]": "glassLook",
         '[data-setting="jumpRunning"]': "jumpRunning",
         "[data-offrel]": "offRelated",
         '[data-setting="helpManual"]': "helpManual",
@@ -5324,6 +5334,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-layout]")?.addEventListener("change", (e) => this._saveSettings({ layout: e.target.value }));
       root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
       root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
+      root.querySelector("select[data-glasslook]")?.addEventListener("change", (e) => this._saveSettings({ glassLook: e.target.value }));
       root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
       const applyLook = (hub, key) => {
         const rs = { ...this._settings().roomSkins || {} };
@@ -5426,9 +5437,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     // Tube radio, device view: On/Off as a sunken brass button in a bezel with a lamp behind (known state), see _bindSkinDecor.
     _powerKnob(hub, dev, real) {
       const pend = this._powerPending(hub, dev);
-      const on = pend ?? real;
+      const on2 = pend ?? real;
       const a = `data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}"`;
-      return `<span class="pwknob ${on ? "on" : ""} ${pend !== null ? "pend" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
+      return `<span class="pwknob ${on2 ? "on" : ""} ${pend !== null ? "pend" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on2 ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
     },
     // The collapsed header no longer sticks (0.16): the offset below the Home Assistant bar was wrong in views with tabs and pushed it over the keys.
     _bindStickyHeader() {
@@ -5468,11 +5479,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._segNames(root);
       root.querySelectorAll("button[data-swpwr]").forEach((el) => el.addEventListener("click", () => {
         const { hub, device } = el.dataset;
-        const on = el.getAttribute("aria-pressed") !== "true";
-        el.setAttribute("aria-pressed", on ? "true" : "false");
-        el.parentElement.classList.toggle("on", on);
+        const on2 = el.getAttribute("aria-pressed") !== "true";
+        el.setAttribute("aria-pressed", on2 ? "true" : "false");
+        el.parentElement.classList.toggle("on", on2);
         el.parentElement.classList.add("pend");
-        this._swPowerSend(hub, device, on);
+        this._swPowerSend(hub, device, on2);
       }));
     }
   };
@@ -5733,9 +5744,180 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;
 
+  // src/shared/skin-css-020.js
+  var G2 = 'ha-card[data-skin="glass"]';
+  var C = 'ha-card[data-skin="clay"]';
+  var X = 'ha-card[data-skin="nixie"]';
+  var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
+  var ACTIVE = [".tile.on", ".actbtn.acton", ".key.sel", ".mini.sel", ".tile.dev.sel", ".tile.going"];
+  var on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
+  var onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
+  var lit = (list, mix, ink = "var(--gi)") => `
+      ${on(G2, list)} { background: color-mix(in srgb, var(--gc) ${mix}, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important;
+        box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 26%, transparent), 0 0 14px color-mix(in srgb, var(--gc) 32%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
+      ${G2}.gl-a :is(${list.join(", ")}) { color: ${ink} !important; text-shadow: none; }
+      ${G2}.gl-b :is(${list.join(", ")}) { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 9px var(--gc); }
+      ${G2}.gl-c :is(${list.join(", ")}) { color: #fff !important; text-shadow: 0 0 5px color-mix(in srgb, var(--gc) 90%, #000), 0 0 11px var(--gc); }
+      ${G2}.gl-b :is(${list.join(", ")}) ha-icon, ${G2}.gl-c :is(${list.join(", ")}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); }`;
+  var SKIN_CSS_020 = `
+      /* ---------- Glas: dark acrylic plates, light from behind ---------- */
+      ${G2} { --gl-green: #2dff7a; --gl-blue: #3da5ff; --gl-red: #ff5a4a; --gl-amber: #ffb340; --gl-rest: #aab6bf; --gl-base: #131a20; --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff;
+        font-family: "Segoe UI", Roboto, Arial, sans-serif; background-color: #0a0f14; background-image: radial-gradient(circle at 20% 0, #13202b, #070a0e 70%); color: var(--hr-text); }
+      ${G2} * { backdrop-filter: none; }
+      /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, amber = running */
+      ${G2} .key[data-cmd*="Ok"], ${G2} .key[data-cmd*="Select"], ${G2} .key[data-cmd*="Play"], ${G2} .key[data-cmd*="Enter"], ${G2} .d.ok, ${G2} .pbtn.pri { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
+      ${G2} .key[data-cmd*="Power"], ${G2} .key[data-cmd*="Stop"], ${G2} .key[data-cmd*="Record"], ${G2} .key.pon, ${G2} .key.warn, ${G2} .tile.off, ${G2} .editdone.warn { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; }
+      ${G2} .tile:not(.dev), ${G2} .actbtn, ${G2} .key.sel, ${G2} .mini.sel { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; }
+      ${G2} .tile.dev.inuse { --gc: var(--gl-green); --gb: #2dff7a; --gi: #05261a; }
+      ${G2} .tile.dev.sel { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
+      ${G2} .hint-row.r { --gc: var(--gl-red); --gb: #ff7a5a; --gi: #fff; } ${G2} .hint-row.o { --gc: var(--gl-amber); --gb: #ffc24a; --gi: #2a1700; } ${G2} .hint-row.b { --gc: var(--gl-blue); --gb: #5cb4ff; --gi: #fff; }
+      /* the resting plate: dark, light grey lettering */
+      ${onNot(G2, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead"], ":not(.ghost):not(.svc)")} {
+        border: 1px solid rgba(255,255,255,.16) !important; border-radius: 2px !important; background: var(--gl-base) !important; background-image: none !important; color: var(--hr-text);
+        box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: background .3s, box-shadow .3s, color .3s, border-color .3s; }
+      ${G2} .key:not(.ghost):not(.svc), ${G2} .kk, ${G2} .pill, ${G2} .chip, ${G2} .d, ${G2} .actbtn, ${G2} .tile { color: var(--gl-rest); }
+      ${G2} .key ha-icon, ${G2} .kk ha-icon, ${G2} .pill ha-icon, ${G2} .chip ha-icon, ${G2} .d ha-icon, ${G2} .actbtn ha-icon, ${G2} .tile ha-icon, ${G2} .tile.dev ha-icon, ${G2} .colorful .cell ha-icon, ${G2} .colorful .rocker .rk ha-icon, ${G2} .colorful .power .key ha-icon { color: inherit !important; }
+      ${G2} .tile.off ha-icon { color: var(--gl-red) !important; }
+      ${G2} .key.ghost, ${G2} .dpad, ${G2} .rocker { background: none !important; box-shadow: none !important; border-color: transparent !important; }
+      ${G2} .dpad::before, ${G2} .dpad::after { display: none; }
+      ${G2} .tile, ${G2} .actbtn { position: relative; }
+      ${G2} .color.red { border-bottom: 3px solid var(--gl-red) !important; } ${G2} .color.green { border-bottom: 3px solid var(--gl-green) !important; } ${G2} .color.yellow { border-bottom: 3px solid var(--gl-amber) !important; } ${G2} .color.blue { border-bottom: 3px solid var(--gl-blue) !important; }
+      ${G2} .tile:active, ${G2} .tile.on { transform: none; }
+      ${G2} .tile.locked, ${G2} .key:disabled, ${G2} .actbtn.miss { opacity: .55; }
+      /* pressed plates: lit as strong as the light style says; steady state (running) dimmer */
+      ${lit(PRESSED, "var(--gl-p)")}
+      ${lit(ACTIVE, "var(--gl-pa)", "#fff")}
+      ${G2}.gl-a { --gl-p: 70%; --gl-pa: 42%; } ${G2}.gl-b { --gl-p: 22%; --gl-pa: 13%; } ${G2}.gl-c { --gl-p: 46%; --gl-pa: 28%; }
+      ${G2}.gl-a .hint-row { --gl-h: 55%; } ${G2}.gl-b .hint-row { --gl-h: 18%; } ${G2}.gl-c .hint-row { --gl-h: 36%; }
+      ${G2} .tile.on { box-shadow: inset 0 0 18px color-mix(in srgb, var(--gc) 22%, transparent), 0 0 10px color-mix(in srgb, var(--gc) 24%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
+      ${G2}.gl-a .tile.on :is(span, small, ha-icon), ${G2}.gl-a .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
+      ${G2}.gl-b .tile.on :is(span, small), ${G2}.gl-b .actbtn.acton span { color: var(--gb) !important; } ${G2}.gl-b .tile.on, ${G2}.gl-b .actbtn.acton { opacity: 1; }
+      ${G2}.gl-c .tile.on :is(span, small, ha-icon), ${G2}.gl-c .actbtn.acton :is(span, ha-icon) { color: #fff !important; }
+      /* hint and info lines: the whole plate lights in the colour of the message */
+      ${G2} .hint-row { background: color-mix(in srgb, var(--gc) var(--gl-h, 36%), var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; padding: 8px 10px; }
+      ${G2}.gl-a .hint-row, ${G2}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G2}.gl-b .hint-row, ${G2}.gl-b .hint-row > ha-icon { color: var(--gb) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
+      ${G2}.gl-c .hint-row, ${G2}.gl-c .hint-row > ha-icon { color: #fff !important; text-shadow: 0 0 5px var(--gc); }
+      ${G2} .hint-row button { border-radius: 2px; background: rgba(255,255,255,.14); color: inherit; border: 1px solid rgba(255,255,255,.35); }
+      /* device page: green plate + one square = belongs to the running activity, blue + white frame + three squares = shown */
+      ${G2} .tile.dev.inuse::before, ${G2} .tile.dev.sel::before { content: ""; position: absolute; left: 7px; top: 14px; width: 5px; height: 5px; background: #fff; box-shadow: 0 0 5px #fff; pointer-events: none; }
+      ${G2} .tile.dev.sel::before { box-shadow: 8px 0 0 #fff, 4px -8px 0 #fff, 0 0 5px #fff; }
+      ${G2} .tile.dev.sel { border-color: #fff !important; box-shadow: inset 0 0 0 1px #fff, 0 0 14px color-mix(in srgb, var(--gc) 35%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; }
+      /* hold ("all off"): the whole plate brightens from within, no rising bar */
+      ${G2} .tile.holdsw::after, ${G2} .tile.locked::after { transform: none !important; opacity: 0; background: color-mix(in srgb, var(--gl-red) 70%, transparent) !important; transition: opacity .7s linear; }
+      ${G2} .tile.holdsw.holding::after, ${G2} .tile.locked.holding::after { opacity: 1; }
+      ${G2} .actbtn.holding::after { transform: none !important; opacity: 0; background: color-mix(in srgb, var(--gl-red) 70%, transparent) !important; animation: glhold .7s linear 1 forwards !important; }
+      @keyframes glhold { from { opacity: 0; } to { opacity: 1; } }
+      /* header: plates with large white, softly glowing symbols */
+      ${G2} .hubtabs button { border-radius: 2px; background: none; }
+      ${G2} .hubtabs .ico { width: 36px; height: 36px; background: #1d2832 !important; border-color: rgba(255,255,255,.28) !important; }
+      ${G2} .hubtabs ha-icon, ${G2} .ib ha-icon { --mdc-icon-size: 22px; color: #fff; filter: drop-shadow(0 0 4px rgba(255,255,255,.7)); }
+      ${G2} .hubtabs button.sel .ico { background: color-mix(in srgb, var(--gl-amber) 38%, var(--gl-base)) !important; border-color: color-mix(in srgb, var(--gl-amber) 60%, transparent) !important; }
+      ${G2} .ib { background: #1d2832 !important; border: 1px solid rgba(255,255,255,.28) !important; color: #fff; }
+      ${G2} .ib.gear[class*="sev-"] ha-icon { color: var(--gc, #fff); }
+      ${G2} .etabs button, ${G2} .favkind button, ${G2} .editdone, ${G2} .editcancel { border-radius: 2px; }
+      ${G2} .seg .th { background: color-mix(in srgb, var(--gl-amber) 55%, var(--gl-base)); border-radius: 2px; box-shadow: 0 0 10px rgba(255,179,64,.3); }
+      ${G2} .seg .lab.a { color: #fff; }
+      /* Ja/Nein: an acrylic plate that turns red or green, no sliding */
+      ${G2} .sw i { border-radius: 2px; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); }
+      ${G2} .sw i::after { content: "\\2715"; inset: 0; top: 0; left: 0; width: auto; height: auto; border-radius: 0; background: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #ffd9d3; transform: none !important; }
+      ${G2} .sw input:checked + i { background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
+      ${G2} .sw input:checked + i::after { content: "\\2713"; color: #d9ffe8; }
+      @keyframes glflash { 0% { filter: brightness(1.9); } 100% { filter: none; } }
+      /* volume: a plate that changes colour with the level (quiet greenish to loud red), no bar */
+      ${G2} .volslider { -webkit-appearance: none; appearance: none; background: transparent; accent-color: var(--gl-green); }
+      ${G2} .volslider::-webkit-slider-runnable-track { border-radius: 2px; border: 1px solid rgba(255,255,255,.28); background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); box-shadow: 0 4px 8px rgba(0,0,0,.45); }
+      ${G2} .volslider.h::-webkit-slider-runnable-track { height: 52px; } ${G2} .volslider.v::-webkit-slider-runnable-track { width: 100%; }
+      ${G2} .volslider::-webkit-slider-thumb { -webkit-appearance: none; background: #fff; box-shadow: 0 0 8px #fff; border-radius: 0; }
+      ${G2} .volslider.h::-webkit-slider-thumb { width: 3px; height: 52px; } ${G2} .volslider.v::-webkit-slider-thumb { height: 3px; width: 44px; }
+      ${G2} .volslider::-moz-range-track { border-radius: 2px; background: color-mix(in srgb, color-mix(in srgb, #ff5a4a calc(var(--v, 0) * 1%), #2dff7a) calc(16% + var(--v, 0) * .34%), var(--gl-base)); border: 1px solid rgba(255,255,255,.28); height: 52px; }
+      ${G2} .volslider::-moz-range-thumb { background: #fff; border: none; border-radius: 0; width: 3px; height: 52px; }
+      /* device with a known power state: one plate that is red (off) or green (on), like the Ja/Nein plate */
+      ${G2} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${G2} .pwlab { flex: 1; min-width: 0; color: var(--gl-rest); font-weight: 600; }
+      ${G2} .pwio { display: flex; gap: 10px; } ${G2} .key.pwio { width: 52px; min-height: 44px; flex-direction: column; gap: 1px; padding: 0; }
+      ${G2} .pwknob { flex: none; width: 68px; height: 44px; position: relative; }
+      ${G2} .pwknob .knob { width: 100%; height: 100%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 2px; color: #ffd9d3; background: color-mix(in srgb, var(--gl-red) 38%, var(--gl-base)); border: 1px solid color-mix(in srgb, var(--gl-red) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-red) 30%, transparent); transition: background .3s, box-shadow .3s; }
+      ${G2} .pwknob.on .knob { color: #d9ffe8; background: color-mix(in srgb, var(--gl-green) 38%, var(--gl-base)); border-color: color-mix(in srgb, var(--gl-green) 60%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gl-green) 30%, transparent); animation: glflash .35s ease-out 1; }
+      ${G2} .pwknob .knob ha-icon { color: inherit !important; --mdc-icon-size: 22px; } ${G2} .pwknob.pend .knob { animation: glpend .6s ease-in-out infinite alternate; }
+      @keyframes glpend { from { filter: brightness(.8); } to { filter: brightness(1.6); } }
+      @media (prefers-reduced-motion: reduce) { ${G2} *, ${G2} *::after { animation: none !important; transition: none !important; } }
+
+      /* ---------- Knetmasse: bubbles you press, dents for surfaces and states ---------- */
+      ${C} { --cl-green: #eaf3e4; --cl-coral: #d94a30; --cl-dent: #bcd3b3; --cl-shade: rgba(60,100,50,.28); --hr-fire: #b85f00; }
+      ${on(C, [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill", ".chip", ".d:where(:not(.ok))", ".actbtn", ".tile", ".linkbar button", ".pbtn", ".ib", ".hubtabs button.sel", ".seg .th"])} {
+        border: none !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), radial-gradient(circle at 50% 120%, var(--cl-shade), transparent 60%), var(--cl-green) !important;
+        box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 6px 8px rgba(50,80,40,.35), 0 2px 0 rgba(50,80,40,.25) !important;
+        transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, background .25s, color .25s; color: var(--hr-text); }
+      ${C} .d.ok { background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), var(--cl-green) !important; box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 6px 8px rgba(50,80,40,.35) !important; }
+      ${C} .dpad::before, ${C} .dpad::after { display: none; }
+      ${C} .status.chip { background: var(--cl-dent) !important; box-shadow: inset 0 4px 8px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; border: none !important; }
+      ${on(C, [".key ha-icon", ".kk ha-icon", ".pill ha-icon", ".chip ha-icon", ".d ha-icon", ".tile ha-icon", ".actbtn ha-icon"])} { color: var(--hr-text); }
+      ${C} .colorful .cell ha-icon, ${C} .colorful .rocker .rk ha-icon, ${C} .colorful .power .key ha-icon { color: var(--hr-text) !important; }
+      /* pressed: squashed, lower, highlight smaller; springs back */
+      ${on(C, PRESSED)} { transform: scale(1.04, .92) translateY(3px) !important;
+        box-shadow: inset -2px -3px 7px var(--cl-shade), inset 2px 3px 5px rgba(255,255,255,.8), 0 2px 3px rgba(50,80,40,.35) !important; }
+      /* running / selected: a coral bubble, slightly pressed, soft red glow, one jelly wobble when it appears */
+      ${on(C, ACTIVE)}, ${C} .hubtabs button.sel .ico { color: #fff !important; transform: scale(.98, .95) translateY(2px);
+        background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 120%, rgba(120,20,5,.4), transparent 60%), var(--cl-coral) !important;
+        box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 2px 3px rgba(50,80,40,.35), 0 6px 18px rgba(228,87,61,.45) !important; }
+      ${on(C, [".tile.on", ".actbtn.acton", ".tile.going"])} { animation: clayjelly .4s ease-out 1; }
+      ${on(C, [".tile.on ha-icon", ".tile.on span", ".tile.on small", ".actbtn.acton span", ".actbtn.acton ha-icon", ".tile.dev.sel ha-icon", ".tile.dev.sel span", ".tile.dev.sel small", ".key.sel *", ".mini.sel *"])} { color: #fff !important; }
+      @keyframes clayjelly { 0% { transform: scale(1, 1); } 25% { transform: scale(1.07, .9); } 55% { transform: scale(.96, 1.06); } 80% { transform: scale(1.02, .98); } 100% { transform: scale(.98, .95) translateY(2px); } }
+      /* not available: a deep dent */
+      ${on(C, [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".pill.ghost"])} { background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.55) !important; opacity: 1; filter: none; }
+      /* hold: sinks deeper and turns red */
+      ${C} .tile.holdsw.holding, ${C} .actbtn.holding, ${C} .tile.off.holding { transform: scale(.97, .92) translateY(4px); }
+      ${C} .tile.holdsw::after, ${C} .tile.locked::after { background: color-mix(in srgb, var(--cl-coral) 60%, transparent); border-radius: inherit; }
+      /* device page: devices of the running activity carry a soft pink rim (strong at the edge, fading to the centre) and wobble once, a little staggered */
+      ${C} .tile.dev.inuse { background: radial-gradient(circle at 30% 22%, #fff 0 6%, rgba(255,255,255,0) 26%), radial-gradient(ellipse at center, rgba(255,190,205,0) 45%, rgba(255,170,190,.32) 100%), var(--cl-green) !important;
+        box-shadow: inset 0 0 12px 1px rgba(255,160,185,.34), inset -3px -6px 10px rgba(60,100,50,.2), inset 3px 4px 6px rgba(255,255,255,.9), 0 6px 8px rgba(50,80,40,.35) !important; animation: claywob .5s ease-out 1 both; }
+      ${C} .tile.dev.inuse:nth-child(2) { animation-delay: .06s; } ${C} .tile.dev.inuse:nth-child(3) { animation-delay: .12s; } ${C} .tile.dev.inuse:nth-child(4) { animation-delay: .18s; } ${C} .tile.dev.inuse:nth-child(n+5) { animation-delay: .24s; }
+      @keyframes claywob { 0% { transform: scale(1); } 30% { transform: scale(1.06, .93) translateY(2px); } 60% { transform: scale(.95, 1.05) translateY(-2px); } 100% { transform: scale(1); } }
+      ${C} .tile.dev.sel { animation: none; }
+      /* switch: the track is a dent, the bubble travels and turns redder on the way */
+      ${C} .sw i { background: #a9c79f; box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
+      ${C} .sw i::after { background: radial-gradient(circle at 30% 25%, #fff 0 12%, rgba(255,255,255,0) 40%), #eaf3e4; box-shadow: inset -2px -3px 5px var(--cl-shade), 0 3px 4px rgba(50,80,40,.4); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), background .3s; }
+      ${C} .sw input:checked + i { background: #a9c79f; }
+      ${C} .sw input:checked + i::after { background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.7) 0 12%, rgba(255,255,255,0) 40%), var(--cl-coral); animation: claysw .35s ease-out 1; }
+      @keyframes claysw { 0% { transform: translateX(0) scale(1, 1); background-color: #eaf3e4; } 40% { transform: translateX(14px) scale(1.25, .82); background-color: #f0a08e; } 100% { transform: translateX(20px) scale(1, 1); background-color: #e4573d; } }
+      /* volume: only the dent is filled, the colour runs from light salmon to red by position, no knob */
+      ${C} .volslider { -webkit-appearance: none; appearance: none; background: transparent; }
+      ${C} .volslider.h::-webkit-slider-runnable-track { height: 30px; border-radius: 999px; background: linear-gradient(90deg, transparent calc(var(--v, 0) * 1%), var(--cl-dent) calc(var(--v, 0) * 1%)), linear-gradient(90deg, #f7b7a5, #e4573d); box-shadow: inset 0 4px 7px rgba(40,70,35,.5); }
+      ${C} .volslider.v::-webkit-slider-runnable-track { width: 30px; border-radius: 999px; background: linear-gradient(0deg, transparent calc(var(--v, 0) * 1%), var(--cl-dent) calc(var(--v, 0) * 1%)), linear-gradient(0deg, #f7b7a5, #e4573d); box-shadow: inset 4px 0 7px rgba(40,70,35,.5); }
+      ${C} .volslider::-webkit-slider-thumb { -webkit-appearance: none; width: 0; height: 0; background: none; box-shadow: none; }
+      ${C} .volslider.h::-moz-range-track { height: 30px; border-radius: 999px; background: var(--cl-dent); box-shadow: inset 0 4px 7px rgba(40,70,35,.5); }
+      ${C} .volslider::-moz-range-progress { background: linear-gradient(90deg, #f7b7a5, #e4573d); height: 30px; border-radius: 999px; }
+      ${C} .volslider::-moz-range-thumb { width: 0; height: 0; border: none; background: none; }
+      /* header: rooms as bubbles, the symbol sits directly on the bubble; hints as a big dent with bubbles inside */
+      ${C} .hubtabs button { background: none !important; box-shadow: none !important; }
+      ${C} .hubtabs .ico { background: none !important; box-shadow: none !important; }
+      ${C} .hubtabs button.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff; box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 6px 14px rgba(228,87,61,.4) !important; border-radius: 999px; }
+      ${C} .hubtabs button.sel .ico { background: none !important; box-shadow: none !important; transform: none; animation: none; }
+      ${C} .hubtabs button.sel ha-icon { color: #fff; } ${C} .hubtabs .fdot ha-icon, ${C} .hubtabs button.sel .fdot ha-icon { color: var(--hr-fire); }
+      ${C} .ib { border-radius: 50% !important; }
+      ${C} .hint-row, ${C} .helpbox, ${C} .infopanel { background: var(--cl-dent) !important; box-shadow: inset 0 5px 9px rgba(40,70,35,.45), inset 0 -2px 3px rgba(255,255,255,.55) !important; border-radius: 20px; }
+      ${C} .hint-row button { border-radius: 999px; background: var(--cl-green); color: var(--hr-text); box-shadow: inset -2px -3px 6px var(--cl-shade), inset 2px 3px 4px rgba(255,255,255,.9), 0 3px 4px rgba(50,80,40,.3); }
+      ${C} .sdot.lit { box-shadow: inset -1px -1px 2px rgba(110,20,5,.4), 0 0 6px var(--hr-accent); }
+      /* device with a known power state: a dent with a bubble that travels and turns coral */
+      ${C} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${C} .pwlab { flex: 1; min-width: 0; color: var(--hr-text); font-weight: 600; }
+      ${C} .pwio { display: flex; gap: 10px; } ${C} .key.pwio { width: 52px; min-height: 44px; flex-direction: column; gap: 1px; padding: 0; }
+      ${C} .pwknob { flex: none; position: relative; width: 70px; height: 38px; border-radius: 999px; background: #a9c79f; box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
+      ${C} .pwknob .knob { position: absolute; left: 3px; top: 3px; width: 32px; height: 32px; padding: 0; min-height: 0; border-radius: 50% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+      ${C} .pwknob .knob ha-icon { --mdc-icon-size: 16px; }
+      ${C} .pwknob.on .knob { transform: translateX(32px); color: #fff !important; background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.7) 0 12%, rgba(255,255,255,0) 40%), var(--cl-coral) !important; animation: claysw .35s ease-out 1; }
+      ${C} .pwknob.on .knob ha-icon { color: #fff !important; } ${C} .pwknob.pend .knob { animation: claypend .6s ease-in-out infinite alternate; }
+      @keyframes claypend { from { filter: brightness(.9); } to { filter: brightness(1.2); } }
+      @media (prefers-reduced-motion: reduce) { ${C} *, ${C} *::after { animation: none !important; transition: none !important; } }
+
+      /* ---------- Nixie: app keys of the Fire TV in graphite with a dim amber legend, no brand colours ---------- */
+      ${X} .key.svc, ${X} .appcell.svc { background: linear-gradient(180deg, #2c2520, #1b1612) !important; color: #c8964a !important; border: 1px solid #5a4630 !important; box-shadow: inset 0 1px 0 rgba(255,220,160,.15), 0 2px 4px rgba(0,0,0,.5) !important; }
+      ${X} .key.svc ha-icon, ${X} .key.svc b, ${X} .key.svc small, ${X} .key.svc span { color: #c8964a !important; filter: none; }
+      ${X} .appcell.svc.on { border-color: #ff9a3a !important; box-shadow: inset 0 0 0 1px #ff9a3a, 0 0 10px rgba(255,154,58,.45) !important; }
+      ${X} .appcell.svc.on ha-icon, ${X} .appcell.svc.on b, ${X} .appcell.svc.on small { color: #ffb84a !important; filter: drop-shadow(0 0 4px #ff9a3a); }
+`;
+
   // src/shared/skin-css-new.js
   var W = 'ha-card[data-skin="thermal"]';
-  var X = 'ha-card[data-skin="nixie"]';
+  var X2 = 'ha-card[data-skin="nixie"]';
   var N = 'ha-card[data-skin="nostromo"]';
   var R2 = 'ha-card[data-skin="radio"]';
   var T2 = 'ha-card[data-skin="terminal"]';
@@ -5763,7 +5945,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
-      ${W} .key:has(span[data-segtxt]) ha-icon { display: none; }
+      ${W} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
+      /* keyboard keys: icon keys keep their icon (the small label is hidden on narrow screens), held modifiers light up like any active key, narrow keys leave room for the slanted corners */
+      ${W} .kk.isfav.shiftkey, ${W} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W} .kk.isfav.shiftkey *, ${W} .kk.shiftkey.on * { color: #2a0600 !important; }
+      ${W} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
       ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
       ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
       /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
@@ -5793,12 +5978,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .hubtabs button.sel { background: linear-gradient(90deg, #6a1fb0, #ff3a2a); color: #fff; border-color: transparent; } ${W} .hubtabs button { color: #6fd0c0; }
       /* settings: every field follows the skin (closed dropdown, its list where the browser allows, text fields, labels) */
       ${W} input[type="text"], ${W} input[type="search"], ${W} input[type="number"], ${W} textarea { background: #0a0724; color: #6fd0c0; border: 1px solid #5b3fd0; border-radius: 0; } ${W} select option { background: #0a0724; color: #6fd0c0; }
-      ${X} input[type="text"], ${X} input[type="search"], ${X} input[type="number"], ${X} textarea { background: #120a08; color: #f0d9a8; border: 1px solid #8a6a2a; border-radius: 10px; } ${X} select option { background: #120a08; color: #f0d9a8; }
+      ${X2} input[type="text"], ${X2} input[type="search"], ${X2} input[type="number"], ${X2} textarea { background: #120a08; color: #f0d9a8; border: 1px solid #8a6a2a; border-radius: 10px; } ${X2} select option { background: #120a08; color: #f0d9a8; }
       ${N} input[type="text"], ${N} input[type="search"], ${N} input[type="number"], ${N} textarea { background: #0d0700; color: #ffb000; border: 1px solid #7a5200; border-radius: 0; font-family: inherit; } ${N} select option { background: #120a00; color: #ffb000; }
       ${R2} input[type="text"], ${R2} input[type="search"], ${R2} input[type="number"], ${R2} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R2} select option { background: #2a1a10; color: #f1e3c1; }
-      ${W} .editbox, ${W} .egrp, ${W} .erow { color: #6fd0c0; } ${X} .editbox, ${X} .egrp, ${X} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
-      ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
-      @keyframes thlock { 0% { background: ${tri(0)}; } 33% { background: ${tri(1)}; } 66% { background: ${tri(2)}; } 100% { background: ${tri(3)}; } }
+      ${W} .editbox, ${W} .egrp, ${W} .erow { color: #6fd0c0; } ${X2} .editbox, ${X2} .egrp, ${X2} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
+      ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X2} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
+      @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
       /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
       ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
@@ -5806,66 +5991,66 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
-      ${R2} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      ${R2} .fdot, ${X2} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X2} .fdot ha-icon { filter: none; }
       /* Fire TV not reachable: a clearly readable dashed badge instead of a dim black square */
-      ${W} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
-      ${W} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X} .fdot.f-unknown { color: #2a170a; }
-      ${W} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
+      ${W} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
+      ${W} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { color: #2a170a; }
+      ${W} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X2} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
       ${T2} .editdone.warn, ${T2} .key.warn { color: #021a05; }
       ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
       ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
       ${T2} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T2} .lockmark.free { color: #1fa83c; }
-      ${R2} .lockmark.on, ${X} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R2} .lockmark.free, ${X} .lockmark.free { color: #9c8450; }
-      ${R2} .ib.gear .gbadge, ${X} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
+      ${R2} .lockmark.on, ${X2} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R2} .lockmark.free, ${X2} .lockmark.free { color: #9c8450; }
+      ${R2} .ib.gear .gbadge, ${X2} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
-      ${X} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
-      ${X} .grid { counter-reset: nx; }
-      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 1px solid #9a9a9a; border-radius: 26px 26px 6px 6px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
-      ${X} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
-      ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
-      ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
-      ${X} .tile.on, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
+      ${X2} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
+      ${X2} .grid { counter-reset: nx; }
+      ${X2} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 1px solid #9a9a9a; border-radius: 26px 26px 6px 6px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
+      ${X2} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
+      ${X2} .tile ha-icon { display: none; } ${X2} .tile.off ha-icon { display: inline-block; }
+      ${X2} .tile span, ${X2} .tile small { font-size: 11px; color: #a8743a; }
+      ${X2} .tile.on, ${X2} .tile.dev.sel, ${X2} .tile.dev.inuse { border-color: #ffb050; box-shadow: inset 0 0 18px rgba(255,150,40,.35), 0 0 12px rgba(255,150,40,.45); }
       /* a stored 'fill' active style must not paint the lit tube orange (digit and name would vanish) */
-      ${X} .tile.on, ${X} .tile.going, ${X} .tile.dev.sel, ${X} .tile.dev.inuse { background: linear-gradient(180deg, #1a0d06, #050302) !important; }
-      ${X} .tile.on::before, ${X} .tile.dev.sel::before, ${X} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
-      ${X} .tile.on span, ${X} .tile.dev.sel span, ${X} .tile.dev.inuse span { color: #ffd9a0; }
+      ${X2} .tile.on, ${X2} .tile.going, ${X2} .tile.dev.sel, ${X2} .tile.dev.inuse { background: linear-gradient(180deg, #1a0d06, #050302) !important; }
+      ${X2} .tile.on::before, ${X2} .tile.dev.sel::before, ${X2} .tile.dev.inuse::before { color: #ff9a3a; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.7); }
+      ${X2} .tile.on span, ${X2} .tile.dev.sel span, ${X2} .tile.dev.inuse span { color: #ffd9a0; }
       /* keys: graphite rectangles with a chrome edge and an engraved legend; direct keys (sent straight to the device) have a dim glowing legend, active ones glow bright and sit pressed in */
-      ${X} .key:not(.color), ${X} .rocker { border: 1px solid #9a9a9a; background: linear-gradient(180deg, #2c2c2e, #161617); color: #d8ccb0; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); transition: transform .12s ease, box-shadow .12s ease; }
-      ${X} .key:not(.color) ha-icon, ${X} .rocker ha-icon { color: #d8ccb0 !important; }
-      ${X} .key[data-adb]:not(.color):not(.appcell), ${X} .key.ic-row:not(.color) { color: #e59a4a; text-shadow: 0 0 6px rgba(255,130,30,.55); border-color: #b08a5a; }
-      ${X} .key[data-adb]:not(.color):not(.appcell) ha-icon, ${X} .key.ic-row:not(.color) ha-icon { color: #e59a4a !important; filter: drop-shadow(0 0 4px rgba(255,130,30,.6)); }
-      ${X} .key.sel:not(.mute):not(.color), ${X} .key.on:not(.mute):not(.color), ${X} .key.muted, ${X} .ic-row.on, ${X} .appcell.svc.on, ${X} .key.lit:not(.color), ${X} .key:active:not(.color) { transform: translateY(2px); color: #ffb25a !important; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.8); border-color: #e8d8b8; background: linear-gradient(180deg, #161617, #1f1f20) !important; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5); }
-      ${X} .key.sel:not(.color) ha-icon, ${X} .key.on:not(.color) ha-icon, ${X} .key.muted ha-icon, ${X} .ic-row.on ha-icon, ${X} .key.lit ha-icon, ${X} .key:active ha-icon { color: #ffb25a !important; filter: drop-shadow(0 0 5px #ff7a1a); }
-      ${X} .rocker .rk.mute.round, ${X} .key.mute.round { background: linear-gradient(180deg, #2c2c2e, #161617) !important; color: #d8ccb0 !important; border: 1px solid #9a9a9a; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); }
-      ${X} .rocker .rk.mute.round.muted, ${X} .key.mute.round.muted { background: linear-gradient(180deg, #161617, #1f1f20) !important; color: #ffb25a !important; border-color: #e8d8b8; transform: translateY(2px); text-shadow: 0 0 8px #ff7a1a; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5) !important; }
-      ${X} .rocker .rk.mute.round ha-icon, ${X} .key.mute.round ha-icon { color: inherit !important; }
-      ${X} .key.color { border: 1px solid rgba(255,255,255,.4); }
+      ${X2} .key:not(.color), ${X2} .rocker { border: 1px solid #9a9a9a; background: linear-gradient(180deg, #2c2c2e, #161617); color: #d8ccb0; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); transition: transform .12s ease, box-shadow .12s ease; }
+      ${X2} .key:not(.color) ha-icon, ${X2} .rocker ha-icon { color: #d8ccb0 !important; }
+      ${X2} .key[data-adb]:not(.color):not(.appcell), ${X2} .key.ic-row:not(.color) { color: #e59a4a; text-shadow: 0 0 6px rgba(255,130,30,.55); border-color: #b08a5a; }
+      ${X2} .key[data-adb]:not(.color):not(.appcell) ha-icon, ${X2} .key.ic-row:not(.color) ha-icon { color: #e59a4a !important; filter: drop-shadow(0 0 4px rgba(255,130,30,.6)); }
+      ${X2} .key.sel:not(.mute):not(.color), ${X2} .key.on:not(.mute):not(.color), ${X2} .key.muted, ${X2} .ic-row.on, ${X2} .appcell.svc.on, ${X2} .key.lit:not(.color), ${X2} .key:active:not(.color) { transform: translateY(2px); color: #ffb25a !important; text-shadow: 0 0 8px #ff7a1a, 0 0 16px rgba(255,110,20,.8); border-color: #e8d8b8; background: linear-gradient(180deg, #161617, #1f1f20) !important; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5); }
+      ${X2} .key.sel:not(.color) ha-icon, ${X2} .key.on:not(.color) ha-icon, ${X2} .key.muted ha-icon, ${X2} .ic-row.on ha-icon, ${X2} .key.lit ha-icon, ${X2} .key:active ha-icon { color: #ffb25a !important; filter: drop-shadow(0 0 5px #ff7a1a); }
+      ${X2} .rocker .rk.mute.round, ${X2} .key.mute.round { background: linear-gradient(180deg, #2c2c2e, #161617) !important; color: #d8ccb0 !important; border: 1px solid #9a9a9a; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 0 #050505, 0 4px 5px rgba(0,0,0,.6); }
+      ${X2} .rocker .rk.mute.round.muted, ${X2} .key.mute.round.muted { background: linear-gradient(180deg, #161617, #1f1f20) !important; color: #ffb25a !important; border-color: #e8d8b8; transform: translateY(2px); text-shadow: 0 0 8px #ff7a1a; box-shadow: inset 0 2px 6px #000, 0 0 0 1px #5a3a1c, 0 0 14px rgba(255,150,40,.5) !important; }
+      ${X2} .rocker .rk.mute.round ha-icon, ${X2} .key.mute.round ha-icon { color: inherit !important; }
+      ${X2} .key.color { border: 1px solid rgba(255,255,255,.4); }
       /* On/Off of a device with a known state: a toggle switch (brass hex nut, chrome lever, lamp) */
-      ${X} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${X} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
-      ${X} .pwio { display: flex; gap: 10px; } ${X} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; } ${X} .key.pwio span { font: 700 10px Georgia, serif; } ${X} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; gap: 6px; }
-      ${X} .pwknob { position: relative; flex: none; width: 64px; height: 48px; background: radial-gradient(circle at 50% 50%, #120a04 0 7px, transparent 7.5px) 15px 18px / 34px 30px no-repeat; }
-      ${X} .pwknob::before { content: ""; position: absolute; left: 15px; bottom: 0; width: 34px; height: 30px; z-index: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); }
-      ${X} .pwknob::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
-      ${X} .pwknob.on::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
-      ${X} .pwknob .knob { position: absolute; left: 26px; bottom: 14px; z-index: 2; width: 12px; height: 32px; min-height: 0; padding: 0; border: none; border-radius: 0; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; box-shadow: none; filter: none; }
-      ${X} .pwknob .knob ha-icon { display: none; } ${X} .pwknob.on .knob { transform: rotate(30deg); }
-      ${X} .pwknob.pend::after { animation: nxpend .6s ease-in-out infinite alternate; }
+      ${X2} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; } ${X2} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
+      ${X2} .pwio { display: flex; gap: 10px; } ${X2} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; } ${X2} .key.pwio span { font: 700 10px Georgia, serif; } ${X2} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; gap: 6px; }
+      ${X2} .pwknob { position: relative; flex: none; width: 64px; height: 48px; background: radial-gradient(circle at 50% 50%, #120a04 0 7px, transparent 7.5px) 15px 18px / 34px 30px no-repeat; }
+      ${X2} .pwknob::before { content: ""; position: absolute; left: 15px; bottom: 0; width: 34px; height: 30px; z-index: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); }
+      ${X2} .pwknob::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
+      ${X2} .pwknob.on::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
+      ${X2} .pwknob .knob { position: absolute; left: 26px; bottom: 14px; z-index: 2; width: 12px; height: 32px; min-height: 0; padding: 0; border: none; border-radius: 0; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; box-shadow: none; filter: none; }
+      ${X2} .pwknob .knob ha-icon { display: none; } ${X2} .pwknob.on .knob { transform: rotate(30deg); }
+      ${X2} .pwknob.pend::after { animation: nxpend .6s ease-in-out infinite alternate; }
       @keyframes nxpend { from { opacity: .35; } to { opacity: 1; } }
-      ${X} .appcell.svc { --c: #120a08 !important; --fg: #ffb84a !important; }
-      ${X} .volslider.h { -webkit-appearance: none; appearance: none; height: 20px; border: 2px solid #8a8a8a; border-radius: 10px; background: #0d0704; }
-      ${X} .volslider.h::-webkit-slider-runnable-track { height: 20px; background: transparent; } ${X} .volslider.h::-moz-range-track { height: 20px; background: transparent; }
-      ${X} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 26px; border-radius: 6px; background: linear-gradient(90deg, #ffb050, #ff7a1c); box-shadow: 0 0 12px #ff7a1c; border: none; margin-top: -4px; }
-      ${X} .volslider.h::-moz-range-thumb { width: 12px; height: 26px; border-radius: 6px; background: #ff9a3a; border: none; }
+      ${X2} .appcell.svc { --c: #120a08 !important; --fg: #ffb84a !important; }
+      ${X2} .volslider.h { -webkit-appearance: none; appearance: none; height: 20px; border: 2px solid #8a8a8a; border-radius: 10px; background: #0d0704; }
+      ${X2} .volslider.h::-webkit-slider-runnable-track { height: 20px; background: transparent; } ${X2} .volslider.h::-moz-range-track { height: 20px; background: transparent; }
+      ${X2} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 26px; border-radius: 6px; background: linear-gradient(90deg, #ffb050, #ff7a1c); box-shadow: 0 0 12px #ff7a1c; border: none; margin-top: -4px; }
+      ${X2} .volslider.h::-moz-range-thumb { width: 12px; height: 26px; border-radius: 6px; background: #ff9a3a; border: none; }
       /* toggle switch: brass hex nut with a chrome lever that is wide at the tip, plus a lamp that is always visible */
-      ${X} .sw:has(> input) { width: 64px; height: 46px; margin-left: 6px; flex: none; position: relative; }
-      ${X} .sw:has(> input) i { position: absolute; left: 14px; bottom: 0; width: 34px; height: 30px; border: none; border-radius: 0; background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); box-shadow: none; }
-      ${X} .sw:has(> input) i::before { content: ""; display: block; position: absolute; inset: 8px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a2a10, #120a04); width: auto; height: auto; top: 8px; left: 8px; }
-      ${X} .sw:has(> input) i::after { content: ""; display: block; position: absolute; left: 11px; bottom: 14px; top: auto; width: 12px; height: 32px; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; border-radius: 0; box-shadow: none; }
-      ${X} .sw:has(> input) input:checked + i::after { transform: rotate(30deg); left: 11px; }
-      ${X} .sw:has(> input)::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
-      ${X} .sw:has(> input:checked)::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
-      ${X} .hmenu { background: #24150c; border: 2px solid #8a6a2a; } ${X} select, ${X} .profchip { background-color: #120a08; border: 1px solid #8a6a2a; color: #f0d9a8; }
-      ${X} .holdoff.holding { background: #120a08 !important; }
+      ${X2} .sw:has(> input) { width: 64px; height: 46px; margin-left: 6px; flex: none; position: relative; }
+      ${X2} .sw:has(> input) i { position: absolute; left: 14px; bottom: 0; width: 34px; height: 30px; border: none; border-radius: 0; background: radial-gradient(circle at 40% 35%, #f6e2a2, #a98530 70%, #5c4210); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); box-shadow: none; }
+      ${X2} .sw:has(> input) i::before { content: ""; display: block; position: absolute; inset: 8px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a2a10, #120a04); width: auto; height: auto; top: 8px; left: 8px; }
+      ${X2} .sw:has(> input) i::after { content: ""; display: block; position: absolute; left: 11px; bottom: 14px; top: auto; width: 12px; height: 32px; background: linear-gradient(90deg, #666, #fafafa 50%, #666); clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%); transform-origin: 50% 100%; transform: rotate(-30deg); transition: transform .18s ease; border-radius: 0; box-shadow: none; }
+      ${X2} .sw:has(> input) input:checked + i::after { transform: rotate(30deg); left: 11px; }
+      ${X2} .sw:has(> input)::after { content: ""; position: absolute; right: 0; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: #5a0e06; box-shadow: 0 0 4px 1px rgba(150,20,10,.45); transition: background .2s, box-shadow .2s; pointer-events: none; }
+      ${X2} .sw:has(> input:checked)::after { background: #ff9a3a; box-shadow: 0 0 10px 3px #ff7a1a; }
+      ${X2} .hmenu { background: #24150c; border: 2px solid #8a6a2a; } ${X2} select, ${X2} .profchip { background-color: #120a08; border: 1px solid #8a6a2a; color: #f0d9a8; }
+      ${X2} .holdoff.holding { background: #120a08 !important; }
 
       /* ---------- Nostromo: amber ship computer, no screen flicker (cursor, typing, afterglow instead) ---------- */
       ${N} { font-family: "Courier New", ui-monospace, monospace; letter-spacing: .03em; border: 3px solid #5a3a00; border-radius: 6px; background-image: radial-gradient(ellipse at center, rgba(255,176,0,.06), transparent 75%); position: relative; overflow: hidden; --hr-fire: #ffb000; --hr-danger: #ffb000; }
@@ -5907,12 +6092,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes nxrefresh { from { top: -20%; } to { top: 120%; } }
 
       /* the pager clips its content with the tile radius: with big radii it cut the bottom corners of the last tile row */
-      ${X} .pager, ${R2} .pager { border-radius: 0; } ${X} .pager .pane, ${R2} .pager .pane { padding: 2px 2px 10px; }
-      ${R2} .key.kk, ${X} .key.kk { overflow: hidden; padding-left: 3px; padding-right: 3px; letter-spacing: 0; }
+      ${X2} .pager, ${R2} .pager { border-radius: 0; } ${X2} .pager .pane, ${R2} .pager .pane { padding: 2px 2px 10px; }
+      ${R2} .key.kk, ${X2} .key.kk { overflow: hidden; padding-left: 3px; padding-right: 3px; letter-spacing: 0; }
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R2} .key.ic-row.on:not(.mute) *, ${R2} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${X} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -6386,7 +6571,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .hsw input { position: absolute; opacity: 0; width: 0; height: 0; } .hsw i { width: 38px; height: 22px; border-radius: 11px; background: var(--hr-key-bg); position: relative; transition: background .15s; }
       .hsw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--hr-muted); transition: transform .15s, background .15s; }
       .hsw input:checked + i { background: var(--hr-accent); } .hsw input:checked + i::after { transform: translateX(16px); background: var(--hr-on-accent); }
-      ha-card[data-skin="glass"] { background-color: #121826; background-image: radial-gradient(circle at 12% 8%, rgba(124,196,255,.55), transparent 46%), radial-gradient(circle at 92% 28%, rgba(176,124,255,.45), transparent 50%), radial-gradient(circle at 28% 96%, rgba(64,224,208,.38), transparent 52%); }
       select, select option, select optgroup { background-color: var(--hr-opt-bg, var(--hr-select-bg, var(--card-background-color, Canvas))); color: var(--hr-text, CanvasText); }
       .lockapps small { display: block; opacity: 0.7; font-size: 0.75em; overflow-wrap: anywhere; }
       .holdoff { position: relative; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
@@ -6483,6 +6667,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @media (prefers-reduced-motion: reduce) { ha-card.fadein { animation: none; } }
       ${SKIN_CSS}
       ${SKIN_CSS_NEW}
+      ${SKIN_CSS_020}
     </style>`;
     }
   };
@@ -6596,8 +6781,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     get _edit() {
       return !!this._editMode;
     }
-    set _edit(on) {
-      this._editMode = on ? this._editMode || "settings" : null;
+    set _edit(on2) {
+      this._editMode = on2 ? this._editMode || "settings" : null;
     }
     setConfig(config) {
       this._config = { columns: 3, compact: false, ...config };
@@ -7034,14 +7219,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ]);
       if (key === this._key) return;
       this._key = key;
-      const skin = SKINS[this._config.skin] ? this._config.skin : SKINS[d?.skin] ? d.skin : "homebase";
+      const sel0 = hubs.find((h) => h.id === this._hubSel);
+      const skin = skinKey(this._config.skin || d?.roomSkins?.[sel0?.id] || d?.skin || "homebase");
+      const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
       const vars = Object.entries({ ...SKINS[skin], ...this._config.skin_vars || {} }).map(([k, v]) => `${k}:${v}`).join(";");
       const sel = hubs.find((h) => h.id === this._hubSel);
       const tabs = hubs.length > 1 ? `<div class="hubtabs">${hubs.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.effective ? "live" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.effective ? "mdi:lock" : roomIcon(h.name)}"></ha-icon></span><span class="rn">${esc(h.name)}</span></button>`).join("")}</div>` : "";
       const body = !d ? `<p class="empty">…</p>` : d.available === false ? `<p class="empty">${esc(t.sec.notAvailable)}</p>` : !sel ? `<p class="empty">${esc(t.sec.noHubs)}</p>` : this._hubHtml(sel, t);
       const keep = this._scrollKeep();
       this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;
@@ -7111,8 +7298,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     _actsHtml(h, s, dis) {
       if (!h.all_activities.length) return `<div class="ehint">${esc(s.actsNone)}</div>`;
-      const on = new Set(h.activities);
-      return `<div class="ehint">${esc(s.actsHint)}</div><div class="chipbox">${h.all_activities.map((a) => `<label class="fchip"><input type="checkbox" data-allow-act="${esc(a)}" ${on.has(a) ? "checked" : ""} ${dis}><span><ha-icon icon="${esc(h.activity_icons?.[a] || activityIcon(a))}"></ha-icon>${esc(a)}</span></label>`).join("")}</div>`;
+      const on2 = new Set(h.activities);
+      return `<div class="ehint">${esc(s.actsHint)}</div><div class="chipbox">${h.all_activities.map((a) => `<label class="fchip"><input type="checkbox" data-allow-act="${esc(a)}" ${on2.has(a) ? "checked" : ""} ${dis}><span><ha-icon icon="${esc(h.activity_icons?.[a] || activityIcon(a))}"></ha-icon>${esc(a)}</span></label>`).join("")}</div>`;
     },
     // Apps to offer: built-in list, what the device has installed, what is allowed already and what runs now.
     _appList(h, t) {
@@ -7128,12 +7315,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!h.fire_entity) return `<div class="ehint">${esc(s.noFire)}</div>`;
       const st = this._hass.states?.[h.fire_entity];
       const now = st && !["off", "standby", "unavailable", "unknown"].includes(st.state) ? st.attributes?.app_id : "";
-      const on = new Set(h.apps);
+      const on2 = new Set(h.apps);
       const cache = this._data?.packages?.[h.fire_entity];
       const msg = this._appsMsg?.[h.fire_entity];
-      const home = on.has(LAUNCHER);
+      const home = on2.has(LAUNCHER);
       const launcher = `<label class="fchip seclauncher" title="${esc(LAUNCHER)}"><input type="checkbox" data-allow-app="${esc(LAUNCHER)}" data-launcher ${home ? "checked" : ""} ${dis}><span><ha-icon icon="mdi:home-outline"></ha-icon>${esc(appLabel(LAUNCHER, t, h.app_names || {}))}</span></label>`;
-      const chips = launcher + this._appList(h, t).map((a) => `<label class="fchip ${a.installed ? "" : "noinst"}" title="${esc(a.pkg)}"><input type="checkbox" data-allow-app="${esc(a.pkg)}" ${on.has(a.pkg) ? "checked" : ""} ${dis || (home ? "" : "disabled")}><span>${esc(a.name)}</span></label>`).join("");
+      const chips = launcher + this._appList(h, t).map((a) => `<label class="fchip ${a.installed ? "" : "noinst"}" title="${esc(a.pkg)}"><input type="checkbox" data-allow-app="${esc(a.pkg)}" ${on2.has(a.pkg) ? "checked" : ""} ${dis || (home ? "" : "disabled")}><span>${esc(a.name)}</span></label>`).join("");
       return `<div class="ehint">${esc(s.appsHint)}</div>
       ${now ? `<div class="secnow"><ha-icon icon="mdi:television-play"></ha-icon><span>${esc(fmtText(s.fireNow, [appLabel(now, t, h.app_names || {})]))}</span></div>` : ""}
       <div class="chipbox">${chips}</div>
@@ -7161,8 +7348,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _offDevHtml(h, s, dis) {
       if (!h.fire_entity) return `<div class="ehint">${esc(s.noFire)}</div>`;
       if (!h.power_devices?.length) return `<div class="ehint">${esc(s.offDevNone)}</div>`;
-      const on = new Set(h.off_devices || []);
-      return `<div class="ehint">${esc(s.offDevHint)}</div><div class="chipbox">${h.power_devices.map((d) => `<label class="fchip"><input type="checkbox" data-off-dev="${esc(d)}" ${on.has(d) ? "checked" : ""} ${dis}><span><ha-icon icon="mdi:power"></ha-icon>${esc(d)}</span></label>`).join("")}</div>`;
+      const on2 = new Set(h.off_devices || []);
+      return `<div class="ehint">${esc(s.offDevHint)}</div><div class="chipbox">${h.power_devices.map((d) => `<label class="fchip"><input type="checkbox" data-off-dev="${esc(d)}" ${on2.has(d) ? "checked" : ""} ${dis}><span><ha-icon icon="mdi:power"></ha-icon>${esc(d)}</span></label>`).join("")}</div>`;
     },
     _scheduleHtml(h, s, dis) {
       const rows = h.schedule.map((w, i) => `<div class="secwin" data-win="${i}">

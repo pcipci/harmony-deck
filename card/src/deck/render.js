@@ -56,7 +56,7 @@ export const renderMixin = {
     const held = this.offsetHeight;
     if (held) this.style.minHeight = `${held}px`;
     this.shadowRoot.innerHTML = `${this._style()}
-      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
+      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
         ${this._edit ? `<div class="edittool"><div class="edmode">${this._edModeHtml(t)}</div>
           ${this._cancelAsk
             ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>`

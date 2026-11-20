@@ -36,7 +36,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume (a slider instead of +/- in the remote) and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
-| **Looks** | 15 skins incl. the effect skins Terminal, Tube radio, Thermal (heat vision, segment letters), Nixie (graphite keys with chrome edge, glowing direct keys, toggle switches) and Nostromo (amber ship computer); an own skin per room; tile and key styles, coloured icons, light and dark |
+| **Looks** | 15 skins incl. the effect skins Terminal, Tube radio, Thermal (heat vision, segment letters), Nixie (graphite keys with chrome edge, glowing direct keys, toggle switches), Nostromo (amber ship computer), Glass (acrylic plates lit from behind, three light styles) and Clay (puffy bubbles you press); an own skin per room; tile and key styles, coloured icons, light and dark |
 | **Hints** | One gear in the tab row: it takes the colour of the most serious hint (hub not reachable, player differs from the activity …), pulses until seen and shows the count; its window lists the hints with their action above the settings; its Info entry opens an Info area with the hubs, the linked network devices (platform, address, state, capabilities) as a table and which keys of the running activity go direct or over Harmony; gear, help and profile share one window |
 | **Resilience** | If a hub drops the connection, commands are retried quietly in the background (in order) and one calm hint replaces Home Assistant's error pop-up |
 | **Profiles** | Different settings for different people or tablets |
@@ -114,6 +114,13 @@ Two effect skins go further than colours: **Terminal** (green phosphor screen, s
   <img src="docs/images/skin-thermal.png" width="32%" alt="Skin Thermal">
   <img src="docs/images/skin-nixie.png" width="32%" alt="Skin Nixie">
   <img src="docs/images/skin-nostromo.png" width="32%" alt="Skin Nostromo">
+</p>
+
+**Glass** (dark acrylic plates with square corners that light from behind in the colour of their function; the setting *Light style* chooses *Plate lights*, *Text lights* or *Mix*) and **Clay** (puffy bubbles that squash when pressed and spring back, dents for unavailable things, a coral bubble for the running activity, a switch with a travelling bubble):
+
+<p align="center">
+  <img src="docs/images/skin-glass.png" width="32%" alt="Skin Glass">
+  <img src="docs/images/skin-clay.png" width="32%" alt="Skin Clay">
 </p>
 
 ## Actions and network control

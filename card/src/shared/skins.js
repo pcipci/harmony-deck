@@ -41,13 +41,15 @@ export const SKINS = {
     "--hr-accent": "#88c0d0", "--hr-on-accent": "#2e3440", "--hr-text": "#eceff4", "--hr-muted": "#9aa5b8", "--hr-card-bg": "#2e3440", "--hr-select-bg": "#3b4252",
     "--hr-rocker-radius": "14px", "--hr-rk-radius": "8px", "--hr-seg-radius": "8px",
   },
-  // Milchglas: frosted glass over a colour gradient, translucent tiles, light blue accent.
+  // Glas: dark acrylic plates that light from behind (function colours green / blue / red / amber), all corners square.
+  // The look itself is in skin-css-020.js; three light styles a/b/c are chosen with the class gl-a / gl-b / gl-c.
   glass: {
-    "--hr-text": "#eef3fb", "--hr-muted": "#b4c0d8", "--hr-panel-sep": "rgba(255,255,255,.28)",
-    "--hr-opt-bg": "#26305a", "color-scheme": "dark",
-    "--hr-tile-bg": "rgba(255,255,255,.13)", "--hr-key-bg": "rgba(255,255,255,.18)", "--hr-radius": "16px", "--hr-tile-radius": "18px", "--hr-panel-bg": "rgba(255,255,255,.06)",
-    "--hr-accent": "#8fd3ff", "--hr-on-accent": "#0a1a2a", "--hr-card-bg": "#1a2548", "--hr-frame": "linear-gradient(135deg, #142a5c, #3b2a78 55%, #0f5c7a)", "--hr-select-bg": "rgba(255,255,255,.14)", "--hr-blur": "blur(14px) saturate(140%)",
-    "--hr-rocker-radius": "22px", "--hr-rk-radius": "16px", "--hr-seg-radius": "14px", "--hr-key-shadow": "inset 0 1px 0 rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.12)",
+    "--hr-text": "#e9f0f4", "--hr-muted": "#8fa3b2", "--hr-panel-sep": "rgba(255,255,255,.16)",
+    "--hr-opt-bg": "#131a20", "color-scheme": "dark",
+    "--hr-tile-bg": "#131a20", "--hr-key-bg": "#131a20", "--hr-radius": "2px", "--hr-tile-radius": "2px", "--hr-panel-bg": "rgba(255,255,255,.03)",
+    "--hr-accent": "#ffb340", "--hr-on-accent": "#2a1700", "--hr-card-bg": "#0d1318", "--hr-select-bg": "#131a20",
+    "--hr-rocker-radius": "2px", "--hr-rk-radius": "2px", "--hr-seg-radius": "2px", "--hr-dpad-radius": "2px", "--hr-ok-radius": "2px", "--hr-d-big": "2px", "--hr-d-small": "2px",
+    "--hr-key-shadow": "none",
   },
   // Knetmasse: modelling clay. Pastel green, thick rounded shapes with a heavy shadow, coral accent.
   clay: {

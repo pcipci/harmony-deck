@@ -33,7 +33,10 @@ export const SKIN_CSS_NEW = `
       ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
-      ${W} .key:has(span[data-segtxt]) ha-icon { display: none; }
+      ${W} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
+      /* keyboard keys: icon keys keep their icon (the small label is hidden on narrow screens), held modifiers light up like any active key, narrow keys leave room for the slanted corners */
+      ${W} .kk.isfav.shiftkey, ${W} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W} .kk.isfav.shiftkey *, ${W} .kk.shiftkey.on * { color: #2a0600 !important; }
+      ${W} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
       ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
       ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
       /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
@@ -68,7 +71,7 @@ export const SKIN_CSS_NEW = `
       ${R} input[type="text"], ${R} input[type="search"], ${R} input[type="number"], ${R} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R} select option { background: #2a1a10; color: #f1e3c1; }
       ${W} .editbox, ${W} .egrp, ${W} .erow { color: #6fd0c0; } ${X} .editbox, ${X} .egrp, ${X} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
       ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
-      @keyframes thlock { 0% { background: ${tri(0)}; } 33% { background: ${tri(1)}; } 66% { background: ${tri(2)}; } 100% { background: ${tri(3)}; } }
+      @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
       /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
       ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }

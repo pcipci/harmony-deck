@@ -54,7 +54,7 @@ export const settingsEditorMixin = {
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
-          ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._trait("glassLook") ? this._selRow(t.glassLook, "data-glasslook", t.glassLooks, this._glassLook()) : ""}
           ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
         ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -159,7 +159,7 @@ export const settingsEditorMixin = {
     const keys = {
       "select[data-skin], select[data-palette]": "skin", "[data-tilestyle]": "tile_style", '[data-setting="colorIcons"]': "colored_icons", '[data-setting="helpNames"]': "help_names",
       '[data-setting="keyboardControl"]': "keyboard_control", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapse_header", '[data-setting="holdSwitch"]': "hold_switch", "[data-layout]": "layout", "[data-activestyle]": "active_style",
-      "[data-keystyle]": "key_style", "[data-labels]": "labels", "[data-glow]": "glow",
+      "[data-keystyle]": "key_style", "[data-labels]": "labels", "[data-glow]": "glow", "[data-glasslook]": "glass_look",
     };
     const locked = new Map();
     Object.entries(keys).forEach(([sel, key]) => {
@@ -183,7 +183,7 @@ export const settingsEditorMixin = {
       '[data-setting="keyboardControl"]': "keyCtl", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapseHeader", '[data-setting="holdSwitch"]': "holdSwitch", "[data-layout]": "layout", "[data-activestyle]": "activeStyle",
       "[data-keystyle]": "keyStyle", "[data-labels]": "labels", "[data-glow]": "glow", '[data-direct="entity"]': "directEntity", '[data-direct="device"]': "directDevice",
       '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel",
-      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", '[data-setting="noBlur"]': "noBlur", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual",
+      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", "[data-glasslook]": "glassLook", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual",
       '[data-link="entity"]': "linkEntity", '[data-link="activity"]': "linkActivity",
       '[data-actname]': "actName", '[data-hent="entity"]': "actEntity", "[data-hop]": "actOp", "[data-actscope]": "actScope", "[data-acttile]": "actTile",
     };
@@ -269,6 +269,7 @@ export const settingsEditorMixin = {
     root.querySelector("select[data-layout]")?.addEventListener("change", (e) => this._saveSettings({ layout: e.target.value }));
     root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
     root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
+    root.querySelector("select[data-glasslook]")?.addEventListener("change", (e) => this._saveSettings({ glassLook: e.target.value }));
     root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
     // One look for the room shown: with "only this room" it is stored for the room, otherwise as the default skin.
     const applyLook = (hub, key) => {

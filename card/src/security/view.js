@@ -1,7 +1,7 @@
 // Security card, view: status, mode, release, allowed activities and apps, schedule, list of interventions.
 import { FIRE_APPS, appPackage, appLabel, knownPackages } from "../shared/fire.js";
 import { LAUNCHER, RELEASE_CHOICES } from "./const.js";
-import { SKINS } from "../shared/skins.js";
+import { SKINS, skinKey } from "../shared/skins.js";
 import { activityIcon, roomIcon } from "../shared/icons.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
@@ -28,7 +28,10 @@ export const securityViewMixin = {
       hubs.map((h) => (h.fire_entity ? [st[h.fire_entity]?.state, st[h.fire_entity]?.attributes?.app_id] : null))]);
     if (key === this._key) return;
     this._key = key;
-    const skin = SKINS[this._config.skin] ? this._config.skin : SKINS[d?.skin] ? d.skin : "homebase";
+    // Same choice as the main card: card YAML, then the skin of the room shown, then the shared skin.
+    const sel0 = hubs.find((h) => h.id === this._hubSel);
+    const skin = skinKey(this._config.skin || d?.roomSkins?.[sel0?.id] || d?.skin || "homebase");
+    const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
     const vars = Object.entries({ ...SKINS[skin], ...(this._config.skin_vars || {}) }).map(([k, v]) => `${k}:${v}`).join(";");
     const sel = hubs.find((h) => h.id === this._hubSel);
     const tabs = hubs.length > 1 ? `<div class="hubtabs">${hubs.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.effective ? "live" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.effective ? "mdi:lock" : roomIcon(h.name)}"></ha-icon></span><span class="rn">${esc(h.name)}</span></button>`).join("")}</div>` : "";
@@ -38,7 +41,7 @@ export const securityViewMixin = {
       : this._hubHtml(sel, t);
     const keep = this._scrollKeep();
     this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;

@@ -1,5 +1,6 @@
 // Style sheet of the cards.
 import { SKIN_CSS } from "../shared/skin-css.js";
+import { SKIN_CSS_020 } from "../shared/skin-css-020.js";
 import { SKIN_CSS_NEW } from "../shared/skin-css-new.js";
 
 export const styleMixin = {
@@ -472,7 +473,6 @@ export const styleMixin = {
       .hsw input { position: absolute; opacity: 0; width: 0; height: 0; } .hsw i { width: 38px; height: 22px; border-radius: 11px; background: var(--hr-key-bg); position: relative; transition: background .15s; }
       .hsw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--hr-muted); transition: transform .15s, background .15s; }
       .hsw input:checked + i { background: var(--hr-accent); } .hsw input:checked + i::after { transform: translateX(16px); background: var(--hr-on-accent); }
-      ha-card[data-skin="glass"] { background-color: #121826; background-image: radial-gradient(circle at 12% 8%, rgba(124,196,255,.55), transparent 46%), radial-gradient(circle at 92% 28%, rgba(176,124,255,.45), transparent 50%), radial-gradient(circle at 28% 96%, rgba(64,224,208,.38), transparent 52%); }
       select, select option, select optgroup { background-color: var(--hr-opt-bg, var(--hr-select-bg, var(--card-background-color, Canvas))); color: var(--hr-text, CanvasText); }
       .lockapps small { display: block; opacity: 0.7; font-size: 0.75em; overflow-wrap: anywhere; }
       .holdoff { position: relative; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
@@ -569,6 +569,7 @@ export const styleMixin = {
       @media (prefers-reduced-motion: reduce) { ha-card.fadein { animation: none; } }
       ${SKIN_CSS}
       ${SKIN_CSS_NEW}
+      ${SKIN_CSS_020}
     </style>`;
   },
 };

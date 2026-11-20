@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.20.0
+
+### Added
+- **Glass skin (new look):** dark acrylic plates with square corners that light from behind. Every key lights in its function colour when pressed (green = OK / play, blue = navigation, red = off / stop), a running activity glows in amber. Three light styles in the settings (*Light style*): *Plate lights* (the whole plate glows), *Text lights* (dark plate, lettering glows with a halo) and *Mix* (default: half-tinted plate, light lettering with a halo). Hold ("all off") brightens the whole plate from within. On the device page, devices of the running activity are green with one square, the shown device is blue with a white frame and three squares. The Yes/No switch is a plate that turns red or green (no sliding), a device with a known power state gets one plate for On/Off, hint lines light in the colour of the message, and a volume slider is a plate whose colour runs from quiet green to loud red. Replaces the old frosted-glass look under the same name.
+- **Clay skin (Knetmasse) rebuilt:** keys and tiles are puffy bubbles that squash when pressed and spring back; a running activity is a coral bubble with one jelly wobble when it appears; unavailable things are deep dents. The switch has a dent track with a bubble that travels and turns coral, the volume slider fills only the dent (light salmon to red by position), the room tabs are bubbles, hints sit in a big dent with bubbles inside. On the device page, devices of the running activity carry a soft pink rim and wobble once, a little staggered. A device with a known power state gets the dent switch too. Look options that no longer apply (key style, tile style, coloured icons, glow) are hidden for this skin.
+- **Security card:** uses the same skin choice as the main card (card YAML, then the skin of the room shown, then the shared skin), so the individual skins and the new Glass light style show there too. Old skin names are mapped as in the main card.
+
+### Changed
+- **Nixie:** the app keys of the Fire TV are graphite with a dim amber legend, without brand colours; a running app glows amber.
+- **Thermal:** keys that show only an icon no longer appear as blank plates on the keyboard; the hold dots light in the order 1-2-3 while you hold.
+- Hint: the setting "Blur off" for the old frosted glass is gone with the new Glass look.
+
 ## 0.19.1
 
 ### Added

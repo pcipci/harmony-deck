@@ -106,10 +106,13 @@ def _result(hass: HomeAssistant, connection: websocket_api.ActiveConnection) -> 
     stored = {"global": data.get("settings", {}), "profiles": data.get("profiles", {}), "assign": data.get("assign", {})}
     user_id = connection.user.id if connection.user else None
     profile = prof.resolve(stored, user_id, None) if stored["profiles"] else None
+    settings = (prof.merged(stored, profile) if profile else stored["global"]) or {}
     return {
         "hubs": lock_overview(hass),
         "packages": fire.cached() if fire else {},
-        "skin": prof.merged(stored, profile).get("skin") if profile else None,
+        "skin": settings.get("skin"),
+        "roomSkins": settings.get("roomSkins") or {},
+        "glassLook": settings.get("glassLook"),
         "admin": bool(connection.user and connection.user.is_admin),
         "available": _manager(hass) is not None,
     }

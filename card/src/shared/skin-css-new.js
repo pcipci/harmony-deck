@@ -6,6 +6,7 @@ const W = 'ha-card[data-skin="thermal"]';
 const X = 'ha-card[data-skin="nixie"]';
 const N = 'ha-card[data-skin="nostromo"]';
 const R = 'ha-card[data-skin="radio"]';
+const T = 'ha-card[data-skin="terminal"]';
 // three dots in a triangle (bottom left, bottom right, top) as one background, n = how many are lit
 const tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
 
@@ -28,9 +29,16 @@ export const SKIN_CSS_NEW = `
       ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
-      ${W} .key:has(span[data-seg]) ha-icon { display: none; }
+      ${W} .key:has(span[data-segtxt]) ha-icon { display: none; }
       ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
       ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
+      /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
+      ${W} .key, ${W} .mini, ${W} .tile { position: relative; isolation: isolate; }
+      ${W} .key::after, ${W} .mini::after, ${W} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
+      ${W} .key.lit::after, ${W} .key:active::after, ${W} .mini.lit::after, ${W} .mini:active::after, ${W} .tile.lit::after, ${W} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
+      ${W} .key.lit, ${W} .key:active, ${W} .mini.lit, ${W} .mini:active, ${W} .tile.lit, ${W} .tile:active { border-color: #ffe36a; }
+      ${W} .key *, ${W} .mini *, ${W} .tile * { transition: color 1.8s ease-out; }
+      ${W} .key.lit *, ${W} .key:active *, ${W} .mini.lit *, ${W} .mini:active *, ${W} .tile.lit *, ${W} .tile:active * { color: #2a0600 !important; transition: color .05s; }
       ${W} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
       ${W} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
       ${W} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
@@ -43,7 +51,7 @@ export const SKIN_CSS_NEW = `
       ${W} .volslider.h::-webkit-slider-runnable-track { height: 22px; background: transparent; } ${W} .volslider.h::-moz-range-track { height: 22px; background: transparent; }
       ${W} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 28px; border-radius: 0; background: #fff; box-shadow: 0 0 8px #fff; border: none; margin-top: -3px; }
       ${W} .volslider.h::-moz-range-thumb { width: 4px; height: 28px; border-radius: 0; background: #fff; border: none; }
-      ${W} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); box-shadow: none; }
+      ${W} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; box-shadow: none; }
       ${W} .sw:has(> input) i::after { border-radius: 0; background: #4a3a90; box-shadow: none; }
       ${W} .sw:has(> input) input:checked + i::after { background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; }
       ${W} .hmenu { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; }
@@ -58,10 +66,18 @@ export const SKIN_CSS_NEW = `
       ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
       @keyframes thlock { 0% { background: ${tri(0)}; } 33% { background: ${tri(1)}; } 66% { background: ${tri(2)}; } 100% { background: ${tri(3)}; } }
 
+      /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
+      ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
+      ${W} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
+      ${W} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
+      ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
+      ${T} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
+      ${R} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      ${R} .ib.gear .gbadge, ${X} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
       ${X} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
       ${X} .grid { counter-reset: nx; }
-      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
+      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
       ${X} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
@@ -126,5 +142,5 @@ export const SKIN_CSS_NEW = `
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R} .key.ic-row.on:not(.mute) *, ${R} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${W} *, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
 `;

@@ -128,3 +128,9 @@ export const skinOrder = () => { const front = ["homebase", "terminal", "radio",
 // Saved skin keys of removed skins map to their successor.
 export const SKIN_ALIAS = { remote: "dark", device: "dark" };
 export const skinKey = (k) => { const a = SKIN_ALIAS[k] || k; return SKINS[a] ? a : "homebase"; };
+
+// In the picker the plain colour variants are one entry "Farbschema" with a palette dropdown below it (0.18.1);
+// the stored skin keys stay unchanged.
+export const SCHEME_SKINS = ["dark", "light", "catppuccin", "nord", "synthwave", "paper"];
+export const skinGroup = (k) => (SCHEME_SKINS.includes(k) ? "scheme" : k);
+export const skinGroups = () => { const all = new Set(skinOrder().map(skinGroup)); return ["homebase", "scheme", "glass", "pebble", "clay", "terminal", "radio", "thermal", "nixie", "nostromo"].filter((g) => all.has(g)); };

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.18.1
+
+### Changed
+- **One entry "Colour scheme":** the plain colour variants (Dark, Light, Catppuccin, Nord, Synthwave, Paper) are now one skin in the picker with a second dropdown "Palette". Stored skin keys are unchanged, nothing to migrate.
+- **One look field:** the second "Skin for this room" dropdown is gone. The skin dropdown stays one; a switch "Only for this room" decides whether the choice applies to this room or to all.
+- **Fields follow the skin:** the effect skins (Terminal, Tube radio, Thermal, Nixie, Nostromo) no longer show coloured icons, tile style, running-activity style, key shape and glow, because they define these themselves.
+
+### Added
+- **Thermal: cool-down effect:** a pressed key or tile lights up white-yellow and then cools down slowly (about 1.8 s), like residual heat. Not with "reduce motion".
+- **Badges follow the skin:** the Fire TV dot at the room icon and the count at the gear are angular heat-coloured tags in Thermal, angular green in Terminal, angular amber in Nostromo and small brass buttons in Tube radio and Nixie.
+
+### Fixed
+- **Thermal:** segment letters now cover every short text (the segmented Activities/Devices switch and long names were skipped before, umlauts included), the space between words is wider, and a pressed key or tile flashes in heat colours (visual feedback).
+- **Nixie:** tubes keep their tube shape in every layout (the bottom corners were cut by another rule).
+
 ## 0.18.0
 
 ### Added

@@ -74,10 +74,11 @@
   "other": "Weitere Tasten",
   "numbers": "Zifferntasten",
   "skin": "Aussehen",
-  "roomSkin": "Skin für diesen Raum",
-  "roomSkinSame": "Wie Standard",
+  "palette": "Farbpalette",
+  "roomOnly": "Nur für diesen Raum",
   "skins": {
     "homebase": "Homebase",
+    "scheme": "Farbschema",
     "dark": "Dunkel",
     "light": "Hell",
     "pebble": "Kiesel",

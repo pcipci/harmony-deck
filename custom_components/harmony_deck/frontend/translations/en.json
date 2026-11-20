@@ -74,10 +74,11 @@
   "other": "More keys",
   "numbers": "Number keys",
   "skin": "Look",
-  "roomSkin": "Skin for this room",
-  "roomSkinSame": "Same as default",
+  "palette": "Palette",
+  "roomOnly": "Only for this room",
   "skins": {
     "homebase": "Homebase",
+    "scheme": "Colour scheme",
     "dark": "Dark",
     "light": "Light",
     "pebble": "Pebble",

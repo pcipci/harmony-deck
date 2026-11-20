@@ -45,7 +45,7 @@ export const skinDecorMixin = {
     if (!this._trait("segFont")) return;
     const card = root.querySelector("ha-card");
     if (!card) return;
-    const skip = "select, option, textarea, input, style, script, svg, [data-seg]";
+    const skip = "select, option, textarea, input, style, script, svg, [data-segtxt]";
     const walker = card.ownerDocument.createTreeWalker(card, 4);
     const nodes = [];
     for (let n = walker.nextNode(); n; n = walker.nextNode()) { if (n.nodeValue.trim() && !n.parentElement.closest(skip)) nodes.push(n); }
@@ -53,7 +53,7 @@ export const skinDecorMixin = {
       const svg = segSvg(n.nodeValue, n.parentElement.closest(".tile") ? 16 : 12);
       if (!svg) return;
       const sp = card.ownerDocument.createElement("span");
-      sp.dataset.seg = "1"; sp.setAttribute("aria-label", n.nodeValue.trim()); sp.innerHTML = svg;
+      sp.dataset.segtxt = "1"; sp.setAttribute("aria-label", n.nodeValue.trim()); sp.innerHTML = svg;
       n.replaceWith(sp);
     });
   },

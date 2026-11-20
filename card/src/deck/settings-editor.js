@@ -1,8 +1,8 @@
 // Settings mode: tabs, look, icons, links, hints; edit mode start / cancel.
+import { SCHEME_SKINS, skinGroup, skinGroups } from "../shared/skins.js";
 import { activityIcon, ACTION_ICONS, DEVICE_ICONS } from "../shared/icons.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
-import { skinOrder } from "../shared/skins.js";
 import { volumeCap } from "./steps/ha-values.js";
 
 export const settingsEditorMixin = {
@@ -36,7 +36,10 @@ export const settingsEditorMixin = {
   _editHtml(t, h) {
     const skin = this._skin();
     const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-    const skins = Object.fromEntries(skinOrder().map((k) => [k, t.skins[k] || k]));
+    const skins = Object.fromEntries(skinGroups().map((k) => [k, t.skins[k] || k]));
+    const palettes = Object.fromEntries(SCHEME_SKINS.map((k) => [k, t.skins[k] || k]));
+    const roomOnly = this._settings().roomSkins?.[h.id] !== undefined;
+    const plain = !this._trait("premium");
     const etab = this._etabNow();
     const g = t.groups || {};
     const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
@@ -48,16 +51,17 @@ export const settingsEditorMixin = {
         ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
         ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
-        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
+        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
+          ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
+          ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
           ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
-          ${h && this._hubs().length > 1 ? this._selRow(t.roomSkin, `data-roomskin data-hub="${esc(h.id)}"`, { "": t.roomSkinSame, ...skins }, this._settings().roomSkins?.[h.id] || "") : ""}
-          ${this._trait("noColorIcons") ? "" : this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
-        ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
+          ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
+        ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
-          ${this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle())}`)}
-        ${this._grp(g.keys, `${this._trait("premium") ? "" : this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
+          ${plain ? this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle()) : ""}`)}
+        ${this._grp(g.keys, `${plain ? this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle()) : ""}
           ${this._selRow(t.labels, "data-labels", t.labelOpts, this._labels())}
-          ${this._selRow(t.glow, "data-glow", t.glows, this._glow())}`)}</div>
+          ${plain ? this._selRow(t.glow, "data-glow", t.glows, this._glow()) : ""}`)}</div>
       <div class="esec" data-t="behave"><div class="etitle">${t.tabs.behave}</div>
         ${this._grp(g.touch, `${this._swRow(t.vibrate, 'data-setting="vibrate"', this._vibrateOn())}
           ${this._swRow(t.holdSwitch, 'data-setting="holdSwitch"', this._holdSwitchOn())}
@@ -153,7 +157,7 @@ export const settingsEditorMixin = {
   _applyLocks(root) {
     const t = this._t();
     const keys = {
-      "select[data-skin]": "skin", "[data-tilestyle]": "tile_style", '[data-setting="colorIcons"]': "colored_icons", '[data-setting="helpNames"]': "help_names",
+      "select[data-skin], select[data-palette]": "skin", "[data-tilestyle]": "tile_style", '[data-setting="colorIcons"]': "colored_icons", '[data-setting="helpNames"]': "help_names",
       '[data-setting="keyboardControl"]': "keyboard_control", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapse_header", '[data-setting="holdSwitch"]': "hold_switch", "[data-layout]": "layout", "[data-activestyle]": "active_style",
       "[data-keystyle]": "key_style", "[data-labels]": "labels", "[data-glow]": "glow",
     };
@@ -175,7 +179,7 @@ export const settingsEditorMixin = {
   _applyTips(root) {
     const tips = this._t().tips || {};
     const rows = {
-      "select[data-skin]": "skin", "[data-tilestyle]": "tileStyle", '[data-setting="colorIcons"]': "colorIcons", '[data-setting="helpNames"]': "helpNames",
+      "select[data-skin], select[data-palette]": "skin", "[data-tilestyle]": "tileStyle", '[data-setting="colorIcons"]': "colorIcons", '[data-setting="helpNames"]': "helpNames",
       '[data-setting="keyboardControl"]': "keyCtl", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapseHeader", '[data-setting="holdSwitch"]': "holdSwitch", "[data-layout]": "layout", "[data-activestyle]": "activeStyle",
       "[data-keystyle]": "keyStyle", "[data-labels]": "labels", "[data-glow]": "glow", '[data-direct="entity"]': "directEntity", '[data-direct="device"]': "directDevice",
       '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel",
@@ -266,10 +270,19 @@ export const settingsEditorMixin = {
     root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
     root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
     root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
-    root.querySelector("select[data-skin]")?.addEventListener("change", (e) => this._saveSettings({ skin: e.target.value }));
-    root.querySelector("select[data-roomskin]")?.addEventListener("change", (e) => {
+    // One look for the room shown: with "only this room" it is stored for the room, otherwise as the default skin.
+    const applyLook = (hub, key) => {
       const rs = { ...(this._settings().roomSkins || {}) };
-      if (e.target.value) rs[e.target.dataset.hub] = e.target.value; else delete rs[e.target.dataset.hub];
+      if (rs[hub] !== undefined) { rs[hub] = key; this._saveSettings({ roomSkins: rs }); } else this._saveSettings({ skin: key });
+    };
+    root.querySelector("select[data-skin]")?.addEventListener("change", (e) => {
+      const cur = this._skin();
+      applyLook(this._hubSel, e.target.value === "scheme" ? (SCHEME_SKINS.includes(cur) ? cur : "dark") : e.target.value);
+    });
+    root.querySelector("select[data-palette]")?.addEventListener("change", (e) => applyLook(this._hubSel, e.target.value));
+    root.querySelector("input[data-roomonly]")?.addEventListener("change", (e) => {
+      const rs = { ...(this._settings().roomSkins || {}) };
+      if (e.target.checked) rs[e.target.dataset.hub] = this._skin(); else delete rs[e.target.dataset.hub];
       this._saveSettings({ roomSkins: rs });
     });
   },

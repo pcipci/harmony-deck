@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.18.0";
+  var VERSION = "0.18.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -3929,12 +3929,18 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     const a = SKIN_ALIAS[k] || k;
     return SKINS[a] ? a : "homebase";
   };
+  var SCHEME_SKINS = ["dark", "light", "catppuccin", "nord", "synthwave", "paper"];
+  var skinGroup = (k) => SCHEME_SKINS.includes(k) ? "scheme" : k;
+  var skinGroups = () => {
+    const all = new Set(skinOrder().map(skinGroup));
+    return ["homebase", "scheme", "glass", "pebble", "clay", "terminal", "radio", "thermal", "nixie", "nostromo"].filter((g) => all.has(g));
+  };
 
   // src/shared/skin-traits.js
   var SKIN_TRAITS = {
     radio: { powerKnob: true, keyHoldMs: 120, dial: true, premium: true },
     terminal: { glass: true, premium: true, noColorIcons: true },
-    thermal: { premium: true, segFont: true, noColorIcons: true },
+    thermal: { premium: true, keyHoldMs: 220, segFont: true, noColorIcons: true },
     nixie: { premium: true, toggles: true },
     nostromo: { premium: true, noColorIcons: true },
     glass: { blurOption: true }
@@ -4934,7 +4940,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _editHtml(t, h) {
       const skin = this._skin();
       const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-      const skins = Object.fromEntries(skinOrder().map((k) => [k, t.skins[k] || k]));
+      const skins = Object.fromEntries(skinGroups().map((k) => [k, t.skins[k] || k]));
+      const palettes = Object.fromEntries(SCHEME_SKINS.map((k) => [k, t.skins[k] || k]));
+      const roomOnly = this._settings().roomSkins?.[h.id] !== void 0;
+      const plain = !this._trait("premium");
       const etab = this._etabNow();
       const g = t.groups || {};
       const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
@@ -4946,16 +4955,17 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
         ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
-        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
+        ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
+          ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
+          ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
           ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
-          ${h && this._hubs().length > 1 ? this._selRow(t.roomSkin, `data-roomskin data-hub="${esc(h.id)}"`, { "": t.roomSkinSame, ...skins }, this._settings().roomSkins?.[h.id] || "") : ""}
-          ${this._trait("noColorIcons") ? "" : this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
-        ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
+          ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
+        ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
-          ${this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle())}`)}
-        ${this._grp(g.keys, `${this._trait("premium") ? "" : this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle())}
+          ${plain ? this._selRow(t.activeStyle, "data-activestyle", t.activeStyles, this._activeStyle()) : ""}`)}
+        ${this._grp(g.keys, `${plain ? this._selRow(t.keyStyle, "data-keystyle", t.keyStyles, this._keyStyle()) : ""}
           ${this._selRow(t.labels, "data-labels", t.labelOpts, this._labels())}
-          ${this._selRow(t.glow, "data-glow", t.glows, this._glow())}`)}</div>
+          ${plain ? this._selRow(t.glow, "data-glow", t.glows, this._glow()) : ""}`)}</div>
       <div class="esec" data-t="behave"><div class="etitle">${t.tabs.behave}</div>
         ${this._grp(g.touch, `${this._swRow(t.vibrate, 'data-setting="vibrate"', this._vibrateOn())}
           ${this._swRow(t.holdSwitch, 'data-setting="holdSwitch"', this._holdSwitchOn())}
@@ -5069,7 +5079,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _applyLocks(root) {
       const t = this._t();
       const keys = {
-        "select[data-skin]": "skin",
+        "select[data-skin], select[data-palette]": "skin",
         "[data-tilestyle]": "tile_style",
         '[data-setting="colorIcons"]': "colored_icons",
         '[data-setting="helpNames"]': "help_names",
@@ -5099,7 +5109,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _applyTips(root) {
       const tips = this._t().tips || {};
       const rows = {
-        "select[data-skin]": "skin",
+        "select[data-skin], select[data-palette]": "skin",
         "[data-tilestyle]": "tileStyle",
         '[data-setting="colorIcons"]': "colorIcons",
         '[data-setting="helpNames"]': "helpNames",
@@ -5243,10 +5253,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
       root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
       root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
-      root.querySelector("select[data-skin]")?.addEventListener("change", (e) => this._saveSettings({ skin: e.target.value }));
-      root.querySelector("select[data-roomskin]")?.addEventListener("change", (e) => {
+      const applyLook = (hub, key) => {
         const rs = { ...this._settings().roomSkins || {} };
-        if (e.target.value) rs[e.target.dataset.hub] = e.target.value;
+        if (rs[hub] !== void 0) {
+          rs[hub] = key;
+          this._saveSettings({ roomSkins: rs });
+        } else this._saveSettings({ skin: key });
+      };
+      root.querySelector("select[data-skin]")?.addEventListener("change", (e) => {
+        const cur = this._skin();
+        applyLook(this._hubSel, e.target.value === "scheme" ? SCHEME_SKINS.includes(cur) ? cur : "dark" : e.target.value);
+      });
+      root.querySelector("select[data-palette]")?.addEventListener("change", (e) => applyLook(this._hubSel, e.target.value));
+      root.querySelector("input[data-roomonly]")?.addEventListener("change", (e) => {
+        const rs = { ...this._settings().roomSkins || {} };
+        if (e.target.checked) rs[e.target.dataset.hub] = this._skin();
         else delete rs[e.target.dataset.hub];
         this._saveSettings({ roomSkins: rs });
       });
@@ -5257,14 +5278,19 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var S = { a: [2, 2, 18, 2], b: [20, 4, 20, 18], c: [20, 22, 20, 36], d: [2, 38, 18, 38], e: [0, 22, 0, 36], f: [0, 4, 0, 18], g1: [2, 20, 10, 20], g2: [12, 20, 18, 20], h: [2, 4, 9, 17], i: [10, 4, 10, 18], j: [18, 4, 11, 17], k: [2, 36, 9, 23], l: [10, 22, 10, 36], m: [18, 36, 11, 23] };
   var G = { A: "abcefg1g2", B: "abcdig2l", C: "adef", D: "abcdil", E: "adefg1", F: "aefg1", G: "acdefg2", H: "bcefg1g2", I: "adil", J: "bcde", K: "efg1jm", L: "def", M: "efbchj", N: "efbchm", O: "abcdef", P: "abefg1g2", Q: "abcdefm", R: "abefg1g2m", S: "afg1g2cd", T: "ail", U: "bcdef", V: "efkj", W: "efcbkm", X: "hjkm", Y: "hjl", Z: "ajkd", 0: "abcdef", 1: "bc", 2: "abdeg1g2", 3: "abcdg2", 4: "bcfg1g2", 5: "acdfg1g2", 6: "acdefg1g2", 7: "abc", 8: "abcdefg1g2", 9: "abcdfg1g2", "-": "g1g2", "+": "g1g2il", " ": "", ":": ".", "/": "jk", "\\": "hm", "_": "d", "(": "adef", ")": "abcd" };
   var UM = { "Ä": "A", "Ö": "O", "Ü": "U" };
-  var SEG_MAX = 16;
+  var SEG_MAX = 40;
   function segSvg(text, h = 18) {
-    const str = String(text ?? "").trim().toUpperCase().replace("ß", "SS");
+    const str = String(text ?? "").trim().toUpperCase().replace("ß", "SS").replace("…", "...");
     if (!str || str.length > SEG_MAX) return null;
-    let x = 0, out = "";
+    const lead = /^\s/.test(String(text ?? "")), trail = /\s$/.test(String(text ?? ""));
+    let x = lead ? 34 : 0, out = "";
     for (const raw of str) {
       const ch = UM[raw] || raw;
       if (!(ch in G)) return null;
+      if (ch === " ") {
+        x += 34;
+        continue;
+      }
       if (ch === "." || ch === ",") {
         out += `<circle cx="${x + 6}" cy="37" r="2.2" stroke="none"/>`;
         x += 14;
@@ -5282,6 +5308,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (UM[raw]) out += `<line x1="${x + 5}" y1="-3" x2="${x + 6}" y2="-3"/><line x1="${x + 14}" y1="-3" x2="${x + 15}" y2="-3"/>`;
       x += 28;
     }
+    if (trail) x += 34;
     return `<svg class="segtxt" viewBox="-2 -6 ${x + 2} 50" height="${h}" width="${Math.round((x + 2) * h / 50)}" fill="currentColor" stroke="currentColor" stroke-width="4.4" stroke-linecap="square" aria-hidden="true">${out}</svg>`;
   }
 
@@ -5325,7 +5352,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!this._trait("segFont")) return;
       const card = root.querySelector("ha-card");
       if (!card) return;
-      const skip = "select, option, textarea, input, style, script, svg, [data-seg]";
+      const skip = "select, option, textarea, input, style, script, svg, [data-segtxt]";
       const walker = card.ownerDocument.createTreeWalker(card, 4);
       const nodes = [];
       for (let n = walker.nextNode(); n; n = walker.nextNode()) {
@@ -5335,7 +5362,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const svg = segSvg(n.nodeValue, n.parentElement.closest(".tile") ? 16 : 12);
         if (!svg) return;
         const sp = card.ownerDocument.createElement("span");
-        sp.dataset.seg = "1";
+        sp.dataset.segtxt = "1";
         sp.setAttribute("aria-label", n.nodeValue.trim());
         sp.innerHTML = svg;
         n.replaceWith(sp);
@@ -5616,6 +5643,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var X = 'ha-card[data-skin="nixie"]';
   var N = 'ha-card[data-skin="nostromo"]';
   var R2 = 'ha-card[data-skin="radio"]';
+  var T2 = 'ha-card[data-skin="terminal"]';
   var tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
   var SKIN_CSS_NEW = `
       /* ---------- Wärmebild: violet-blue night, heat colours, segment letters ---------- */
@@ -5636,9 +5664,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
-      ${W} .key:has(span[data-seg]) ha-icon { display: none; }
+      ${W} .key:has(span[data-segtxt]) ha-icon { display: none; }
       ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
       ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
+      /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
+      ${W} .key, ${W} .mini, ${W} .tile { position: relative; isolation: isolate; }
+      ${W} .key::after, ${W} .mini::after, ${W} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
+      ${W} .key.lit::after, ${W} .key:active::after, ${W} .mini.lit::after, ${W} .mini:active::after, ${W} .tile.lit::after, ${W} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
+      ${W} .key.lit, ${W} .key:active, ${W} .mini.lit, ${W} .mini:active, ${W} .tile.lit, ${W} .tile:active { border-color: #ffe36a; }
+      ${W} .key *, ${W} .mini *, ${W} .tile * { transition: color 1.8s ease-out; }
+      ${W} .key.lit *, ${W} .key:active *, ${W} .mini.lit *, ${W} .mini:active *, ${W} .tile.lit *, ${W} .tile:active * { color: #2a0600 !important; transition: color .05s; }
       ${W} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
       ${W} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
       ${W} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
@@ -5651,7 +5686,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .volslider.h::-webkit-slider-runnable-track { height: 22px; background: transparent; } ${W} .volslider.h::-moz-range-track { height: 22px; background: transparent; }
       ${W} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 28px; border-radius: 0; background: #fff; box-shadow: 0 0 8px #fff; border: none; margin-top: -3px; }
       ${W} .volslider.h::-moz-range-thumb { width: 4px; height: 28px; border-radius: 0; background: #fff; border: none; }
-      ${W} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); box-shadow: none; }
+      ${W} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; box-shadow: none; }
       ${W} .sw:has(> input) i::after { border-radius: 0; background: #4a3a90; box-shadow: none; }
       ${W} .sw:has(> input) input:checked + i::after { background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; }
       ${W} .hmenu { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; }
@@ -5666,10 +5701,18 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
       @keyframes thlock { 0% { background: ${tri(0)}; } 33% { background: ${tri(1)}; } 66% { background: ${tri(2)}; } 100% { background: ${tri(3)}; } }
 
+      /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
+      ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
+      ${W} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
+      ${W} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
+      ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
+      ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
+      ${R2} .fdot, ${X} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X} .fdot ha-icon { filter: none; }
+      ${R2} .ib.gear .gbadge, ${X} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
       ${X} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
       ${X} .grid { counter-reset: nx; }
-      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
+      ${X} .tile { background: linear-gradient(180deg, #120a08, #050302), repeating-linear-gradient(0deg, rgba(255,150,40,.05) 0 1px, transparent 1px 4px); border: 2px solid #8a8a8a; border-radius: 40px 40px 10px 10px !important; box-shadow: inset 0 0 14px #000, 0 3px 6px rgba(0,0,0,.6); min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; counter-increment: nx; color: #5a3a1c; }
       ${X} .tile:not(.off)::before { content: counter(nx); font: 600 30px Georgia, serif; color: #6a3a10; text-shadow: none; }
       ${X} .tile ha-icon { display: none; } ${X} .tile.off ha-icon { display: inline-block; }
       ${X} .tile span, ${X} .tile small { font-size: 11px; color: #a8743a; }
@@ -5734,7 +5777,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R2} .key.ic-row.on:not(.mute) *, ${R2} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${W} *, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
 `;
 
   // src/deck/style.js

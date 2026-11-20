@@ -1,8 +1,8 @@
 // Visual editor shown by Home Assistant's card dialog (the pencil inside the card edits the shared settings).
 // All texts come from translations/<language>.json (section "cardEditor"), in the language of Home Assistant.
-import { SKINS } from "../shared/skins.js";
 import { esc } from "../shared/util.js";
 import { loadText } from "../shared/i18n.js";
+import { skinOrder } from "../shared/skins.js";
 
 export class HarmonyDeckCardEditor extends HTMLElement {
   setConfig(config) { this._config = config; this._render(); }
@@ -26,7 +26,7 @@ export class HarmonyDeckCardEditor extends HTMLElement {
     return [
       { name: "entity", selector: { entity: { domain: "remote" } } },
       { name: "profile", selector: { select: { mode: "dropdown", options: [{ value: "", label: t.cardEditor.auto }, ...(this._profiles || []).map((n) => ({ value: n, label: n }))] } } },
-      { name: "skin", selector: { select: { mode: "dropdown", options: Object.keys(SKINS).map((k) => ({ value: k, label: t.skins?.[k] || k })) } } },
+      { name: "skin", selector: { select: { mode: "dropdown", options: skinOrder().map((k) => ({ value: k, label: t.skins?.[k] || k })) } } },
       { name: "language", selector: { select: { mode: "dropdown", options: [{ value: "de", label: "Deutsch" }, { value: "en", label: "English" }, { value: "ru", label: "Русский" }] } } },
       { name: "columns", selector: { number: { min: 2, max: 5, mode: "box" } } },
       { name: "compact", selector: { boolean: {} } },

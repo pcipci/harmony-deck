@@ -122,3 +122,6 @@ export const SKINS = {
     "--hr-radius": "999px", "--hr-tile-radius": "22px", "--hr-rocker-radius": "30px", "--hr-rk-radius": "22px",
   },
 };
+
+// Order in the pickers: the default first, then the two effect skins (premium looks), then the rest as defined.
+export const skinOrder = () => { const front = ["homebase", "terminal", "radio"].filter((k) => k in SKINS); return [...front, ...Object.keys(SKINS).filter((k) => !front.includes(k))]; };

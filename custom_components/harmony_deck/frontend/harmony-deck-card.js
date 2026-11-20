@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.15.5";
+  var VERSION = "0.16.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1443,13 +1443,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       return { acts, keys };
     },
-    _linkBars(h, t) {
-      if (this._edit || h.starting) return "";
+    // A linked player runs while Harmony shows another activity: a hint with "Match" (shown in the gear window since 0.16).
+    _linkHints(h, t) {
+      if (this._edit || h.starting) return [];
       return this._links(h).filter((l) => l.entity && this._entityOn(l.entity) && h.current !== l.activity).map((l) => {
         const name2 = this._hass.states[l.entity]?.attributes?.friendly_name || l.entity;
-        return `<div class="linkbar"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name2, h.current || t.none))}</span>
-        <button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>`;
-      }).join("");
+        return { key: `${l.entity}>${l.activity}`, html: `<div class="hint-row o"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name2, h.current || t.none))}</span><button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>` };
+      });
     },
     // Events of the activity tiles.
     _bindActivities(root) {
@@ -1660,7 +1660,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           id,
           state: s.state,
           list: a.activity_list || [],
-          name: this._settings().names?.[id] || String(a.friendly_name || id).trim(),
+          name: this._settings().names?.[id] || this._info?.hubs?.[id]?.area?.name || String(a.friendly_name || id).trim(),
+          // own name, else the room (area), else the hub name
           current: s.state === "on" ? a.current_activity : null,
           starting: a.activity_starting && a.activity_starting !== "PowerOff" ? a.activity_starting : null,
           areaIcon: this._info?.hubs?.[id]?.area?.icon || ""
@@ -1971,8 +1972,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const dp = this._directHtml(h, dev, t, false, "", true) || {};
       const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
       const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
-      const pwSwitch = swPower ? this._powerSwitch(h.id, dev, t) : "";
-      const pw = power.length ? `<div class="block power">${pwSwitch}<div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power", swPower && c !== "PowerToggle" ? "pwronoff" : "")).join("")}</div></div>` : "";
+      const pstate = swPower ? this._powerState(h.id, dev) : null;
+      let pw;
+      if (swPower) {
+        const mid = pstate === null ? `<span class="pwio">${btn("PowerOn", "I", "mdi:power", "pwio")}${btn("PowerOff", "O", "mdi:power", "pwio")}</span>` : this._powerKnob(h.id, dev, pstate);
+        pw = `<div class="block power rpow"><div class="pwrow"><span class="pwlab">${esc(t.ddCtlPower)}</span>${mid}${power.includes("PowerToggle") ? btn("PowerToggle", esc(prettyCommand("PowerToggle")), "mdi:power", "pwtg") : ""}</div></div>`;
+      } else pw = power.length ? `<div class="block power"><div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power")).join("")}</div></div>` : "";
       const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", ""];
       const pad = !kb && Object.keys(digitCmds).length >= 3 ? `<details class="block numpad" open><summary class="dname">${t.numbers}</summary><div class="nums">${digits.map((d) => d && digitCmds[d] ? btn(digitCmds[d], d) : "<span></span>").join("")}</div></details>` : "";
       const act = !embed && !this._edit ? this._runningActOf(h, dev) : null;
@@ -2434,7 +2439,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const hub = box.dataset.hub;
       const val = (n) => box.querySelector(`[data-direct="${n}"]`)?.value || "";
       const all = { ...this._fireCfg(hub) ? { [hub]: this._fireCfg(hub) } : {} };
-      if (val("entity")) all[hub] = { entity: val("entity").trim(), device: val("device"), model: val("model"), prefer: val("prefer"), ...val("irvol") ? { irVolume: val("irvol") } : {}, keymap: Object.fromEntries(["red", "green", "yellow", "blue"].map((c) => [c, val("km_" + c)]).filter((x) => x[1])), hiddenApps: [...box.querySelectorAll("input[data-hide-app]:not(:checked)")].map((i) => i.dataset.hideApp), hiddenKeys: [...box.querySelectorAll("input[data-hide-key]:not(:checked)")].map((i) => i.dataset.hideKey), inActivities: box.querySelector('[data-direct="inact"]')?.checked || false, ...box.querySelector('[data-direct="offlock"]')?.checked ? { lockOffline: true } : {}, ...all[hub]?.pkgs ? { pkgs: all[hub].pkgs } : {}, ...all[hub]?.customApps ? { customApps: all[hub].customApps } : {} };
+      if (val("entity")) all[hub] = { entity: val("entity").trim(), device: val("device"), model: val("model"), prefer: val("prefer"), ...val("irvol") ? { irVolume: val("irvol") } : {}, keymap: this._fireCfg(hub)?.keymap || {}, hiddenApps: [...box.querySelectorAll("input[data-hide-app]:not(:checked)")].map((i) => i.dataset.hideApp), hiddenKeys: [...box.querySelectorAll("input[data-hide-key]:not(:checked)")].map((i) => i.dataset.hideKey), inActivities: box.querySelector('[data-direct="inact"]')?.checked || false, ...box.querySelector('[data-direct="offlock"]')?.checked ? { lockOffline: true } : {}, ...all[hub]?.pkgs ? { pkgs: all[hub].pkgs } : {}, ...all[hub]?.customApps ? { customApps: all[hub].customApps } : {} };
       else delete all[hub];
       await this._fireSave(hub, all[hub] || null);
     },
@@ -2517,7 +2522,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${(cur.model || "all") === "cube" ? `<label class="erow"><span>${t.irVolume}</span><select data-direct="irvol"><option value="">${t.irVolumeOff}</option><option value="cube" ${cur.irVolume === "cube" ? "selected" : ""}>${t.irVolumeCube}</option></select></label>` : ""}`)}
       ${this._grp(g.fireAct, `${this._swRow(t.directAct, 'data-direct="inact"', cur.inActivities)}
         ${this._swRow(t.offlineLock, 'data-direct="offlock"', cur.lockOffline)}`)}
-      ${this._grp(g.colorKeys, ["red", "green", "yellow", "blue"].map((c) => `<label class="erow"><span>${t.colorKey[c]}</span><select data-direct="km_${c}"><option value="">–</option>${allApps.map((a) => `<option ${cur.keymap?.[c] === a.name ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`).join(""))}
       <div class="dname">${t.directShow}</div><div class="ehint pkgleg"><b>${t.pkgLegendLabel}</b> <ha-icon class="abadge s-unv" icon="mdi:help-circle-outline"></ha-icon>${t.unvChip} <ha-icon class="abadge s-ok" icon="mdi:check-circle-outline"></ha-icon>${t.instChip} <ha-icon class="abadge s-bad" icon="mdi:alert-circle-outline"></ha-icon>${t.missChip}</div><div class="cells">${allApps.map((a) => `<label class="erow approw"><input type="checkbox" data-hide-app="${esc(a.name)}" ${(cur.hiddenApps || []).includes(a.name) ? "" : "checked"}><span class="appname" title="${esc(a.pkg || "")}">${esc(a.name)}${this._appBadge(a, t)}</span>${!a.custom && cur.pkgs?.[a.name] ? `<button class="mini" data-pkgunmap="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(fmtText(t.pkgUnmap, [cur.pkgs[a.name]]))}"><ha-icon icon="mdi:link-variant-off"></ha-icon></button>` : ""}${a.custom ? `<button class="mini" data-pkgdel="${esc(a.name)}" data-hub="${esc(h.id)}" title="${esc(t.pkgRemove)}"><ha-icon icon="mdi:close"></ha-icon></button>` : ""}</label>`).join("")}</div>
       ${this._appsEdit(h.id, cur, allApps, t)}
       <div class="dname">${t.lockApps}</div><div class="ehint">${t.lockAppsMoved}</div>
@@ -3036,7 +3040,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const errs = (d.errors || []).map(esc).join("; ");
       return `${t.hubConfig}: ${d.readable} / ${d.entries}${errs ? ` · ${errs}` : ""}`;
     },
-    _infoHtml(h, t) {
+    // Technical data of one hub, in Settings › Info (0.16: no longer a panel on the card). Folded; a hub that is down opens by itself.
+    _hubInfoHtml(h, t) {
       const meta = this._info?.hubs?.[h.id]?.meta || {};
       const st = this._hass?.states?.[h.id];
       const a = st?.attributes || {};
@@ -3063,10 +3068,47 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         [t.infoLast, a.last_activity],
         [t.infoEntity, h.id]
       ].filter(([, v]) => v);
-      const canEdit = this._hass?.user?.is_admin !== false && !this._config.compact;
-      const edit = canEdit ? `<div class="infoedits"><button class="infoedit" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${t.editSettings}</span></button><button class="infoedit" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${t.editFavs}</span></button><button class="infoedit" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${t.actions}</span></button></div>` : "";
-      const head = `<div class="infohead"><i class="sdot ${down ? "bad" : "ok"}"></i><b>${esc(h.name)}</b><span>${esc([meta.manufacturer, meta.model].filter(Boolean).join(" "))}</span></div>`;
-      return `<div class="infopanel">${head}${rows.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}${edit}</div>`;
+      const head = `<summary class="infohead"><i class="sdot ${down ? "bad" : "ok"}"></i><b>${esc(h.name)}</b><span>${esc([meta.manufacturer, meta.model].filter(Boolean).join(" "))}</span></summary>`;
+      const text = rows.map(([k, v]) => `${k}: ${v}`).join("\n");
+      return `<details class="infopanel hubinfo" ${down ? "open" : ""}>${head}${rows.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}<div class="infoedits"><button class="infoedit" data-copyinfo="${esc(text)}"><ha-icon icon="mdi:content-copy"></ha-icon><span>${esc(t.copy)}</span></button></div></details>`;
+    },
+    // Hints of a hub, most serious first: r = error, o = difference to fix, b = notice. Shown in the window of the gear button.
+    _hintsOf(h, t) {
+      if (this._edit) return [];
+      const out = [];
+      const st = this._hass?.states?.[h.id];
+      if (st?.state === "unavailable") {
+        const d = new Date(st.last_changed);
+        const tm = isNaN(d) ? "" : d.toLocaleTimeString(void 0, { hour: "2-digit", minute: "2-digit" });
+        out.push({ sev: "r", key: "down", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(fmtText(t.hintDown, [h.name, tm]))}</span></div>` });
+      }
+      const errs = this._info?.diagnostics?.errors || [];
+      if (errs.length) out.push({ sev: "r", key: "diag", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(errs.join("; "))}</span></div>` });
+      for (const l of this._linkHints(h, t)) out.push({ sev: "o", key: `link:${l.key}`, html: l.html });
+      (this._mm?.[h.id] || []).forEach((it, i) => out.push({ sev: "o", key: `mm:${it.device}:${it.kind}:${it.want}`, html: this._mmRow(h, it, i, t) }));
+      return out;
+    },
+    // The gear: always in the same place; it takes the colour of the most serious hint, pulses while there is something unseen and shows the count.
+    _gearBtn(h, t) {
+      const hints = this._hintsOf(h, t);
+      const sev = hints.some((x) => x.sev === "r") ? "r" : hints.some((x) => x.sev === "o") ? "o" : hints.length ? "b" : "";
+      const sig = hints.map((x) => x.key).join("|");
+      const fresh = sev && this._hintSeen?.[h.id] !== sig;
+      const tip = hints.length ? fmtText(t.hintsTip, [hints.length]) : t.menuTitle;
+      return `<button class="ib gear ${sev ? `sev-${sev}` : ""} ${fresh ? "fresh" : ""} ${this._menuOpen?.[h.id] ? "sel" : ""}" data-menu="${esc(h.id)}" data-sig="${esc(sig)}" title="${esc(tip)}" aria-label="${esc(tip)}"><ha-icon icon="mdi:cog-outline"></ha-icon>${hints.length ? `<i class="gbadge">${hints.length}</i>` : ""}</button>`;
+    },
+    // Window under the gear: hints with their action on top, below always the way to settings (admins).
+    _menuHtml(h, t) {
+      if (!this._menuOpen?.[h.id] || this._edit) return "";
+      const hints = this._hintsOf(h, t);
+      const admin = this._hass?.user?.is_admin !== false;
+      const entries = admin ? `<div class="mentries">
+        <button class="mentry" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${esc(t.editSettings)}</span></button>
+        <button class="mentry" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${esc(t.editFavs)}</span></button>
+        <button class="mentry" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${esc(t.actions)}</span></button>
+        <button class="mentry" data-edit="settings" data-goetab="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
+      const list = hints.length ? `<div class="mhints">${hints.map((x) => x.html).join("")}</div>` : admin ? "" : `<div class="mnone">${esc(t.noHints)}</div>`;
+      return `<div class="hmenu" data-hmenu="${esc(h.id)}">${list}${entries}</div>`;
     },
     _legendHtml(t) {
       const items = Array.isArray(t.legend) ? t.legend : [];
@@ -3083,15 +3125,30 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const status = Array.isArray(t.statusLegend) ? t.statusLegend : [];
       const open = status[this._statusOpen];
       const grid = status.map((x, n) => `<button class="sbtn ${n === this._statusOpen ? "sel" : ""}" data-status="${n}"><span class="sample">${sample(x.kind)}</span><span>${esc(x.short || x.title)}</span></button>`).join("");
-      return `<div class="esec infobox" data-t="info"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
+      const hubs = `<div class="esec infobox" data-t="info"><div class="etitle">${t.hubsTitle}</div>${this._hubs().map((h) => this._hubInfoHtml(h, t)).join("")}</div>`;
+      return `${hubs}<div class="esec infobox" data-t="info"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
         <div class="ehint sexpl">${open ? `<b>${esc(open.title)}</b> ${esc(open.text)}` : esc(t.statusHint)}</div></div>
       <details class="esec infobox" data-t="info"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
     },
     // Events of the info panel and the legend.
     _bindInfo(root) {
-      root.querySelectorAll("[data-info]").forEach((b) => b.addEventListener("click", () => {
-        this._infoOpen = { ...this._infoOpen || {}, [b.dataset.info]: !this._infoOpen?.[b.dataset.info] };
+      root.querySelectorAll("[data-menu]").forEach((b) => b.addEventListener("click", () => {
+        const hub = b.dataset.menu;
+        const open = !this._menuOpen?.[hub];
+        this._menuOpen = { [hub]: open };
+        if (open) this._hintSeen = { ...this._hintSeen || {}, [hub]: b.dataset.sig };
         this._rerender();
+      }));
+      root.querySelectorAll("[data-copyinfo]").forEach((b) => b.addEventListener("click", async (e) => {
+        e.preventDefault();
+        let ok = false;
+        try {
+          await navigator.clipboard.writeText(b.dataset.copyinfo);
+          ok = true;
+        } catch (err) {
+          ok = false;
+        }
+        b.querySelector("span").textContent = ok ? this._t().copied : this._t().copyFailed;
       }));
       root.querySelectorAll("[data-copyraw]").forEach((b) => b.addEventListener("click", async () => {
         const text = b.parentElement.querySelector("pre")?.textContent || "";
@@ -3355,15 +3412,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this.hass = this._hass;
       }
     },
-    _mmHtml(h, t) {
-      const items = this._edit ? [] : this._mm?.[h.id] || [];
-      if (!items.length) return "";
-      const rows = items.map((it, i) => {
-        const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
-        const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
-        return `<div class="mmrow"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" class="mini txt" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
-      }).join("");
-      return `<div class="mmbox">${rows}</div>`;
+    // One target/actual difference as a hint row with its fix (shown in the gear window since 0.16).
+    _mmRow(h, it, i, t) {
+      const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
+      const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
+      return `<div class="hint-row o"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
     },
     _bindMismatch(root) {
       root.querySelectorAll("[data-mmfix]").forEach((b) => b.addEventListener("click", async () => {
@@ -3617,6 +3670,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       "--hr-rocker-radius": "30px",
       "--hr-rk-radius": "22px"
     }
+  };
+  var skinOrder = () => {
+    const front = ["homebase", "terminal", "radio"].filter((k) => k in SKINS);
+    return [...front, ...Object.keys(SKINS).filter((k) => !front.includes(k))];
   };
 
   // src/deck/options.js
@@ -4287,7 +4344,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const fireOnly = !cur && !!fi && (fi.mode === "on" || fi.mode === "playing");
       const helpAct = cur || (fireOnly ? this._fireActivity(h) : null);
       const helpBtn = this._edit || compact && !helpAct ? "" : `<button class="ib ${this._helpOpen?.[h.id] ? "sel" : "hl"}" data-help="${esc(h.id)}" title="${esc(helpAct ? t.help : t.helpOff)}" ${helpAct ? "" : "disabled"}><ha-icon icon="mdi:lifebuoy"></ha-icon></button>`;
-      const infoBtn = compact ? "" : `<button class="ib ${this._infoOpen?.[h.id] ? "sel" : ""}" data-info="${esc(h.id)}" title="${esc(t.infoBtn)}"><ha-icon icon="mdi:information-outline"></ha-icon></button>`;
+      const infoBtn = this._edit ? "" : this._gearBtn(h, t);
       const openNow = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
       const collapseBtn = !this._edit && !compact ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
       const nameTxt = this._config.title ?? h.name;
@@ -4295,9 +4352,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const collapsedNow = !this._edit && !compact && !!openNow && !!this._hdrCollapsed?.[h.id];
       const toggleBtn = this._edit || compact ? "" : collapsedNow ? `<button class="ib subtle" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="mdi:chevron-down"></ha-icon></button>` : collapseBtn;
       const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-      const top = `<div class="toprow">${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+      const top = `<div class="toprow">${this._menuHtml(h, t)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
       const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
-      const boxes = `${this._infoOpen?.[h.id] ? this._infoHtml(h, t) : ""}${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
+      const boxes = `${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
       let body;
       if (this._edit || !hasDevices) {
         body = mode === "devices" ? this._devicesView(h, cur, t) : this._activitiesView(h, cur, busy, t, index);
@@ -4305,7 +4362,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         body = `<div class="pager" data-pager data-p="${p}"><div class="track" style="transform: translateX(${-p * 100}%)">
           <div class="pane" data-pane="0">${this._activitiesView(h, cur, busy, t, index, "grid")}</div>
           <div class="pane" data-pane="1">${this._devicesView(h, cur, t, "list")}</div></div></div>
-        <div class="below">${this._mmHtml(h, t)}${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
+        <div class="below">${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
       }
       if (this._edit) return `<section class="editview"><div class="hdr">${tabs}</div>${this._editBody(h, t, body)}</section>`;
       const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";
@@ -4318,7 +4375,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const hdr = `${top}<div class="slimrow">${slim}${offB}</div>`;
         return `<section class="collapsed"><div class="hdr">${hdr}</div>${boxes}${below}${this._actionsBlock(h, cur, t)}</section>`;
       }
-      return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+      return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${body}</section>`;
     },
     // What runs in a room, as chips (expanded) and short texts (collapsed): Harmony activity, Fire TV, linked network devices with their source.
     _statusParts(h, t, cur, busy) {
@@ -4578,7 +4635,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _editHtml(t, h) {
       const skin = this._skin();
       const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-      const skins = Object.fromEntries(Object.keys(SKINS).map((k) => [k, t.skins[k] || k]));
+      const skins = Object.fromEntries(skinOrder().map((k) => [k, t.skins[k] || k]));
       const etab = this._etabNow();
       const g = t.groups || {};
       const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
@@ -4764,7 +4821,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         '[data-direct="inact"]': "directAct",
         '[data-direct="offlock"]': "offlineLock",
         '[data-direct="model"]': "directModel",
-        '[data-direct="km_red"]': "colorKey",
         "[data-hubname]": "hubName",
         "[data-hubvis]": "hubVis",
         '[data-setting="noBlur"]': "noBlur",
@@ -4834,7 +4890,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       } else {
         if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings()));
         this._editMode = act;
-        this._infoOpen = {};
+        this._menuOpen = {};
+      }
+      if (act !== "cancel" && act !== "cancelno") {
+        this._ddPage = null;
+        this._iconOpen = null;
       }
       this._key = "";
       this.hass = this._hass;
@@ -4893,10 +4953,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var skinDecorMixin = {
     _skinHead(skin, h) {
       if (skin !== "radio") return "";
-      const name2 = this._config.title ?? h?.name ?? "";
-      const idx = h?.current ? Math.max(0, (h.list || []).indexOf(h.current)) : 0;
-      const needle = h?.current && h.current !== "PowerOff" ? 12 + idx * 17 % 76 : 8;
-      return `<div class="skin-head"><div class="skin-dial"><b>${String(name2).replace(/[<>&"]/g, "")}</b><i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
+      const clean = (x) => String(x ?? "").replace(/[<>&"]/g, "");
+      const name2 = clean(this._config.title ?? h?.name);
+      const acts = (h?.list || []).filter((a) => a !== "PowerOff");
+      const idx = h?.current ? acts.indexOf(h.current) : -1;
+      const run = idx >= 0;
+      const needle = run ? 10 + (acts.length > 1 ? idx / (acts.length - 1) * 80 : 40) : 6;
+      const lab = run ? `<span class="skin-sta ${needle > 62 ? "left" : ""}" style="--needle:${needle}%">${clean(h.current)}</span>` : "";
+      return `<div class="skin-head"><div class="skin-dial"><b>${name2}</b>${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
     },
     _skinTail(skin) {
       return skin === "terminal" ? '<div class="skin-tear"></div><div class="skin-glare"></div>' : "";
@@ -4918,38 +4982,31 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const h = hubs.find((x) => x.id === this._hubSel) || hubs[0];
       el.style.setProperty("--eye", this._eyeLevel(h));
     },
-    // On/Off toggle switch of the device view (tube radio). The state comes from the linked player, else from the last tap.
-    _powerSwitch(hub, dev, t) {
+    // State of a device from its linked player: true = on, false = off, null = not known (no link, unavailable).
+    _powerState(hub, dev) {
       const link = this._settings().directDevices?.[hub]?.[dev];
       const st = link ? this._hass?.states?.[link.entity]?.state : null;
-      const known = st && !["unavailable", "unknown"].includes(st);
-      const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
-      return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i><b class="lamp"></b></span></label>`;
+      if (!st || ["unavailable", "unknown"].includes(st)) return null;
+      return !["off", "standby"].includes(st);
     },
-    // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
-    // (a sticky bar pushed down there covered the first row of keys on a tablet).
-    _bindStickyHeader(root) {
+    // Tube radio, device view: On/Off as a sunken brass button in a bezel with a lamp behind (known state), see _bindSkinDecor.
+    _powerKnob(hub, dev, on) {
+      const a = `data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}"`;
+      return `<span class="pwknob ${on ? "on" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
+    },
+    // The collapsed header no longer sticks (0.16): the offset below the Home Assistant bar was wrong in views with tabs and pushed it over the keys.
+    _bindStickyHeader() {
       if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
       this._stickFn = null;
-      const bars = [...root.querySelectorAll("section.collapsed > .hdr")];
-      if (!bars.length) return;
-      const scrolled = () => {
-        for (let n = this; n; n = n.assignedSlot || n.parentNode || n.host) if (n.scrollTop > 0) return true;
-        return (document.scrollingElement?.scrollTop || 0) > 0;
-      };
-      const upd = () => {
-        const on = !scrolled();
-        bars.forEach((hdr) => hdr.classList.toggle("nostick", on));
-      };
-      this._stickFn = upd;
-      window.addEventListener("scroll", upd, { capture: true, passive: true });
-      upd();
     },
     _bindSkinDecor(root) {
       this._bindStickyHeader(root);
-      root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
+      root.querySelectorAll("button[data-swpwr]").forEach((el) => el.addEventListener("click", () => {
         const { hub, device } = el.dataset;
-        this._swPowerSend(hub, device, el.checked);
+        const on = el.getAttribute("aria-pressed") !== "true";
+        el.setAttribute("aria-pressed", on ? "true" : "false");
+        el.parentElement.classList.toggle("on", on);
+        this._swPowerSend(hub, device, on);
       }));
     },
     // The switch sends On/Off itself. (Up to 0.15.4 it "clicked" the hidden On/Off key, but keys send on pointerdown,
@@ -5006,6 +5063,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* the tools next to the room tabs: no frame, active = brighter glow */
       ${T} .bbtns .ib, ${T} .bbtns .profchip { border: none; box-shadow: none; background: transparent; color: #3dff6b; }
       ${T} .bbtns .ib.sel ha-icon { filter: drop-shadow(0 0 6px #3dff6b) drop-shadow(0 0 12px #3dff6b) brightness(1.35); }
+      ${T} .ib.gear[class*="sev-"] { background: #3dff6b !important; box-shadow: 0 0 12px rgba(61,255,107,.7) !important; } ${T} .ib.gear[class*="sev-"] ha-icon { color: #021a05 !important; filter: none; } ${T} .gbadge { background: #021a05 !important; color: #3dff6b !important; border: 1px solid #3dff6b; border-radius: 0 !important; }
+      ${T} .hmenu { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; box-shadow: 0 0 14px rgba(61,255,107,.4); } ${T} .hint-row > ha-icon, ${T} .mentry ha-icon { color: #3dff6b !important; } ${T} .hint-row button { background: #3dff6b; color: #021a05; border-radius: 0; } ${T} .mentry { border-radius: 0; border: 1px solid #1fa63f; background: #021a05; color: #3dff6b; }
       /* everything green: On/Off keys, the off button, Fire TV app keys and badges in Pip-Boy style (no brand colours) */
       ${T} .key.pon ha-icon, ${T} .key.poff ha-icon, ${T} .ib.offb, ${T} .ib.offb ha-icon { color: #3dff6b !important; }
       ${T} .appcell.svc { --c: #021a05 !important; --fg: #3dff6b !important; border: 1px solid #1fa63f; }
@@ -5028,12 +5087,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* hold to switch off: green like everything else; blocks fill the whole tile left to right, then the picture shrinks to a line */
       ${T} .holdoff ha-icon, ${T} .tile.off ha-icon { color: #3dff6b !important; }
       ${T} .tile.off.holdoff { justify-content: center; gap: 12px; position: relative; overflow: hidden; }
-      ${T} .tile.off.holdoff::before { content: "OFF" !important; order: 2; margin: 0 !important; font-weight: 700; letter-spacing: .2em; color: #3dff6b; }
+      ${T} .tile.off.holdoff::before { content: "" !important; margin: 0 !important; }
       ${T} .holdoff .hring { display: none; }
       ${T} .holdoff.holding { background: #021a05 !important; }
-      ${T} .tile.holdoff.holding::after, ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { content: ""; position: absolute; inset: 0; right: auto; width: calc(var(--p, 0) * 1%); transform: none; animation: none; border-radius: 0;
-        background: repeating-linear-gradient(90deg, rgba(61,255,107,.55) 0 8px, transparent 8px 11px); box-shadow: 0 0 10px rgba(61,255,107,.5); }
-      ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { width: 100%; transition: clip-path .7s linear; clip-path: inset(0 0 0 0); }
+      ${T} .tile.holdoff.holding, ${T} .ib.holdoff.holding { background: color-mix(in srgb, #3dff6b calc(var(--p, 0) * 1%), #021a05) !important; box-shadow: 0 0 calc(var(--p, 0) * .2px) rgba(61,255,107,.7), inset 0 0 8px rgba(61,255,107,.2); }
+      ${T} .holding::after { display: none !important; }
+      ${T} .tile.locked.holding, ${T} .actbtn.holding { animation: skfill .7s linear forwards; } ${T} .tile.locked.holding *, ${T} .actbtn.holding * { animation: skfilltx .7s linear forwards; text-shadow: none; }
+      @keyframes skfill { from { background: #021a05; } to { background: #3dff6b; box-shadow: 0 0 16px rgba(61,255,107,.7); } } @keyframes skfilltx { from { color: #3dff6b; } to { color: #021a05; } }
+      ${T} .holdoff.holding ha-icon, ${T} .holdoff.holding span { color: color-mix(in srgb, #021a05 calc(var(--p, 0) * 1%), #3dff6b) !important; text-shadow: none; filter: none; }
+      /* devices that take part in the running activity: faint phosphor flicker instead of a dot */
+      ${T} .tile.dev.inuse::after { display: none; }
+      ${T} .tile.dev.inuse { animation: skphos 3.4s infinite steps(1); }
+      @keyframes skphos { 0%, 100% { filter: none; opacity: 1; } 8% { opacity: .72; } 9% { opacity: 1; } 41% { filter: brightness(1.35); } 42% { filter: none; } 63% { opacity: .82; } 65% { opacity: 1; } 88% { filter: brightness(1.2); } 89% { filter: none; } }
+      /* lists in the screen's look */
+      ${T} select, ${T} .profchip { font-family: inherit; color: #3dff6b; background-color: #021a05; border: 1px solid #1fa63f; border-radius: 0; box-shadow: 0 0 8px rgba(61,255,107,.25); } ${T} select option { background: #021a05; color: #3dff6b; font-family: inherit; }
       ${T} .holdoff.fired { background: #3dff6b !important; color: #021a05; transform: scaleY(.14); transition: transform .35s ease-in; box-shadow: 0 0 22px 6px rgba(184,255,201,.8); }
       ${T} .holdoff.fired ha-icon, ${T} .holdoff.fired span { opacity: 0; }
       @keyframes skroll { from { transform: translateY(-120px); } to { transform: translateY(1400px); } }
@@ -5052,10 +5119,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         background: repeating-linear-gradient(90deg, rgba(241,227,193,.55) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(241,227,193,.9) 0 1px, transparent 1px 60px); background-size: 100% 10px, 100% 18px; background-repeat: no-repeat; background-position: 0 0, 0 0; }
       ${R} .skin-dial b { position: absolute; top: 20px; left: 12px; font: 600 11px Georgia, serif; letter-spacing: .2em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; }
       ${R} .skin-dial i { position: absolute; top: 0; bottom: 0; left: var(--needle, 40%); width: 2px; background: #ff7a1a; box-shadow: 0 0 8px 2px rgba(255,120,20,.8); transition: left .8s; }
+      ${R} .skin-sta { position: absolute; top: 3px; left: calc(var(--needle, 40%) + 6px); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
+      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%) + 6px); }
       ${R} .skin-eye { position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #c8a24a;
-        box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(120,255,120,.55); filter: drop-shadow(0 0 6px rgba(120,255,120,.6));
+        box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(255,170,60,.55); filter: drop-shadow(0 0 6px rgba(255,170,60,.6));
         --w: calc((1 - var(--eye, .5)) * 150deg);
-        background: radial-gradient(circle at 50% 50%, #0c1f0c 0 15%, transparent 16%), conic-gradient(from 0deg, #6dff6d 0 calc(180deg - var(--w) / 2), #0f3a14 0 calc(180deg + var(--w) / 2), #6dff6d 0), radial-gradient(circle, #0a1a0a, #041004); }
+        background: radial-gradient(circle at 50% 50%, #0c1f0c 0 15%, transparent 16%), conic-gradient(from 0deg, #ffb84a 0 calc(180deg - var(--w) / 2), #3a1802 0 calc(180deg + var(--w) / 2), #ffb84a 0), radial-gradient(circle, #1a0d05, #0a0502); }
       ${R} .skin-eye::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(ellipse at 35% 22%, rgba(255,255,255,.55), transparent 38%); }
       /* every tile is a pilot lamp under a wire grille: unlit = dark amber glass, lit (running / selected) = glowing */
       ${R} .tile { position: relative; border: 3px solid #b9b19a; color: #e2c58a; text-shadow: 0 1px 0 rgba(0,0,0,.8);
@@ -5081,11 +5150,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .rocker .rk.mute.round { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210) !important; border: 2px solid #2a170a !important; box-shadow: 0 3px 0 #3b2a14, 0 5px 6px rgba(0,0,0,.6) !important; transition: transform .12s, box-shadow .12s; }
       ${R} .rocker .rk.mute.round.muted { transform: translateY(3px); filter: brightness(.82); box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 #3b2a14 !important; }
       /* keys with a state are pressed in while active; keys without one go down on a tap and come back */
-      ${R} .key.sel, ${R} .key.on, ${R} .key.muted, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
+      ${R} .key.muted { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
       ${R} .key { transition: transform .12s ease, box-shadow .12s ease; }
       ${R} .key.lit, ${R} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; color: #2a170a; box-shadow: 0 1px 0 #6b4a1a, 0 2px 3px rgba(0,0,0,.5); }
       ${R} .rocker .rk.lit, ${R} .rocker .rk:active { background: transparent !important; box-shadow: none !important; }
-      ${R} .appcell.svc.on { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
       /* toggle switch, horizontal: brass nut, chrome lever pointing right = ON (AN, nut glows) or left = OFF (AUS) */
@@ -5096,15 +5164,34 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
       ${R} .sw:has(> input) i::after { content: ""; position: absolute; height: 10px; width: 24px; top: 13px; left: 6px; border-radius: 5px; transform: none; background: linear-gradient(180deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
       ${R} .sw:has(> input) input:checked + i::after { left: 52px; transform: none; box-shadow: 0 3px 4px rgba(0,0,0,.6); }
-      ${R} .sw:has(> input)::before { content: none; display: none; }
-      ${R} .sw:has(> input)::after { content: none; display: none; }
-      ${R} .sw:has(> input) { width: 88px; }
-      ${R} .sw:has(> input) i::before { left: 18px; }
-      ${R} .sw:has(> input) i::after { left: 4px; width: 20px; }
-      ${R} .sw:has(> input) input:checked + i::after { left: 36px; }
-      ${R} .sw .lamp { display: block; position: absolute; right: 0; top: 8px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #b9b19a; box-sizing: border-box; pointer-events: none;
-        background: radial-gradient(circle at 38% 32%, #ff9a8a, #b0180a 55%, #4a0803); box-shadow: 0 0 5px rgba(255,40,20,.35), inset 0 0 4px rgba(0,0,0,.5); }
-      ${R} .sw input:checked ~ .lamp { background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 10px 3px rgba(77,255,107,.8); }
+      /* On/Off of a device: one row (label, switch, Toggle). Known state = sunken brass button with a lamp behind; unknown = short keys I and O */
+      ${R} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; }
+      ${R} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
+      ${R} .pwknob { position: relative; flex: none; width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(circle, #1a0d05 55%, #4a3012 70%, #c8a24a 72%, #6b4a1a 80%); box-shadow: 0 3px 6px rgba(0,0,0,.6); }
+      ${R} .pwknob.on { background: radial-gradient(circle, #3a1802 40%, #7a3a05 62%, #ffb84a 70%, #c8a24a 74%, #6b4a1a 82%); box-shadow: 0 0 0 2px #ffb84a, 0 0 18px 6px rgba(255,150,30,.75), 0 3px 6px rgba(0,0,0,.6); animation: rlamp 4.2s infinite steps(1); }
+      ${R} .pwknob .knob { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 2px solid #2a170a; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 4px 0 #3b2a14, 0 6px 6px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s; }
+      ${R} .pwknob .knob ha-icon { color: #2a170a !important; }
+      ${R} .pwknob.on .knob { transform: translateY(3px); filter: brightness(.88); box-shadow: inset 0 3px 6px rgba(0,0,0,.6), 0 1px 0 #3b2a14; }
+      ${R} .pwio { display: flex; gap: 10px; } ${R} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; border-radius: 14px; } ${R} .key.pwio span { font: 700 10px Georgia, serif; } ${R} .key.pwio ha-icon { --mdc-icon-size: 18px; }
+      ${R} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; border-radius: 999px; gap: 6px; } ${R} .key.pwtg span { font: 600 12px Georgia, serif; }
+      /* keys with a state: dark glass behind a grille, the letters lit orange (and a faint lamp flicker); Mute stays a pressed brass button */
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); border-color: #8a6a2a;
+        background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #1f0f05, #3a1d08) !important;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,.8), 0 1px 0 #6b4a1a !important; filter: none; animation: rlamp 4.2s infinite steps(1); }
+      ${R} .key.sel:not(.mute) *, ${R} .key.on:not(.mute) *, ${R} .appcell.svc.on *, ${R} .ic-row.on *, ${R} .mini.sel *, ${R} .mini.txt.sel * { color: #ffb84a !important; text-shadow: 0 0 6px rgba(255,150,30,.95), 0 0 14px rgba(255,120,20,.7); }
+      /* lamps breathe a little: irregular, faint; devices that take part in the running activity flicker weaker */
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton { animation: rlamp 4.6s infinite steps(1); }
+      ${R} .tile.dev.inuse { box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 12px 1px rgba(255,150,30,.38), 0 3px 6px rgba(0,0,0,.6); animation: rlampw 5.3s infinite steps(1); }
+      ${R} .tile.dev.inuse::after { top: 3px; right: 3px; bottom: 3px; left: 3px; width: auto; height: auto; border-radius: inherit; background: repeating-linear-gradient(0deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px), repeating-linear-gradient(90deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px); }
+      @keyframes rlamp { 0%, 100% { filter: none; } 11% { filter: brightness(.86); } 12% { filter: none; } 37% { filter: brightness(1.12); } 38% { filter: none; } 61% { filter: brightness(.9); } 63% { filter: none; } 86% { filter: brightness(1.08); } 87% { filter: none; } }
+      @keyframes rlampw { 0%, 100% { filter: none; } 18% { filter: brightness(.82); } 20% { filter: none; } 52% { filter: brightness(1.1); } 54% { filter: none; } 79% { filter: brightness(.88); } 81% { filter: none; } }
+      /* lists and the gear in the radio's look */
+      ${R} select, ${R} .profchip { font-family: inherit; color: #e2c58a; background-color: #2a170a; border: 2px solid #c8a24a; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,.5); } ${R} select option { background: #2a170a; color: #e2c58a; font-family: inherit; }
+      ${R} .bbtns .ib.gear { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #c8a24a; background: radial-gradient(circle at 40% 35%, #6b4a1a, #2a170a); box-shadow: 0 2px 4px #000; } ${R} .ib.gear ha-icon { color: #c8a24a !important; --mdc-icon-size: 18px; filter: none; }
+      ${R} .ib.gear.sev-r { background: radial-gradient(circle at 40% 35%, #ffd0b0, #ff5a2a 50%, #7a1a05); box-shadow: 0 0 14px 4px rgba(255,80,30,.8); } ${R} .ib.gear.sev-o, ${R} .ib.gear.sev-b { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb347 50%, #a8480a); box-shadow: 0 0 14px 4px rgba(255,150,30,.8); }
+      ${R} .ib.gear[class*="sev-"] ha-icon { color: #2a170a !important; } ${R} .gbadge { background: #2a170a !important; color: #ffcf70 !important; border: 1px solid #c8a24a; }
+      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -5130,7 +5217,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .rocker.slr:not(:has(.mute))::before, ${R} .rocker.slr:not(:has(.mute))::after { bottom: 18px; }
       /* round typewriter keys on the keyboard */
       ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
-      ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
       /* readable text on the light brass-cream surfaces: buttons of the editors, favourites and the small buttons */
       ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }
       ${R} .mini:not(.txt) ha-icon, ${R} .mini.txt ha-icon { color: inherit; }
@@ -5146,7 +5232,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .tile.holdoff.holding ha-icon { color: #fff3e0 !important; filter: drop-shadow(0 0 6px #ff6a2a); }
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
-      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i { animation: none !important; transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -5536,7 +5622,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .bar .status.busy > ha-icon { animation: pulse 1s ease-in-out infinite; }
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
-      @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; } .toprow .hubtabs button:not(.sel) .rn { display: none; } .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      @container (max-width: 400px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -5564,8 +5650,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ha-card { overflow: visible; }
       section > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 8px); }
       section.collapsed > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 62px); }
-      section.collapsed > .hdr.nostick { position: static; }
-      section.collapsed > .hdr { display: block; position: sticky; top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px)); z-index: 4; padding: 6px 0; margin: -6px 0; background: var(--hr-card-bg, var(--card-background-color)); }
+      section.collapsed > .hdr { display: block; padding: 6px 0; margin: -6px 0; }
       .devhead .devclose { margin-left: auto; }
       .tabhint { margin: 2px 0 6px; } .adbhelp { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; } .adbhelp ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-accent); }
       .devhead .actlink { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--hr-accent); background: color-mix(in srgb, var(--hr-accent) 14%, transparent); color: var(--hr-text); font: inherit; font-size: 0.8em; cursor: pointer; }
@@ -5577,6 +5662,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .rocker .rk.mute.round { flex: none; align-self: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; background: var(--hr-key-bg); --mdc-icon-size: 20px; }
       .rocker.slr .rk.mute.round { margin-top: 6px; } .rocker.slr { flex-direction: column; }
       .sw .lamp { display: none; }
+      /* gear: menu and hints in one place; colour = most serious hint, pulse while unseen, count at the corner */
+      .toprow { position: relative; }
+      .ib.gear { position: relative; } .ib.gear .gbadge { position: absolute; top: 1px; right: 1px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 10px/15px system-ui, sans-serif; font-style: normal; text-align: center; color: #fff; background: var(--gc, var(--hr-accent)); }
+      .ib.gear.sev-r { --gc: #e53935; } .ib.gear.sev-o { --gc: #fb8c00; } .ib.gear.sev-b { --gc: var(--hr-accent); }
+      .ib.gear[class*="sev-"] ha-icon { color: var(--gc); filter: drop-shadow(0 0 5px var(--gc)); }
+      .ib.gear.fresh ha-icon { animation: gearpulse 1.6s ease-in-out infinite; } @keyframes gearpulse { 50% { opacity: .45; filter: none; } }
+      .hmenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(340px, 100%); box-sizing: border-box; padding: 6px; border-radius: 14px; background: var(--hr-card-bg, var(--card-background-color, #1e2126)); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: grid; gap: 4px; }
+      .mhints { display: grid; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); } .mhints:last-child { border: none; padding: 0; }
+      .hint-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px; border-radius: 10px; font-size: 0.85em; color: var(--hr-text); }
+      .hint-row > ha-icon { --mdc-icon-size: 18px; flex: none; } .hint-row.r > ha-icon { color: #e53935; } .hint-row.o > ha-icon { color: #fb8c00; } .hint-row.b > ha-icon { color: var(--hr-accent); }
+      .hint-row > span { flex: 1 1 160px; min-width: 0; } .hint-row button { margin-left: auto; border: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 999px; background: var(--hr-accent); color: var(--hr-on-accent); }
+      .mentries { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .mentry { display: flex; align-items: center; gap: 8px; border: none; font: inherit; font-size: 0.85em; cursor: pointer; padding: 10px; border-radius: 10px; background: var(--hr-tile-bg); color: var(--hr-text); text-align: left; } .mentry ha-icon { --mdc-icon-size: 18px; color: var(--hr-muted); flex: none; }
+      .mnone { padding: 12px; text-align: center; color: var(--hr-muted); font-size: 0.85em; }
+      details.hubinfo { margin-bottom: 8px; } details.hubinfo > summary { cursor: pointer; list-style: none; } details.hubinfo > summary::-webkit-details-marker { display: none; } details.hubinfo:not([open]) > summary { border-bottom: none; padding-bottom: 0; margin-bottom: 0; } details.hubinfo > summary::after { content: "\\25BE"; margin-left: 6px; color: var(--hr-muted); } details.hubinfo[open] > summary::after { content: "\\25B4"; }
+      @media (prefers-reduced-motion: reduce) { .ib.gear.fresh ha-icon { animation: none; } }
       .key.muted { color: var(--hr-accent); box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .sidecol { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: space-between; }
       .key.tall { flex: 1; min-height: 40px; flex-direction: column; gap: 1px; border-radius: var(--hr-rk-radius, 14px); padding: 2px; } .key.tall ha-icon { --mdc-icon-size: 20px; }
@@ -5839,7 +5939,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._modeState,
         this._device,
         this._hubSel,
-        this._infoOpen,
+        this._menuOpen,
+        this._hintSeen,
         this._actPanel,
         this._actPanelOff,
         hubs.map((h) => this._links(h).map((l) => {
@@ -5906,7 +6007,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return [
         { name: "entity", selector: { entity: { domain: "remote" } } },
         { name: "profile", selector: { select: { mode: "dropdown", options: [{ value: "", label: t.cardEditor.auto }, ...(this._profiles || []).map((n) => ({ value: n, label: n }))] } } },
-        { name: "skin", selector: { select: { mode: "dropdown", options: Object.keys(SKINS).map((k) => ({ value: k, label: t.skins?.[k] || k })) } } },
+        { name: "skin", selector: { select: { mode: "dropdown", options: skinOrder().map((k) => ({ value: k, label: t.skins?.[k] || k })) } } },
         { name: "language", selector: { select: { mode: "dropdown", options: [{ value: "de", label: "Deutsch" }, { value: "en", label: "English" }, { value: "ru", label: "Русский" }] } } },
         { name: "columns", selector: { number: { min: 2, max: 5, mode: "box" } } },
         { name: "compact", selector: { boolean: {} } },

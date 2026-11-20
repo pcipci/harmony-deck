@@ -166,12 +166,6 @@
     "raised": "Classic"
   },
   "directShow": "Show apps",
-  "colorKey": {
-    "red": "Red key starts",
-    "green": "Green key starts",
-    "yellow": "Yellow key starts",
-    "blue": "Blue key starts"
-  },
   "directPrefer": "Send shared keys via",
   "preferH": "Harmony (ADB as fallback)",
   "preferA": "ADB direct",
@@ -276,7 +270,6 @@
     "directPrefer": "Send shared keys (arrows, play …) via Harmony and use ADB only for gaps, or always ADB.",
     "directAct": "Also shows the Fire TV keys and apps inside activities, not only in the device.",
     "directModel": "Limits the keys to what your model really has.",
-    "colorKey": "The coloured remote keys can start an app.",
     "apps": "Which app tiles appear. The badge next to the name shows how far the package name is verified.",
     "keys": "Which further keys appear.",
     "actions": "Actions are your own keys that switch something in Home Assistant, such as a light, a scene or a script. They work without Harmony and show the state of the entity.",
@@ -372,7 +365,6 @@
   "yamlLock": "Set in this card's YAML ({0}: {1}). To release: card › ⋮ › Edit › “Use integration setting”.",
   "yamlHint": "Locked because set in the card YAML: {0}. To release: card › ⋮ › Edit, then under “Fixed in this card” click “Use integration setting” (or delete the lines in the YAML code).",
   "pkgMapTitle": "Assign packages ({0})",
-  "infoBtn": "Info and settings",
   "entityPick": "Choose entity …",
   "cancel": "Cancel",
   "cancelTip": "Discard all changes since opening",
@@ -982,5 +974,11 @@
     "app_list": "List apps"
   },
   "preferHint": "Via Harmony the keys can arrive late or not at all (the hub sends infrared or Bluetooth). Direct ADB is fast; it is the default for a new setup.",
-  "allOff": "all off"
+  "allOff": "all off",
+  "menuTitle": "Settings and hints",
+  "noHints": "No hints",
+  "hintsTip": "{0} hint(s) – tap to see",
+  "hintDown": "{0} not reachable since {1}",
+  "menuInfo": "Info",
+  "hubsTitle": "Hubs"
 }

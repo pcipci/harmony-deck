@@ -36,7 +36,8 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 | **Netzwerksteuerung** | Harmony-Gerät mit seinem Mediaplayer (TV, Receiver) verbinden: Zustand, genaue Lautstärke (Regler statt Lauter/Leiser in der Fernbedienung) und Quelle übers Netzwerk, erkannte Plattform mit ihren Eigenheiten, Soll/Ist-Prüfung mit Korrektur per Tipp, vorsichtige Vorschläge, abschaltbar |
 | **Fire TV** | Apps, Wiedergabe/Pause, Standby, Texteingabe und Zusatztasten per ADB; beim Fire TV Cube Lautstärke über den Infrarot-Sender |
 | **Sperre** | Aus / Immer / Zeitplan, zeitliche Freigabe, erlaubte Aktivitäten und Apps, Geräte, die mit dem Fire TV ausgehen, letzte 100 Eingriffe |
-| **Looks** | 13 Looks, darunter die Effekt-Looks Terminal (grünes Röhrenglas mit Störungen) und Röhrenradio (Kontrolllampen, magisches Auge, Kippschalter); Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
+| **Looks** | 13 Looks, darunter die Effekt-Looks Terminal (grünes Röhrenglas mit Störungen) und Röhrenradio (flackernde Kontrolllampen, versenkbare Messingknöpfe, magisches Auge); Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
+| **Hinweise** | Ein Zahnrad in der Reiterzeile: Es nimmt die Farbe des schwersten Hinweises an (Hub nicht erreichbar, Player weicht von der Aktivität ab …), pulsiert, bis man hingesehen hat, und zeigt die Anzahl; sein Fenster listet die Hinweise mit ihrer Aktion über den Einstellungen |
 | **Profile** | Unterschiedliche Einstellungen für Personen oder Tablets |
 | **Entitäten** | Aktivitäten, Geräte und Aktionen pro Hub als Liste, eine Taste pro Aktion, ein Gerät pro verbundenem Netzwerkgerät, Abweichungen pro Hub, Sperr-Entitäten, Reparaturhinweise und Diagnose |
 | **Sprachen** | Deutsch, Englisch, Russisch; weitere als eine JSON-Datei |
@@ -101,7 +102,7 @@ Die ausführliche Anleitung steht im [Handbuch](docs/HANDBUCH.md) (englisch: [Ma
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm mit Scanlines, Rauschen, durchlaufendem Balken und gelegentlichem Flackern; Aktivitäten als Listenzeilen, die laufende invertiert) und **Röhrenradio** (Holz und Messing, die laufende Aktivität als Glas-Kontrolllampe, ein magisches Auge, das der Lautstärke folgt, Kippschalter). Die Effekte liegen nur über der Karte, die Animationen stoppen bei „Bewegung reduzieren“.
+Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm mit Scanlines, Rauschen, durchlaufendem Balken und gelegentlichem Flackern; Aktivitäten als Listenzeilen, die laufende invertiert) und **Röhrenradio** (Holz und Messing, die laufende Aktivität als Glas-Kontrolllampe, ein bernsteinfarbenes magisches Auge, das der Lautstärke folgt, versenkbare Messingknöpfe mit Lampe dahinter, Tasten mit Zustand als leuchtendes dunkles Glas, leichtes Lampenflackern, eine Skala mit Raum und laufender Aktivität). Die Effekte liegen nur über der Karte, die Animationen stoppen bei „Bewegung reduzieren“.
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Look Terminal">

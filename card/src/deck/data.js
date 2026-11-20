@@ -92,7 +92,7 @@ export const dataMixin = {
       const s = states[id], a = s.attributes;
       return {
         id, state: s.state, list: a.activity_list || [],
-        name: this._settings().names?.[id] || String(a.friendly_name || id).trim(),
+        name: this._settings().names?.[id] || this._info?.hubs?.[id]?.area?.name || String(a.friendly_name || id).trim(),   // own name, else the room (area), else the hub name
         current: s.state === "on" ? a.current_activity : null,
         starting: a.activity_starting && a.activity_starting !== "PowerOff" ? a.activity_starting : null,
         areaIcon: this._info?.hubs?.[id]?.area?.icon || "",

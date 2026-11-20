@@ -34,15 +34,11 @@ export const mismatchMixin = {
     if (JSON.stringify(next) !== JSON.stringify(this._mm || {})) { this._mm = next; this._key = ""; this.hass = this._hass; }
   },
 
-  _mmHtml(h, t) {
-    const items = this._edit ? [] : this._mm?.[h.id] || [];
-    if (!items.length) return "";
-    const rows = items.map((it, i) => {
-      const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
-      const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
-      return `<div class="mmrow"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" class="mini txt" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
-    }).join("");
-    return `<div class="mmbox">${rows}</div>`;
+  // One target/actual difference as a hint row with its fix (shown in the gear window since 0.16).
+  _mmRow(h, it, i, t) {
+    const text = it.kind === "input" ? fmtText(t.mmInput, [it.device, it.source, it.want]) : it.want ? fmtText(t.mmShouldOn, [it.device]) : fmtText(t.mmShouldOff, [it.device]);
+    const label = it.fix === "source" ? fmtText(t.mmSwitch, [it.value]) : it.fix === "on" ? t.mmOn : t.mmOff;
+    return `<div class="hint-row o"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(text)}</span>${it.can ? `<button type="button" data-mmfix="${i}" data-hub="${esc(h.id)}">${esc(label)}</button>` : ""}</div>`;
   },
 
   _bindMismatch(root) {

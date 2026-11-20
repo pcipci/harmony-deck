@@ -1,8 +1,8 @@
 // Settings mode: tabs, look, icons, links, hints; edit mode start / cancel.
-import { SKINS } from "../shared/skins.js";
 import { activityIcon, ACTION_ICONS, DEVICE_ICONS } from "../shared/icons.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
+import { skinOrder } from "../shared/skins.js";
 import { volumeCap } from "./steps/ha-values.js";
 
 export const settingsEditorMixin = {
@@ -35,7 +35,7 @@ export const settingsEditorMixin = {
   _editHtml(t, h) {
     const skin = this._skin();
     const shown = !(this._settings().hiddenHubs || []).includes(h.id);
-    const skins = Object.fromEntries(Object.keys(SKINS).map((k) => [k, t.skins[k] || k]));
+    const skins = Object.fromEntries(skinOrder().map((k) => [k, t.skins[k] || k]));
     const etab = this._etabNow();
     const g = t.groups || {};
     const tabsBar = `<div class="etabs">${Object.entries(t.tabs).map(([k, v]) => `<button class="${k === etab ? "sel" : ""}" data-etab="${k}">${esc(v)}</button>`).join("")}</div>`;
@@ -178,7 +178,7 @@ export const settingsEditorMixin = {
       "select[data-skin]": "skin", "[data-tilestyle]": "tileStyle", '[data-setting="colorIcons"]': "colorIcons", '[data-setting="helpNames"]': "helpNames",
       '[data-setting="keyboardControl"]': "keyCtl", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapseHeader", '[data-setting="holdSwitch"]': "holdSwitch", "[data-layout]": "layout", "[data-activestyle]": "activeStyle",
       "[data-keystyle]": "keyStyle", "[data-labels]": "labels", "[data-glow]": "glow", '[data-direct="entity"]': "directEntity", '[data-direct="device"]': "directDevice",
-      '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel", '[data-direct="km_red"]': "colorKey",
+      '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel",
       "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", '[data-setting="noBlur"]': "noBlur", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual",
       '[data-link="entity"]': "linkEntity", '[data-link="activity"]': "linkActivity",
       '[data-actname]': "actName", '[data-hent="entity"]': "actEntity", "[data-hop]": "actOp", "[data-actscope]": "actScope", "[data-acttile]": "actTile",
@@ -228,7 +228,9 @@ export const settingsEditorMixin = {
         try { await this._hass.callWS({ type: "harmony_deck/save_settings", settings: snap, profile: this._prof().active }); } catch (e) { /* kept for this session only */ }
       }
     } else if (act === "off") { if (this._editMode === "actions") await this._actFlush(); this._editMode = null; this._snap = null; this._cancelAsk = false; }
-    else { if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings())); this._editMode = act; this._infoOpen = {}; }
+    else { if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings())); this._editMode = act; this._menuOpen = {}; }
+    // Leaving or entering settings: no device page of the network tab stays open (the tab starts at its overview).
+    if (act !== "cancel" && act !== "cancelno") { this._ddPage = null; this._iconOpen = null; }
     this._key = "";
     this.hass = this._hass;
   },

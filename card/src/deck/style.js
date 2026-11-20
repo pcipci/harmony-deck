@@ -387,7 +387,7 @@ export const styleMixin = {
       .bar .status.busy > ha-icon { animation: pulse 1s ease-in-out infinite; }
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
-      @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; } .toprow .hubtabs button:not(.sel) .rn { display: none; } .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      @container (max-width: 400px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -415,8 +415,7 @@ export const styleMixin = {
       ha-card { overflow: visible; }
       section > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 8px); }
       section.collapsed > .below { scroll-margin-top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px) + 62px); }
-      section.collapsed > .hdr.nostick { position: static; }
-      section.collapsed > .hdr { display: block; position: sticky; top: calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px)); z-index: 4; padding: 6px 0; margin: -6px 0; background: var(--hr-card-bg, var(--card-background-color)); }
+      section.collapsed > .hdr { display: block; padding: 6px 0; margin: -6px 0; }
       .devhead .devclose { margin-left: auto; }
       .tabhint { margin: 2px 0 6px; } .adbhelp { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; } .adbhelp ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-accent); }
       .devhead .actlink { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--hr-accent); background: color-mix(in srgb, var(--hr-accent) 14%, transparent); color: var(--hr-text); font: inherit; font-size: 0.8em; cursor: pointer; }
@@ -428,6 +427,21 @@ export const styleMixin = {
       .rocker .rk.mute.round { flex: none; align-self: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; background: var(--hr-key-bg); --mdc-icon-size: 20px; }
       .rocker.slr .rk.mute.round { margin-top: 6px; } .rocker.slr { flex-direction: column; }
       .sw .lamp { display: none; }
+      /* gear: menu and hints in one place; colour = most serious hint, pulse while unseen, count at the corner */
+      .toprow { position: relative; }
+      .ib.gear { position: relative; } .ib.gear .gbadge { position: absolute; top: 1px; right: 1px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 10px/15px system-ui, sans-serif; font-style: normal; text-align: center; color: #fff; background: var(--gc, var(--hr-accent)); }
+      .ib.gear.sev-r { --gc: #e53935; } .ib.gear.sev-o { --gc: #fb8c00; } .ib.gear.sev-b { --gc: var(--hr-accent); }
+      .ib.gear[class*="sev-"] ha-icon { color: var(--gc); filter: drop-shadow(0 0 5px var(--gc)); }
+      .ib.gear.fresh ha-icon { animation: gearpulse 1.6s ease-in-out infinite; } @keyframes gearpulse { 50% { opacity: .45; filter: none; } }
+      .hmenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(340px, 100%); box-sizing: border-box; padding: 6px; border-radius: 14px; background: var(--hr-card-bg, var(--card-background-color, #1e2126)); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: grid; gap: 4px; }
+      .mhints { display: grid; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); } .mhints:last-child { border: none; padding: 0; }
+      .hint-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px; border-radius: 10px; font-size: 0.85em; color: var(--hr-text); }
+      .hint-row > ha-icon { --mdc-icon-size: 18px; flex: none; } .hint-row.r > ha-icon { color: #e53935; } .hint-row.o > ha-icon { color: #fb8c00; } .hint-row.b > ha-icon { color: var(--hr-accent); }
+      .hint-row > span { flex: 1 1 160px; min-width: 0; } .hint-row button { margin-left: auto; border: none; cursor: pointer; font: inherit; padding: 6px 12px; border-radius: 999px; background: var(--hr-accent); color: var(--hr-on-accent); }
+      .mentries { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .mentry { display: flex; align-items: center; gap: 8px; border: none; font: inherit; font-size: 0.85em; cursor: pointer; padding: 10px; border-radius: 10px; background: var(--hr-tile-bg); color: var(--hr-text); text-align: left; } .mentry ha-icon { --mdc-icon-size: 18px; color: var(--hr-muted); flex: none; }
+      .mnone { padding: 12px; text-align: center; color: var(--hr-muted); font-size: 0.85em; }
+      details.hubinfo { margin-bottom: 8px; } details.hubinfo > summary { cursor: pointer; list-style: none; } details.hubinfo > summary::-webkit-details-marker { display: none; } details.hubinfo:not([open]) > summary { border-bottom: none; padding-bottom: 0; margin-bottom: 0; } details.hubinfo > summary::after { content: "\\25BE"; margin-left: 6px; color: var(--hr-muted); } details.hubinfo[open] > summary::after { content: "\\25B4"; }
+      @media (prefers-reduced-motion: reduce) { .ib.gear.fresh ha-icon { animation: none; } }
       .key.muted { color: var(--hr-accent); box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .sidecol { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: space-between; }
       .key.tall { flex: 1; min-height: 40px; flex-direction: column; gap: 1px; border-radius: var(--hr-rk-radius, 14px); padding: 2px; } .key.tall ha-icon { --mdc-icon-size: 20px; }

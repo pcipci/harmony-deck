@@ -72,13 +72,13 @@ export const activitiesMixin = {
     return { acts, keys };
   },
 
-  _linkBars(h, t) {
-    if (this._edit || h.starting) return "";
+  // A linked player runs while Harmony shows another activity: a hint with "Match" (shown in the gear window since 0.16).
+  _linkHints(h, t) {
+    if (this._edit || h.starting) return [];
     return this._links(h).filter((l) => l.entity && this._entityOn(l.entity) && h.current !== l.activity).map((l) => {
       const name = this._hass.states[l.entity]?.attributes?.friendly_name || l.entity;
-      return `<div class="linkbar"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name, h.current || t.none))}</span>
-        <button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>`;
-    }).join("");
+      return { key: `${l.entity}>${l.activity}`, html: `<div class="hint-row o"><ha-icon icon="mdi:link-variant"></ha-icon><span>${esc(t.linkMismatch(name, h.current || t.none))}</span><button data-sync="${esc(h.id)}" data-act="${esc(l.activity)}">${t.linkSync}</button></div>` };
+    });
   },
 
   // Events of the activity tiles.

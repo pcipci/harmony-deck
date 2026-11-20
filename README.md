@@ -36,7 +36,8 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume (a slider instead of +/- in the remote) and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
-| **Looks** | 13 skins incl. the effect skins Terminal (green phosphor glass with interference) and Tube radio (pilot lamps, magic eye, toggle switches); tile and key styles, coloured icons, light and dark |
+| **Looks** | 13 skins incl. the effect skins Terminal (green phosphor glass with interference) and Tube radio (pilot lamps that flicker, sunken brass buttons, magic eye); tile and key styles, coloured icons, light and dark |
+| **Hints** | One gear in the tab row: it takes the colour of the most serious hint (hub not reachable, player differs from the activity …), pulses until seen and shows the count; its window lists the hints with their action above the settings |
 | **Profiles** | Different settings for different people or tablets |
 | **Entities** | Activities, devices and actions of each hub as lists, a button per action, a device per linked network device, differences per hub, lock entities, repair hints and diagnostics |
 | **Languages** | English, German, Russian; more as one JSON file |
@@ -101,7 +102,7 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), a magic eye that follows the volume, toggle switches, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion".
+Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), an amber magic eye that follows the volume, sunken brass buttons with a lamp behind, keys with a state as lit dark glass, faint lamp flicker, a dial with the room and the running activity, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion".
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Skin Terminal">

@@ -47,6 +47,8 @@ export const SKIN_CSS = `
       /* the tools next to the room tabs: no frame, active = brighter glow */
       ${T} .bbtns .ib, ${T} .bbtns .profchip { border: none; box-shadow: none; background: transparent; color: #3dff6b; }
       ${T} .bbtns .ib.sel ha-icon { filter: drop-shadow(0 0 6px #3dff6b) drop-shadow(0 0 12px #3dff6b) brightness(1.35); }
+      ${T} .ib.gear[class*="sev-"] { background: #3dff6b !important; box-shadow: 0 0 12px rgba(61,255,107,.7) !important; } ${T} .ib.gear[class*="sev-"] ha-icon { color: #021a05 !important; filter: none; } ${T} .gbadge { background: #021a05 !important; color: #3dff6b !important; border: 1px solid #3dff6b; border-radius: 0 !important; }
+      ${T} .hmenu { background: #021a05; border: 1px solid #3dff6b; border-radius: 0; box-shadow: 0 0 14px rgba(61,255,107,.4); } ${T} .hint-row > ha-icon, ${T} .mentry ha-icon { color: #3dff6b !important; } ${T} .hint-row button { background: #3dff6b; color: #021a05; border-radius: 0; } ${T} .mentry { border-radius: 0; border: 1px solid #1fa63f; background: #021a05; color: #3dff6b; }
       /* everything green: On/Off keys, the off button, Fire TV app keys and badges in Pip-Boy style (no brand colours) */
       ${T} .key.pon ha-icon, ${T} .key.poff ha-icon, ${T} .ib.offb, ${T} .ib.offb ha-icon { color: #3dff6b !important; }
       ${T} .appcell.svc { --c: #021a05 !important; --fg: #3dff6b !important; border: 1px solid #1fa63f; }
@@ -69,12 +71,20 @@ export const SKIN_CSS = `
       /* hold to switch off: green like everything else; blocks fill the whole tile left to right, then the picture shrinks to a line */
       ${T} .holdoff ha-icon, ${T} .tile.off ha-icon { color: #3dff6b !important; }
       ${T} .tile.off.holdoff { justify-content: center; gap: 12px; position: relative; overflow: hidden; }
-      ${T} .tile.off.holdoff::before { content: "OFF" !important; order: 2; margin: 0 !important; font-weight: 700; letter-spacing: .2em; color: #3dff6b; }
+      ${T} .tile.off.holdoff::before { content: "" !important; margin: 0 !important; }
       ${T} .holdoff .hring { display: none; }
       ${T} .holdoff.holding { background: #021a05 !important; }
-      ${T} .tile.holdoff.holding::after, ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { content: ""; position: absolute; inset: 0; right: auto; width: calc(var(--p, 0) * 1%); transform: none; animation: none; border-radius: 0;
-        background: repeating-linear-gradient(90deg, rgba(61,255,107,.55) 0 8px, transparent 8px 11px); box-shadow: 0 0 10px rgba(61,255,107,.5); }
-      ${T} .tile.locked.holding::after, ${T} .actbtn.holding::after { width: 100%; transition: clip-path .7s linear; clip-path: inset(0 0 0 0); }
+      ${T} .tile.holdoff.holding, ${T} .ib.holdoff.holding { background: color-mix(in srgb, #3dff6b calc(var(--p, 0) * 1%), #021a05) !important; box-shadow: 0 0 calc(var(--p, 0) * .2px) rgba(61,255,107,.7), inset 0 0 8px rgba(61,255,107,.2); }
+      ${T} .holding::after { display: none !important; }
+      ${T} .tile.locked.holding, ${T} .actbtn.holding { animation: skfill .7s linear forwards; } ${T} .tile.locked.holding *, ${T} .actbtn.holding * { animation: skfilltx .7s linear forwards; text-shadow: none; }
+      @keyframes skfill { from { background: #021a05; } to { background: #3dff6b; box-shadow: 0 0 16px rgba(61,255,107,.7); } } @keyframes skfilltx { from { color: #3dff6b; } to { color: #021a05; } }
+      ${T} .holdoff.holding ha-icon, ${T} .holdoff.holding span { color: color-mix(in srgb, #021a05 calc(var(--p, 0) * 1%), #3dff6b) !important; text-shadow: none; filter: none; }
+      /* devices that take part in the running activity: faint phosphor flicker instead of a dot */
+      ${T} .tile.dev.inuse::after { display: none; }
+      ${T} .tile.dev.inuse { animation: skphos 3.4s infinite steps(1); }
+      @keyframes skphos { 0%, 100% { filter: none; opacity: 1; } 8% { opacity: .72; } 9% { opacity: 1; } 41% { filter: brightness(1.35); } 42% { filter: none; } 63% { opacity: .82; } 65% { opacity: 1; } 88% { filter: brightness(1.2); } 89% { filter: none; } }
+      /* lists in the screen's look */
+      ${T} select, ${T} .profchip { font-family: inherit; color: #3dff6b; background-color: #021a05; border: 1px solid #1fa63f; border-radius: 0; box-shadow: 0 0 8px rgba(61,255,107,.25); } ${T} select option { background: #021a05; color: #3dff6b; font-family: inherit; }
       ${T} .holdoff.fired { background: #3dff6b !important; color: #021a05; transform: scaleY(.14); transition: transform .35s ease-in; box-shadow: 0 0 22px 6px rgba(184,255,201,.8); }
       ${T} .holdoff.fired ha-icon, ${T} .holdoff.fired span { opacity: 0; }
       @keyframes skroll { from { transform: translateY(-120px); } to { transform: translateY(1400px); } }
@@ -93,10 +103,12 @@ export const SKIN_CSS = `
         background: repeating-linear-gradient(90deg, rgba(241,227,193,.55) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(241,227,193,.9) 0 1px, transparent 1px 60px); background-size: 100% 10px, 100% 18px; background-repeat: no-repeat; background-position: 0 0, 0 0; }
       ${R} .skin-dial b { position: absolute; top: 20px; left: 12px; font: 600 11px Georgia, serif; letter-spacing: .2em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; }
       ${R} .skin-dial i { position: absolute; top: 0; bottom: 0; left: var(--needle, 40%); width: 2px; background: #ff7a1a; box-shadow: 0 0 8px 2px rgba(255,120,20,.8); transition: left .8s; }
+      ${R} .skin-sta { position: absolute; top: 3px; left: calc(var(--needle, 40%) + 6px); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
+      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%) + 6px); }
       ${R} .skin-eye { position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #c8a24a;
-        box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(120,255,120,.55); filter: drop-shadow(0 0 6px rgba(120,255,120,.6));
+        box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(255,170,60,.55); filter: drop-shadow(0 0 6px rgba(255,170,60,.6));
         --w: calc((1 - var(--eye, .5)) * 150deg);
-        background: radial-gradient(circle at 50% 50%, #0c1f0c 0 15%, transparent 16%), conic-gradient(from 0deg, #6dff6d 0 calc(180deg - var(--w) / 2), #0f3a14 0 calc(180deg + var(--w) / 2), #6dff6d 0), radial-gradient(circle, #0a1a0a, #041004); }
+        background: radial-gradient(circle at 50% 50%, #0c1f0c 0 15%, transparent 16%), conic-gradient(from 0deg, #ffb84a 0 calc(180deg - var(--w) / 2), #3a1802 0 calc(180deg + var(--w) / 2), #ffb84a 0), radial-gradient(circle, #1a0d05, #0a0502); }
       ${R} .skin-eye::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(ellipse at 35% 22%, rgba(255,255,255,.55), transparent 38%); }
       /* every tile is a pilot lamp under a wire grille: unlit = dark amber glass, lit (running / selected) = glowing */
       ${R} .tile { position: relative; border: 3px solid #b9b19a; color: #e2c58a; text-shadow: 0 1px 0 rgba(0,0,0,.8);
@@ -122,11 +134,10 @@ export const SKIN_CSS = `
       ${R} .rocker .rk.mute.round { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210) !important; border: 2px solid #2a170a !important; box-shadow: 0 3px 0 #3b2a14, 0 5px 6px rgba(0,0,0,.6) !important; transition: transform .12s, box-shadow .12s; }
       ${R} .rocker .rk.mute.round.muted { transform: translateY(3px); filter: brightness(.82); box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 #3b2a14 !important; }
       /* keys with a state are pressed in while active; keys without one go down on a tap and come back */
-      ${R} .key.sel, ${R} .key.on, ${R} .key.muted, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
+      ${R} .key.muted { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; filter: brightness(.9); }
       ${R} .key { transition: transform .12s ease, box-shadow .12s ease; }
       ${R} .key.lit, ${R} .key:active { transform: translateY(3px); background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; color: #2a170a; box-shadow: 0 1px 0 #6b4a1a, 0 2px 3px rgba(0,0,0,.5); }
       ${R} .rocker .rk.lit, ${R} .rocker .rk:active { background: transparent !important; box-shadow: none !important; }
-      ${R} .appcell.svc.on { transform: translateY(3px); box-shadow: 0 1px 0 #6b4a1a, inset 0 3px 6px rgba(0,0,0,.45) !important; }
       ${R} .key.color { border-color: #2a170a; }
       ${R} .dpad { background: radial-gradient(circle at 40% 35%, #3a2a1c, #150c06); border: 3px solid #c8a24a; box-shadow: 0 0 0 4px #2a170a, 0 4px 10px rgba(0,0,0,.6); }
       /* toggle switch, horizontal: brass nut, chrome lever pointing right = ON (AN, nut glows) or left = OFF (AUS) */
@@ -137,15 +148,34 @@ export const SKIN_CSS = `
       ${R} .sw:has(> input) input:checked + i::before { box-shadow: 0 3px 5px rgba(0,0,0,.7), 0 0 12px 3px rgba(255,150,30,.7); }
       ${R} .sw:has(> input) i::after { content: ""; position: absolute; height: 10px; width: 24px; top: 13px; left: 6px; border-radius: 5px; transform: none; background: linear-gradient(180deg, #666, #f7f7f7 50%, #666); box-shadow: 0 3px 4px rgba(0,0,0,.6); }
       ${R} .sw:has(> input) input:checked + i::after { left: 52px; transform: none; box-shadow: 0 3px 4px rgba(0,0,0,.6); }
-      ${R} .sw:has(> input)::before { content: none; display: none; }
-      ${R} .sw:has(> input)::after { content: none; display: none; }
-      ${R} .sw:has(> input) { width: 88px; }
-      ${R} .sw:has(> input) i::before { left: 18px; }
-      ${R} .sw:has(> input) i::after { left: 4px; width: 20px; }
-      ${R} .sw:has(> input) input:checked + i::after { left: 36px; }
-      ${R} .sw .lamp { display: block; position: absolute; right: 0; top: 8px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #b9b19a; box-sizing: border-box; pointer-events: none;
-        background: radial-gradient(circle at 38% 32%, #ff9a8a, #b0180a 55%, #4a0803); box-shadow: 0 0 5px rgba(255,40,20,.35), inset 0 0 4px rgba(0,0,0,.5); }
-      ${R} .sw input:checked ~ .lamp { background: radial-gradient(circle at 38% 32%, #eaffea, #4dff6b 45%, #127a2a); box-shadow: 0 0 10px 3px rgba(77,255,107,.8); }
+      /* On/Off of a device: one row (label, switch, Toggle). Known state = sunken brass button with a lamp behind; unknown = short keys I and O */
+      ${R} .rpow .pwrow { display: flex; align-items: center; gap: 14px; padding: 8px 6px; }
+      ${R} .pwlab { flex: 1; min-width: 0; color: #e2c58a; font: 600 13px Georgia, serif; letter-spacing: .04em; }
+      ${R} .pwknob { position: relative; flex: none; width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(circle, #1a0d05 55%, #4a3012 70%, #c8a24a 72%, #6b4a1a 80%); box-shadow: 0 3px 6px rgba(0,0,0,.6); }
+      ${R} .pwknob.on { background: radial-gradient(circle, #3a1802 40%, #7a3a05 62%, #ffb84a 70%, #c8a24a 74%, #6b4a1a 82%); box-shadow: 0 0 0 2px #ffb84a, 0 0 18px 6px rgba(255,150,30,.75), 0 3px 6px rgba(0,0,0,.6); animation: rlamp 4.2s infinite steps(1); }
+      ${R} .pwknob .knob { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 2px solid #2a170a; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 4px 0 #3b2a14, 0 6px 6px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s; }
+      ${R} .pwknob .knob ha-icon { color: #2a170a !important; }
+      ${R} .pwknob.on .knob { transform: translateY(3px); filter: brightness(.88); box-shadow: inset 0 3px 6px rgba(0,0,0,.6), 0 1px 0 #3b2a14; }
+      ${R} .pwio { display: flex; gap: 10px; } ${R} .key.pwio { width: 52px; height: 46px; min-height: 0; flex-direction: column; gap: 1px; padding: 0; border-radius: 14px; } ${R} .key.pwio span { font: 700 10px Georgia, serif; } ${R} .key.pwio ha-icon { --mdc-icon-size: 18px; }
+      ${R} .key.pwtg { flex: none; height: 44px; min-height: 0; padding: 0 16px; border-radius: 999px; gap: 6px; } ${R} .key.pwtg span { font: 600 12px Georgia, serif; }
+      /* keys with a state: dark glass behind a grille, the letters lit orange (and a faint lamp flicker); Mute stays a pressed brass button */
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { transform: translateY(3px); border-color: #8a6a2a;
+        background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #1f0f05, #3a1d08) !important;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,.8), 0 1px 0 #6b4a1a !important; filter: none; animation: rlamp 4.2s infinite steps(1); }
+      ${R} .key.sel:not(.mute) *, ${R} .key.on:not(.mute) *, ${R} .appcell.svc.on *, ${R} .ic-row.on *, ${R} .mini.sel *, ${R} .mini.txt.sel * { color: #ffb84a !important; text-shadow: 0 0 6px rgba(255,150,30,.95), 0 0 14px rgba(255,120,20,.7); }
+      /* lamps breathe a little: irregular, faint; devices that take part in the running activity flicker weaker */
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton { animation: rlamp 4.6s infinite steps(1); }
+      ${R} .tile.dev.inuse { box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 12px 1px rgba(255,150,30,.38), 0 3px 6px rgba(0,0,0,.6); animation: rlampw 5.3s infinite steps(1); }
+      ${R} .tile.dev.inuse::after { top: 3px; right: 3px; bottom: 3px; left: 3px; width: auto; height: auto; border-radius: inherit; background: repeating-linear-gradient(0deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px), repeating-linear-gradient(90deg, rgba(0,0,0,.65) 0 1.5px, transparent 1.5px 10px); }
+      @keyframes rlamp { 0%, 100% { filter: none; } 11% { filter: brightness(.86); } 12% { filter: none; } 37% { filter: brightness(1.12); } 38% { filter: none; } 61% { filter: brightness(.9); } 63% { filter: none; } 86% { filter: brightness(1.08); } 87% { filter: none; } }
+      @keyframes rlampw { 0%, 100% { filter: none; } 18% { filter: brightness(.82); } 20% { filter: none; } 52% { filter: brightness(1.1); } 54% { filter: none; } 79% { filter: brightness(.88); } 81% { filter: none; } }
+      /* lists and the gear in the radio's look */
+      ${R} select, ${R} .profchip { font-family: inherit; color: #e2c58a; background-color: #2a170a; border: 2px solid #c8a24a; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,.5); } ${R} select option { background: #2a170a; color: #e2c58a; font-family: inherit; }
+      ${R} .bbtns .ib.gear { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #c8a24a; background: radial-gradient(circle at 40% 35%, #6b4a1a, #2a170a); box-shadow: 0 2px 4px #000; } ${R} .ib.gear ha-icon { color: #c8a24a !important; --mdc-icon-size: 18px; filter: none; }
+      ${R} .ib.gear.sev-r { background: radial-gradient(circle at 40% 35%, #ffd0b0, #ff5a2a 50%, #7a1a05); box-shadow: 0 0 14px 4px rgba(255,80,30,.8); } ${R} .ib.gear.sev-o, ${R} .ib.gear.sev-b { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb347 50%, #a8480a); box-shadow: 0 0 14px 4px rgba(255,150,30,.8); }
+      ${R} .ib.gear[class*="sev-"] ha-icon { color: #2a170a !important; } ${R} .gbadge { background: #2a170a !important; color: #ffcf70 !important; border: 1px solid #c8a24a; }
+      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -171,7 +201,6 @@ export const SKIN_CSS = `
       ${R} .rocker.slr:not(:has(.mute))::before, ${R} .rocker.slr:not(:has(.mute))::after { bottom: 18px; }
       /* round typewriter keys on the keyboard */
       ${R} .kbrow .key, ${R} .kbarr .key, ${R} .kbud .key { border-radius: 999px; border: 3px solid #8f8f8f; background: radial-gradient(circle at 35% 28%, #fffaf0, #d9cba5 70%); box-shadow: 0 0 0 2px #2a170a, 0 4px 0 #3b2a14, 0 6px 8px rgba(0,0,0,.5); min-height: 38px; }
-      ${R} .key.pwronoff { display: none; } ${R} .swpwr { padding: 6px 4px; }
       /* readable text on the light brass-cream surfaces: buttons of the editors, favourites and the small buttons */
       ${R} .mini, ${R} .editdone, ${R} button.txt, ${R} .egrp button:not(.tile):not(.key):not(.sel) { color: #2a170a; }
       ${R} .mini:not(.txt) ha-icon, ${R} .mini.txt ha-icon { color: inherit; }
@@ -187,5 +216,5 @@ export const SKIN_CSS = `
       ${R} .tile.holdoff.holding ha-icon { color: #fff3e0 !important; filter: drop-shadow(0 0 6px #ff6a2a); }
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
-      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i { animation: none !important; transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;

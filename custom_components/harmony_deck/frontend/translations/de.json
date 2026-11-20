@@ -166,12 +166,6 @@
     "raised": "Klassisch"
   },
   "directShow": "Apps anzeigen",
-  "colorKey": {
-    "red": "Rote Taste startet",
-    "green": "Grüne Taste startet",
-    "yellow": "Gelbe Taste startet",
-    "blue": "Blaue Taste startet"
-  },
   "directPrefer": "Gemeinsame Tasten senden über",
   "preferH": "Harmony (ADB als Ersatz)",
   "preferA": "ADB direkt",
@@ -276,7 +270,6 @@
     "directPrefer": "Gemeinsame Tasten (z. B. Pfeile, Play) über Harmony senden und nur bei Lücken ADB nehmen, oder immer ADB.",
     "directAct": "Zeigt die Fire-TV-Tasten und Apps auch in Aktivitäten, nicht nur im Gerät.",
     "directModel": "Begrenzt die Tasten auf das, was dein Modell wirklich hat.",
-    "colorKey": "Die farbigen Tasten der Fernbedienung können eine App starten.",
     "apps": "Welche App-Kacheln erscheinen. Die Markierung neben dem Namen zeigt den Prüfstand des Paketnamens.",
     "keys": "Welche weiteren Tasten erscheinen.",
     "actions": "Aktionen sind eigene Tasten, die etwas in Home Assistant schalten, zum Beispiel Licht, eine Szene oder ein Skript. Sie funktionieren auch ohne Harmony und zeigen den Zustand der Entität.",
@@ -372,7 +365,6 @@
   "yamlLock": "In der YAML dieser Karte festgelegt ({0}: {1}). Freigeben: Karte › ⋮ › Bearbeiten › „Aus Integration übernehmen“.",
   "yamlHint": "Gesperrt, weil in der YAML der Karte festgelegt: {0}. Freigeben: Karte › ⋮ › Bearbeiten, unten bei „In dieser Karte festgelegt“ auf „Aus Integration übernehmen“ klicken (oder die Zeilen im YAML-Code löschen).",
   "pkgMapTitle": "Pakete zuordnen ({0})",
-  "infoBtn": "Info und Einstellungen",
   "entityPick": "Entität wählen …",
   "cancel": "Abbrechen",
   "cancelTip": "Alle Änderungen seit dem Öffnen verwerfen",
@@ -982,5 +974,11 @@
     "app_list": "Apps auflisten"
   },
   "preferHint": "Über Harmony können Tasten verzögert oder gar nicht ankommen (der Hub sendet Infrarot oder Bluetooth). ADB direkt ist schnell und für eine neue Einrichtung voreingestellt.",
-  "allOff": "alles aus"
+  "allOff": "alles aus",
+  "menuTitle": "Einstellungen und Hinweise",
+  "noHints": "Keine Hinweise",
+  "hintsTip": "{0} Hinweis(e) – antippen",
+  "hintDown": "{0} nicht erreichbar seit {1}",
+  "menuInfo": "Info",
+  "hubsTitle": "Hubs"
 }

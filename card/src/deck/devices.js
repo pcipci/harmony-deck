@@ -133,10 +133,14 @@ export const devicesMixin = {
     }).join("");
     const dp = this._directHtml(h, dev, t, false, "", true) || {};
     const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
-    // Tube radio: On/Off as one toggle switch (lever up = on) instead of two buttons; Toggle stays a button.
+    // Tube radio: with a known state On/Off is one sunken button with a lamp (0.16); without, two short keys I and O. Toggle stays a key.
     const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
-    const pwSwitch = swPower ? this._powerSwitch(h.id, dev, t) : "";
-    const pw = power.length ? `<div class="block power">${pwSwitch}<div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power", swPower && c !== "PowerToggle" ? "pwronoff" : "")).join("")}</div></div>` : "";
+    const pstate = swPower ? this._powerState(h.id, dev) : null;
+    let pw;
+    if (swPower) {
+      const mid = pstate === null ? `<span class="pwio">${btn("PowerOn", "I", "mdi:power", "pwio")}${btn("PowerOff", "O", "mdi:power", "pwio")}</span>` : this._powerKnob(h.id, dev, pstate);
+      pw = `<div class="block power rpow"><div class="pwrow"><span class="pwlab">${esc(t.ddCtlPower)}</span>${mid}${power.includes("PowerToggle") ? btn("PowerToggle", esc(prettyCommand("PowerToggle")), "mdi:power", "pwtg") : ""}</div></div>`;
+    } else pw = power.length ? `<div class="block power"><div class="cells">${power.map((c) => btn(c, esc(prettyCommand(c)), "mdi:power")).join("")}</div></div>` : "";
     const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", ""];
     const pad = !kb && Object.keys(digitCmds).length >= 3 ? `<details class="block numpad" open><summary class="dname">${t.numbers}</summary><div class="nums">${digits.map((d) => (d && digitCmds[d] ? btn(digitCmds[d], d) : "<span></span>")).join("")}</div></details>` : "";
     // Part of the running activity: say so, and lead back to the remote of that activity.

@@ -125,7 +125,7 @@ export const renderMixin = {
     const fireOnly = !cur && !!fi && (fi.mode === "on" || fi.mode === "playing");
     const helpAct = cur || (fireOnly ? this._fireActivity(h) : null);
     const helpBtn = this._edit || (compact && !helpAct) ? "" : `<button class="ib ${this._helpOpen?.[h.id] ? "sel" : "hl"}" data-help="${esc(h.id)}" title="${esc(helpAct ? t.help : t.helpOff)}" ${helpAct ? "" : "disabled"}><ha-icon icon="mdi:lifebuoy"></ha-icon></button>`;
-    const infoBtn = compact ? "" : `<button class="ib ${this._infoOpen?.[h.id] ? "sel" : ""}" data-info="${esc(h.id)}" title="${esc(t.infoBtn)}"><ha-icon icon="mdi:information-outline"></ha-icon></button>`;
+    const infoBtn = this._edit ? "" : this._gearBtn(h, t);
     const openNow = mode === "devices" ? this._device?.[h.id] : cur || fireOnly;
     const collapseBtn = !this._edit && !compact ? `<button class="ib subtle" data-hdrcollapse="${esc(h.id)}" title="${esc(openNow ? t.collapseNow : t.collapseOff)}" ${openNow ? "" : "disabled"}><ha-icon icon="mdi:chevron-up"></ha-icon></button>` : "";
     const nameTxt = this._config.title ?? h.name;
@@ -136,10 +136,10 @@ export const renderMixin = {
       : collapseBtn;
     // Tools (lock, profile, help, info, collapse) sit right in the row of the room tabs, apart from the device controls.
     const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-    const top = `<div class="toprow">${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+    const top = `<div class="toprow">${this._menuHtml(h, t)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
     // Status chips only for what runs (Harmony activity, Fire TV, linked network devices); nothing runs = no chip line.
     const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
-    const boxes = `${this._infoOpen?.[h.id] ? this._infoHtml(h, t) : ""}${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
+    const boxes = `${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
     let body;
     if (this._edit || !hasDevices) {
       body = mode === "devices" ? this._devicesView(h, cur, t) : this._activitiesView(h, cur, busy, t, index);
@@ -147,7 +147,7 @@ export const renderMixin = {
       body = `<div class="pager" data-pager data-p="${p}"><div class="track" style="transform: translateX(${-p * 100}%)">
           <div class="pane" data-pane="0">${this._activitiesView(h, cur, busy, t, index, "grid")}</div>
           <div class="pane" data-pane="1">${this._devicesView(h, cur, t, "list")}</div></div></div>
-        <div class="below">${this._mmHtml(h, t)}${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
+        <div class="below">${this._edit ? "" : this._seqPanel(h, t)}${mode === "devices" ? this._devicesView(h, cur, t, "below") : this._activitiesView(h, cur, busy, t, index, "below")}${this._edit ? "" : this._actionsBlock(h, cur, t)}</div>`;
     }
     if (this._edit) return `<section class="editview"><div class="hdr">${tabs}</div>${this._editBody(h, t, body)}</section>`;
     const cap = hasDevices && !this._edit ? `<div class="stripcap">${mode === "devices" ? t.devicesTab : t.activities}</div>` : "";
@@ -162,7 +162,7 @@ export const renderMixin = {
       const hdr = `${top}<div class="slimrow">${slim}${offB}</div>`;
       return `<section class="collapsed"><div class="hdr">${hdr}</div>${boxes}${below}${this._actionsBlock(h, cur, t)}</section>`;
     }
-    return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${mode === "devices" ? "" : this._linkBars(h, t)}${body}</section>`;
+    return `<section><div class="hdr">${top}${bar}</div>${boxes}${seg}${cap}${body}</section>`;
   },
 
   // What runs in a room, as chips (expanded) and short texts (collapsed): Harmony activity, Fire TV, linked network devices with their source.

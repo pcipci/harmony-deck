@@ -4,10 +4,15 @@
 export const skinDecorMixin = {
   _skinHead(skin, h) {
     if (skin !== "radio") return "";
-    const name = this._config.title ?? h?.name ?? "";
-    const idx = h?.current ? Math.max(0, (h.list || []).indexOf(h.current)) : 0;
-    const needle = h?.current && h.current !== "PowerOff" ? 12 + (idx * 17) % 76 : 8;
-    return `<div class="skin-head"><div class="skin-dial"><b>${String(name).replace(/[<>&"]/g, "")}</b><i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
+    const clean = (x) => String(x ?? "").replace(/[<>&"]/g, "");
+    const name = clean(this._config.title ?? h?.name);   // the room (area), see _hubs
+    // The needle sits where the running activity is on the dial (spread over the list) and its name stands next to it.
+    const acts = (h?.list || []).filter((a) => a !== "PowerOff");
+    const idx = h?.current ? acts.indexOf(h.current) : -1;
+    const run = idx >= 0;
+    const needle = run ? 10 + (acts.length > 1 ? (idx / (acts.length - 1)) * 80 : 40) : 6;
+    const lab = run ? `<span class="skin-sta ${needle > 62 ? "left" : ""}" style="--needle:${needle}%">${clean(h.current)}</span>` : "";
+    return `<div class="skin-head"><div class="skin-dial"><b>${name}</b>${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
   },
 
   _skinTail(skin) {
@@ -33,37 +38,31 @@ export const skinDecorMixin = {
     el.style.setProperty("--eye", this._eyeLevel(h));
   },
 
-  // On/Off toggle switch of the device view (tube radio). The state comes from the linked player, else from the last tap.
-  _powerSwitch(hub, dev, t) {
+  // State of a device from its linked player: true = on, false = off, null = not known (no link, unavailable).
+  _powerState(hub, dev) {
     const link = this._settings().directDevices?.[hub]?.[dev];
     const st = link ? this._hass?.states?.[link.entity]?.state : null;
-    const known = st && !["unavailable", "unknown"].includes(st);
-    const on = known ? !["off", "standby"].includes(st) : !!this._pwrLast?.[`${hub}/${dev}`];
-    return `<label class="erow swrow swpwr"><span>${t.ddCtlPower}</span><span class="sw"><input type="checkbox" data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}" ${on ? "checked" : ""}><i></i><b class="lamp"></b></span></label>`;
+    if (!st || ["unavailable", "unknown"].includes(st)) return null;
+    return !["off", "standby"].includes(st);
   },
 
-  // The collapsed header sticks below the Home Assistant bar only while the page is scrolled; at the top it stays in place
-  // (a sticky bar pushed down there covered the first row of keys on a tablet).
-  _bindStickyHeader(root) {
-    if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
-    this._stickFn = null;
-    const bars = [...root.querySelectorAll("section.collapsed > .hdr")];
-    if (!bars.length) return;
-    const scrolled = () => {
-      for (let n = this; n; n = n.assignedSlot || n.parentNode || n.host) if (n.scrollTop > 0) return true;
-      return (document.scrollingElement?.scrollTop || 0) > 0;
-    };
-    const upd = () => { const on = !scrolled(); bars.forEach((hdr) => hdr.classList.toggle("nostick", on)); };
-    this._stickFn = upd;
-    window.addEventListener("scroll", upd, { capture: true, passive: true });
-    upd();
+  // Tube radio, device view: On/Off as a sunken brass button in a bezel with a lamp behind (known state), see _bindSkinDecor.
+  _powerKnob(hub, dev, on) {
+    const a = `data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}"`;
+    return `<span class="pwknob ${on ? "on" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
   },
+
+  // The collapsed header no longer sticks (0.16): the offset below the Home Assistant bar was wrong in views with tabs and pushed it over the keys.
+  _bindStickyHeader() { if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true); this._stickFn = null; },
 
   _bindSkinDecor(root) {
     this._bindStickyHeader(root);
-    root.querySelectorAll("input[data-swpwr]").forEach((el) => el.addEventListener("change", () => {
+    root.querySelectorAll("button[data-swpwr]").forEach((el) => el.addEventListener("click", () => {
       const { hub, device } = el.dataset;
-      this._swPowerSend(hub, device, el.checked);
+      const on = el.getAttribute("aria-pressed") !== "true";
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+      el.parentElement.classList.toggle("on", on);
+      this._swPowerSend(hub, device, on);
     }));
   },
 

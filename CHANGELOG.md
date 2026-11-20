@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.16.0
+
+### Changed
+- **Gear instead of the info button; hints get a fixed place.** The gear sits at the right of the room tab row. At rest it opens the entries (Settings, Favourites, Actions, Info). When something needs attention it takes the colour of the most serious hint (red error, orange difference, blue notice), pulses until seen and shows the count; its window lists the hints with their action on top and the entries below. The window lies over the card, so the remote never moves. The "Fire TV runs, Harmony is on …" bar under the switch and the target/actual box in the device list moved into this window.
+- **Technical hub data** (IP, firmware, MAC, counts, entity, with Copy) moved to Settings › Info › Hubs, one folded entry per hub (a hub that is down opens by itself).
+- **Rooms in the tabs:** the room (area) of the hub when it has one, else its name; a name set in Settings still wins.
+- **Look list:** Terminal and Tube radio come right after Homebase.
+- **Terminal:** hold to switch off fills the tile from black to green, then it shrinks to a line (the segment bar is gone); devices in the running activity flicker faintly instead of showing a dot; the "OFF" word in the off tile is gone; lists (look, profile) in the screen's style.
+- **Tube radio:** On/Off of a device is a sunken brass button with an orange lamp behind it when the state is known from the linked player, otherwise two short keys I and O (no German words); On/Off and Toggle share one row. Keys with a state (selected source, running app, favourites) are dark glass behind a grille with orange lit letters. Lamps and running tiles flicker faintly (off with "reduce motion"). The magic eye is amber. The dial shows the room, the needle sits at the running activity and its name stands next to it. Lists, gear and window follow the look.
+
+### Fixed
+- The tab "Network control" in Settings opens on its overview again after leaving the settings (it stayed on the last device page).
+- The collapsed header no longer sticks: in views with tabs its offset below the Home Assistant bar was wrong and pushed it over the keys.
+- Fire TV settings no longer list the coloured keys (they are no property of the Fire TV). An existing assignment keeps working.
+
+### Notes
+- Not yet tested on real hardware.
+
 ## 0.15.5
 
 ### Fixed

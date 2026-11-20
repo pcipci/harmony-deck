@@ -120,8 +120,8 @@ export const panelMixin = {
   // Events of the remote keys (light up, send).
   _bindKeys(root) {
     root.querySelectorAll("button.key, button.tile").forEach((b) => {
-      // Radio: a key stays down for at least ~120 ms, so a short tap still shows the press.
-      const off = () => { if (this._skin?.() === "radio") setTimeout(() => b.classList.remove("lit"), 120); else b.classList.remove("lit"); };
+      // Skins with a key hold time (tube radio): a key stays down for at least that long, so a short tap still shows the press.
+      const off = () => { const ms = this._trait("keyHoldMs", 0); if (ms) setTimeout(() => b.classList.remove("lit"), ms); else b.classList.remove("lit"); };
       b.addEventListener("pointerdown", () => { if (!this._edit) b.classList.add("lit"); });
       ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => b.addEventListener(ev, off));
     });
@@ -134,7 +134,7 @@ export const panelMixin = {
     const send = () => {
       this._buzz();
       const pre = b.dataset.pre;   // key that needs two commands in a row (Löschen = cursor left + Delete)
-      this._hass.callService("remote", "send_command", { entity_id: b.dataset.hub, device: b.dataset.device, command: pre ? [pre, b.dataset.cmd] : b.dataset.cmd, ...(pre ? { delay_secs: 0.15 } : {}), ...this._holdOpt() });
+      this._sendCmd(b.dataset.hub, b.dataset.device, pre ? [pre, b.dataset.cmd] : b.dataset.cmd, pre ? { delay_secs: 0.15 } : {});
     };
     const stop = () => { clearTimeout(delay); clearInterval(loop); };
     b.addEventListener("pointerdown", (e) => {

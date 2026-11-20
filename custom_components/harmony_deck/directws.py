@@ -37,7 +37,12 @@ async def ws_overview(hass: HomeAssistant, connection: websocket_api.ActiveConne
     hubs, _ = collect_hubs(hass, await load_confs(hass))
     await direct.load_seen(hass)
     await direct.load_seen_caps(hass)
-    connection.send_result(msg["id"], direct.overview(hass, hubs))
+    result = direct.overview(hass, hubs)
+    if not (connection.user and connection.user.is_admin):
+        for devices in result["hubs"].values():      # addresses only for administrators
+            for item in devices.values():
+                item.pop("host", None)
+    connection.send_result(msg["id"], result)
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/direct/check", vol.Required("hub"): str})

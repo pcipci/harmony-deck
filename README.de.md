@@ -37,7 +37,7 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 | **Fire TV** | Apps, Wiedergabe/Pause, Standby, Texteingabe und Zusatztasten per ADB; beim Fire TV Cube Lautstärke über den Infrarot-Sender |
 | **Sperre** | Aus / Immer / Zeitplan, zeitliche Freigabe, erlaubte Aktivitäten und Apps, Geräte, die mit dem Fire TV ausgehen, letzte 100 Eingriffe |
 | **Looks** | 13 Looks, darunter die Effekt-Looks Terminal (grünes Röhrenglas mit Störungen) und Röhrenradio (flackernde Kontrolllampen, versenkbare Messingknöpfe, magisches Auge); Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
-| **Hinweise** | Ein Zahnrad in der Reiterzeile: Es nimmt die Farbe des schwersten Hinweises an (Hub nicht erreichbar, Player weicht von der Aktivität ab …), pulsiert, bis man hingesehen hat, und zeigt die Anzahl; sein Fenster listet die Hinweise mit ihrer Aktion über den Einstellungen |
+| **Hinweise** | Ein Zahnrad in der Reiterzeile: Es nimmt die Farbe des schwersten Hinweises an (Hub nicht erreichbar, Player weicht von der Aktivität ab …), pulsiert, bis man hingesehen hat, und zeigt die Anzahl; sein Fenster listet die Hinweise mit ihrer Aktion über den Einstellungen; der Eintrag Info öffnet einen Info-Bereich mit den Hubs und den verknüpften Netzwerkgeräten (Plattform, Adresse, Zustand, Fähigkeiten) |
 | **Profile** | Unterschiedliche Einstellungen für Personen oder Tablets |
 | **Entitäten** | Aktivitäten, Geräte und Aktionen pro Hub als Liste, eine Taste pro Aktion, ein Gerät pro verbundenem Netzwerkgerät, Abweichungen pro Hub, Sperr-Entitäten, Reparaturhinweise und Diagnose |
 | **Sprachen** | Deutsch, Englisch, Russisch; weitere als eine JSON-Datei |

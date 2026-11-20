@@ -216,5 +216,39 @@ export const SKIN_CSS = `
       ${R} .tile.holdoff.holding ha-icon { color: #fff3e0 !important; filter: drop-shadow(0 0 6px #ff6a2a); }
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
-      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse { animation: none !important; transition: none !important; } }
+      /* 0.16.1: calmer flicker (slow and smooth), thin sunken rims, pressed state keys, hold-to-switch effects */
+      ${T} .tile.dev.inuse { animation: skphos2 8s ease-in-out infinite; }
+      @keyframes skphos2 { 0%, 100% { opacity: 1; } 50% { opacity: .86; } }
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 8s ease-in-out infinite; }
+      ${R} .tile.dev.inuse { animation: rlamp2 10s ease-in-out infinite; }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 7s ease-in-out infinite; }
+      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.88); } 70% { filter: brightness(1.07); } }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel, ${R} .appcell.svc { border: 2px solid #4a3414 !important;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22) !important; }
+      /* Fire TV keys of the direct block: always dark glass, dim letters; the running app lights up */
+      ${R} .appcell.svc { background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708) !important; transform: translateY(2px); }
+      ${R} .appcell.svc * { color: #9a7633 !important; text-shadow: none; }
+      ${R} .appcell.svc.on * { color: #ffb84a !important; text-shadow: 0 0 6px rgba(255,150,30,.95), 0 0 14px rgba(255,120,20,.7); }
+      /* Mute pressed: amber ring */
+      ${R} .rocker .rk.mute.round.muted, ${R} .key.muted { box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65) !important; }
+      /* dial: only the activity */
+      ${R} .skin-dial b { display: none; }
+      /* power knob switching: the lamp pulses until the device confirms */
+      ${R} .pwknob.pend { animation: rpend .6s ease-in-out infinite alternate; }
+      @keyframes rpend { from { filter: brightness(.7); } to { filter: brightness(1.3); } }
+      /* hold to start an activity: Terminal fills with a lighter green, tube radio heats up to white-hot */
+      ${T} .tile.holdsw.holding { animation: skfillw .7s linear forwards; } ${T} .tile.holdsw.holding * { animation: skfillwtx .7s linear forwards; text-shadow: none; }
+      @keyframes skfillw { from { background: #021a05; } to { background: #c8ffd8; box-shadow: 0 0 18px rgba(200,255,216,.8); } } @keyframes skfillwtx { from { color: #3dff6b; } to { color: #021a05; } }
+      ${R} .tile.holdsw.holding::after { display: none !important; }
+      ${R} .tile.holdsw.holding { border-color: #d9d2bc; background: radial-gradient(circle at 50% 58%, #fffbe8, #ffd27a 45%, #ff9a1f 100%) !important; animation: rheat .7s ease-in forwards; }
+      ${R} .tile.holdsw.holding * { color: #3a1802 !important; text-shadow: none; }
+      @keyframes rheat { from { filter: brightness(.2) saturate(.6); box-shadow: inset 0 0 14px rgba(0,0,0,.6); } 60% { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(.7); box-shadow: 0 0 24px 8px rgba(255,235,170,.9); } }
+      /* Terminal: state keys are green blocks too */
+      ${T} .key.on, ${T} .ic-row.on, ${T} .appcell.svc.on { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.on *, ${T} .ic-row.on *, ${T} .appcell.svc.on * { color: #021a05 !important; text-shadow: none; filter: none; }
+      /* settings switches: sunken brass button with a lamp (dim = off, amber = on) instead of a lever */
+      ${R} .sw:has(> input) { width: 64px; height: 34px; border-radius: 17px; border: 2px solid #4a3414; background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708); box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22); box-sizing: border-box; }
+      ${R} .sw:has(> input) i::after { display: none; }
+      ${R} .sw:has(> input) i::before, ${R} .sw:has(> input) input:checked + i::before { top: 6px; width: 18px; height: 18px; left: 8px; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transition: left .15s; }
+      ${R} .sw:has(> input) input:checked + i::before { left: 34px; background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); }
+      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;

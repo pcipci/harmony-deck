@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.16.1
+
+### Added
+- **Info is its own area** (gear window › Info, like Favourites and Actions); the tab "Info" is gone from Settings. It lists the hubs, the **network devices** linked to a Harmony device (platform, address for administrators, state, capabilities), the status symbols, explanations and raw data.
+- **Cube remote: key "TV on/off"** (infrared power key of the Cube remote, switches the TV) next to Standby and Wake, in all skins. Shown only for the Cube model.
+- **Capabilities of every linked device** in one list, also on the Fire TV settings page.
+
+### Changed
+- **Direct commands when the device is reachable:** Off goes straight to the player (media_player), On always over Harmony (the device may sleep or be in WLAN standby). Mute, Play, Pause and Stop go direct too when the player reports the capability, volume only with "Volume directly"; otherwise Harmony as before.
+- **Tube radio:** the device switch flips at once and shows a pulsing lamp until the device confirms; the dial shows only the running activity; settings switches are sunken brass buttons with a lamp; state keys with a thin dark rim and a faint light lower edge, Fire TV app keys always dark glass with dim letters (the running app glows), Mute pressed with an amber ring; hold to start an activity heats the key up to white-hot.
+- **Terminal:** hold to start an activity fills the tile with a lighter green; state keys are green blocks.
+- **Flicker** of lamps and tiles is slower and smooth (7 to 10 s), only slightly dimmed; Terminal stays green, tube radio amber.
+- **All other skins:** keys with a known state (Mute, Play/Pause, Standby, app) show as pressed keys.
+- **Skins are modular:** logic files no longer name a skin; they ask for traits (`shared/skin-traits.js`: power knob, key hold time, dial, glass). Power state and direct routing moved to `deck/device-state.js`. A test fails when a logic file compares a skin name.
+
+### Fixed
+- Mute state was not drawn: the card did not redraw when only the mute state of a linked player changed.
+
+### Notes
+- Not yet tested on real hardware.
+
 ## 0.16.0
 
 ### Changed

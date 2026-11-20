@@ -96,7 +96,7 @@ export const styleMixin = {
       .appcell.svc.starting { animation: svcpulse 1.1s ease-in-out infinite; }
       @keyframes svcpulse { 0%, 100% { box-shadow: inset 0 0 0 2px #fff8, 0 0 6px 0 var(--c); filter: brightness(1); } 50% { box-shadow: inset 0 0 0 2px #fff, 0 0 20px 4px var(--c); filter: brightness(1.25); } }
       .key.color span { font-size: 0.62em; font-weight: 700; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.6); }
-      .ic-row.on { box-shadow: inset 0 0 0 2px var(--hr-accent); background: linear-gradient(color-mix(in srgb, var(--hr-accent) 18%, transparent), color-mix(in srgb, var(--hr-accent) 18%, transparent)), var(--hr-key-bg); }
+      .ic-row.on { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0,0,0,.4), inset 0 0 0 2px var(--hr-accent); background: linear-gradient(color-mix(in srgb, var(--hr-accent) 18%, transparent), color-mix(in srgb, var(--hr-accent) 18%, transparent)), var(--hr-key-bg); }
       .ic-row.on ha-icon { color: var(--hr-accent) !important; }
       .dtext { display: flex; gap: 6px; } .dtext input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: var(--hr-radius); border: 1px solid var(--divider-color, #444); background: var(--hr-tile-bg); color: var(--hr-text); }
       .dtext .key { width: 42px; flex: none; } .dtext .key ha-icon { --mdc-icon-size: 22px; } .appcell, .ic-row { flex-direction: column; min-height: 58px; gap: 4px; } .appcell ha-icon, .ic-row ha-icon { --mdc-icon-size: 22px; } .appcell span, .ic-row span { font-size: 0.78em; }
@@ -251,6 +251,9 @@ export const styleMixin = {
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
       .mmbox { display: grid; gap: 6px; margin: 8px 0; } .mmrow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warning-color, #f5a623) 16%, transparent); font-size: 13px; } .mmrow span { flex: 1; } .mmrow ha-icon { color: var(--warning-color, #f5a623); --mdc-icon-size: 20px; }
+      .netrow { padding: 8px 2px; border-top: 1px solid color-mix(in srgb, var(--hr-muted) 25%, transparent); } .netrow:first-of-type { border-top: 0; }
+      .nethead { display: flex; align-items: center; gap: 8px; } .nethead b { flex: 1; min-width: 0; } .netstate { font-size: 12px; color: var(--hr-muted); } .netstate.on { color: var(--hr-accent); }
+      .netmeta, .netcaps { font-size: 12px; color: var(--hr-muted); margin-left: 32px; }
       .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-dd [data-t]:not([data-t="dd"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
@@ -442,7 +445,7 @@ export const styleMixin = {
       .mnone { padding: 12px; text-align: center; color: var(--hr-muted); font-size: 0.85em; }
       details.hubinfo { margin-bottom: 8px; } details.hubinfo > summary { cursor: pointer; list-style: none; } details.hubinfo > summary::-webkit-details-marker { display: none; } details.hubinfo:not([open]) > summary { border-bottom: none; padding-bottom: 0; margin-bottom: 0; } details.hubinfo > summary::after { content: "\\25BE"; margin-left: 6px; color: var(--hr-muted); } details.hubinfo[open] > summary::after { content: "\\25B4"; }
       @media (prefers-reduced-motion: reduce) { .ib.gear.fresh ha-icon { animation: none; } }
-      .key.muted { color: var(--hr-accent); box-shadow: inset 0 0 0 2px var(--hr-accent); }
+      .key.muted { color: var(--hr-accent); transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0,0,0,.4), inset 0 0 0 2px var(--hr-accent); }
       .sidecol { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: space-between; }
       .key.tall { flex: 1; min-height: 40px; flex-direction: column; gap: 1px; border-radius: var(--hr-rk-radius, 14px); padding: 2px; } .key.tall ha-icon { --mdc-icon-size: 20px; }
       .key .sub { font-size: 0.62em; color: var(--hr-muted); line-height: 1.05; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

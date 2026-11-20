@@ -169,6 +169,19 @@ def platform(hass: HomeAssistant, entity: str) -> str | None:
     return entry.platform if entry else None
 
 
+def host_of(hass: HomeAssistant, entity: str) -> str | None:
+    """Network address of the device behind an entity (host or IP of its config entry); None if unknown."""
+    entry = er.async_get(hass).async_get(entity)
+    conf = hass.config_entries.async_get_entry(entry.config_entry_id) if entry and entry.config_entry_id else None
+    if conf is None:
+        return None
+    for key in ("host", "ip_address", "ip"):
+        value = conf.data.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
 def summary(hass: HomeAssistant) -> list[dict[str, Any]]:
     """Every linked device with what was found about it (for the sensor "Network control" and diagnostics)."""
     out = []
@@ -238,7 +251,7 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                 found = known_caps(hass, entity)
                 plat = platform(hass, entity)
                 item.update(linked[label], caps=found, state=snapshot(hass, entity), known=hass.states.get(entity) is not None,
-                            platform=plat, quirks=directdev.quirks(plat, found), page=PAGES.get(plat or "", "generic"),
+                            platform=plat, host=host_of(hass, entity), quirks=directdev.quirks(plat, found), page=PAGES.get(plat or "", "generic"),
                             capsLive=caps(hass, entity), sources=remember_sources(hass, entity),
                             sourcesLive=bool(_sources(hass, entity)))
                 item["inputList"] = _inputs(hass, info, label, linked[label])

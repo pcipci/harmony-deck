@@ -8,7 +8,7 @@ export const dataMixin = {
   _send(hub, device, command) {
     if (!command) return;
     this._buzz();
-    this._hass.callService("remote", "send_command", { entity_id: hub, device, command, ...(Array.isArray(command) ? { delay_secs: 0.15 } : {}), ...this._holdOpt() });
+    this._sendCmd(hub, device, command, Array.isArray(command) ? { delay_secs: 0.15 } : {});
   },
 
   // Hub knowledge from the integration: per hub {name, activities: {A: {volume, nav, channel, transport}}, devices: {D: [commands]}}

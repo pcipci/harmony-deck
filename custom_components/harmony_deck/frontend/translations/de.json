@@ -119,9 +119,10 @@
     "devs": "Geräte",
     "acts": "Aktivitäten",
     "dd": "Netzwerksteuerung",
-    "misc": "Hub",
-    "info": "Info"
+    "misc": "Hub"
   },
+  "netTitle": "Netzwerkgeräte",
+  "netNone": "Kein Gerät mit einem Netzwerkgerät verknüpft.",
   "directShowKeys": "Tasten anzeigen",
   "actions": "Aktionen",
   "actionsHint": "Aktionen sind eigene Tasten: Harmony-Tasten, Pausen und Home-Assistant-Entitäten (Lampen, Szenen, Skripte …), einzeln oder als Sequenz aus mehreren Schritten. Die Integration führt sie aus, auch wenn die Seite zu ist.",
@@ -489,6 +490,7 @@
     "Vorheriger": "Vorheriger",
     "Nächster": "Nächster",
     "Standby": "Standby",
+    "TV Ein/Aus": "TV Ein/Aus",
     "Aufwecken": "Aufwecken",
     "Kanal +": "Kanal +",
     "Kanal −": "Kanal −",

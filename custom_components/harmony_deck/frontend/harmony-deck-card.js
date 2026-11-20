@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.16.0";
+  var VERSION = "0.16.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1561,7 +1561,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _send(hub, device, command) {
       if (!command) return;
       this._buzz();
-      this._hass.callService("remote", "send_command", { entity_id: hub, device, command, ...Array.isArray(command) ? { delay_secs: 0.15 } : {}, ...this._holdOpt() });
+      this._sendCmd(hub, device, command, Array.isArray(command) ? { delay_secs: 0.15 } : {});
     },
     // Hub knowledge from the integration: per hub {name, activities: {A: {volume, nav, channel, transport}}, devices: {D: [commands]}}
     // and shared settings {hidden: {hub: [..]}, skin, names: {hub: label}}.
@@ -1744,6 +1744,81 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       this._key = "";
       this.hass = this._hass;
+    }
+  };
+
+  // src/deck/device-state.js
+  var deviceStateMixin = {
+    // Volume 0..1 of the device the volume slider belongs to, else of any linked player that reports one; half open if there is none.
+    _eyeLevel(h) {
+      const s = this._sl?.[h?.id];
+      const entities = [s?.activity?.entity, ...Object.values(this._settings().directDevices?.[h?.id] || {}).map((l) => l.entity)];
+      for (const e of entities) {
+        const v = e && this._hass?.states?.[e]?.attributes?.volume_level;
+        if (typeof v === "number") return Math.min(1, Math.max(0, v)).toFixed(2);
+      }
+      return "0.5";
+    },
+    // State of a device from its linked player: true = on, false = off, null = not known (no link, unavailable).
+    _powerState(hub, dev) {
+      const link = this._settings().directDevices?.[hub]?.[dev];
+      const st = link ? this._hass?.states?.[link.entity]?.state : null;
+      if (!st || ["unavailable", "unknown"].includes(st)) return null;
+      return !["off", "standby"].includes(st);
+    },
+    // Player of a Harmony device that can be addressed directly now (linked, reachable), with its supported feature bits; else null.
+    _reach(hub, dev) {
+      const link = this._settings().directDevices?.[hub]?.[dev];
+      const st = link ? this._hass?.states?.[link.entity] : null;
+      if (!st || ["unavailable", "unknown"].includes(st.state)) return null;
+      return { entity: link.entity, state: st.state, attrs: st.attributes || {}, features: Number(st.attributes?.supported_features) || 0, link };
+    },
+    // Commands that go straight to the player when it is reachable and reports the capability; Harmony stays the fallback.
+    // "On" never goes this way (the device may be off or in WLAN sleep and only Harmony can wake it).
+    _directRoute(hub, dev, command) {
+      if (Array.isArray(command)) return null;
+      const r = this._reach(hub, dev);
+      if (!r) return null;
+      const has = (bit) => !!(r.features & bit);
+      const c = String(command).toLowerCase();
+      if (c === "poweroff" && has(256)) return { service: "turn_off", data: {} };
+      if (c === "mute" && has(8)) return { service: "volume_mute", data: { is_volume_muted: !r.attrs.is_volume_muted } };
+      if (r.link.volumeDirect === true && has(1024) && (c === "volumeup" || c === "volumedown")) return { service: c === "volumeup" ? "volume_up" : "volume_down", data: {} };
+      if (c === "play" && has(16384)) return { service: "media_play", data: {} };
+      if (c === "pause" && has(1)) return { service: "media_pause", data: {} };
+      if (c === "stop" && has(4096)) return { service: "media_stop", data: {} };
+      return null;
+    },
+    // Send one command of a Harmony device: directly if possible, else over the hub.
+    _sendCmd(hub, device, command, extra = {}) {
+      const route = this._directRoute(hub, device, command);
+      if (route) {
+        this._hass.callService("media_player", route.service, { entity_id: this._reach(hub, device).entity, ...route.data });
+        return;
+      }
+      this._hass.callService("remote", "send_command", { entity_id: hub, device, command, ...extra, ...this._holdOpt() });
+    },
+    // Target state of a switch that was just pressed and is not confirmed by the device yet (null = nothing pending).
+    _powerPending(hub, dev) {
+      const p = this._pwrPend?.[`${hub}/${dev}`];
+      if (!p) return null;
+      const real = this._powerState(hub, dev);
+      if (Date.now() - p.at > 2e4 || real === p.on) {
+        delete this._pwrPend[`${hub}/${dev}`];
+        return null;
+      }
+      return p.on;
+    },
+    // The switch sends On/Off itself and flips at once; the lamp shows "switching" until the device confirms (or 20 s pass).
+    _swPowerSend(hub, device, on) {
+      this._pwrPend = { ...this._pwrPend || {}, [`${hub}/${device}`]: { on, at: Date.now() } };
+      this._buzz();
+      this._sendCmd(hub, device, on ? "PowerOn" : "PowerOff");
+      clearTimeout(this._pwrT);
+      this._pwrT = setTimeout(() => {
+        this._key = "";
+        this._rerender?.();
+      }, 20500);
     }
   };
 
@@ -1971,7 +2046,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }).join("");
       const dp = this._directHtml(h, dev, t, false, "", true) || {};
       const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
-      const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
+      const swPower = this._trait("powerKnob") && power.includes("PowerOn") && power.includes("PowerOff");
       const pstate = swPower ? this._powerState(h.id, dev) : null;
       let pw;
       if (swPower) {
@@ -2019,8 +2094,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
   };
 
-  // src/deck/direct-editor.js
+  // src/shared/platforms.js
   var PLATFORMS = { lg_netcast: "LG Netcast", webostv: "LG webOS", samsungtv: "Samsung TV", sonos: "Sonos", androidtv: "Android TV (ADB)", androidtv_remote: "Android TV", cast: "Google Cast", apple_tv: "Apple TV", denonavr: "Denon AVR", yamaha_musiccast: "Yamaha MusicCast", onkyo: "Onkyo", bravia: "Sony Bravia", philips_js: "Philips TV", roku: "Roku", panasonic_viera: "Panasonic Viera" };
+
+  // src/deck/direct-editor.js
   var directEditorMixin = {
     // Overview of the integration, loaded when the tab (or a step "Device") needs it; the card redraws when it arrives.
     async _ddLoad(force = false) {
@@ -2135,7 +2212,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
       if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
       if (item.page === "firetv") {
-        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+        return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
       }
       const caps = item.caps || [];
       const has = (c) => caps.includes(c);
@@ -2153,15 +2230,19 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         has("source_select") ? row(t.ddCtlSources, (item.sources || []).length ? item.sources.map((src) => `<button type="button" class="mini txt ${st.source === src ? "sel" : ""} ${seen ? "seen" : ""}" data-ddctl="source" data-val="${esc(src)}" data-dev="${esc(d)}"><span>${esc(src)}</span></button>`).join("") + (seen ? `<div class="ehint">${t.ddSourcesSeen}</div>` : "") : `<span class="ddnow">${esc(t.ddNoSources)}</span>`) : ""
       ].join("");
       const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
-      const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
-      const liveCaps = item.capsLive || caps;
-      const capList = `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
+      const capList = this._ddCapList(item, caps, t);
       const rescan = `<div class="egrp ddrescan"><button type="button" class="mini txt" data-ddrescan data-dev="${esc(d)}" title="${esc(t.ddRescanHint)}"><ha-icon icon="mdi:refresh"></ha-icon><span>${t.ddRescan}</span></button><span class="ehint" data-ddrescanmsg>${this._ddRescanMsg?.[d] || ""}</span></div>`;
       return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
       ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
       ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
+    },
+    // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
+    _ddCapList(item, caps, t) {
+      const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
+      const liveCaps = item.capsLive || caps;
+      return `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
     },
     async _ddControl(hub, device, op, value, box) {
       const msg = box?.querySelector("[data-ddmsg]");
@@ -2368,6 +2449,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     ["Nächster", "mdi:skip-next", 87],
     ["Standby", "mdi:power-sleep", 223],
     ["Aufwecken", "mdi:power", 224],
+    ["TV Ein/Aus", "mdi:television-off", 116],
     ["Kanal +", "mdi:chevron-up", 166],
     ["Kanal −", "mdi:chevron-down", 167],
     ["Guide", "mdi:television-guide", 172],
@@ -2376,9 +2458,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     ["Stumm", "mdi:volume-mute", 164]
   ];
   var ADB_KEYS = { up: 19, down: 20, left: 21, right: 22, ok: 23, back: 4, home: 3, menu: 82, play: 126, pause: 127, stop: 86, rewind: 89, forward: 90, volume_up: 24, volume_down: 25, mute: 164, channel_up: 166, channel_down: 167 };
-  var FIRE_ROWS = [["Suchen", "Einstellungen", "Guide"], ["Vorheriger", "Play/Pause", "Nächster"], ["Standby", "Aufwecken"]];
+  var FIRE_ROWS = [["Suchen", "Einstellungen", "Guide"], ["Vorheriger", "Play/Pause", "Nächster"], ["Standby", "Aufwecken"], ["TV Ein/Aus"]];
   var FIRE_MODELS = {
-    cube: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Stop", "Zurückspulen", "Vorspulen", "Vorheriger", "Nächster", "Kanal +", "Kanal −", "Guide", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken"],
+    cube: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Stop", "Zurückspulen", "Vorspulen", "Vorheriger", "Nächster", "Kanal +", "Kanal −", "Guide", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken", "TV Ein/Aus"],
     stick: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Zurückspulen", "Vorspulen", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken"],
     lite: ["Suchen", "Menü", "Home", "Zurück", "Play/Pause", "Zurückspulen", "Vorspulen"]
   };
@@ -2431,6 +2513,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var knownPackages = () => FIRE_APPS.map((a) => appPackage(a.cmd)).filter(Boolean);
   var IR_DEVICE = "/dev/input/event2";
   var IR_KEYS = { mute: 113, volume_down: 114, volume_up: 115 };
+  var IR_POWER = 116;
   var irCommand = (code, dev = IR_DEVICE) => `sendevent ${dev} 1 ${code} 1 && sendevent ${dev} 0 0 0 && sendevent ${dev} 1 ${code} 0 && sendevent ${dev} 0 0 0`;
 
   // src/deck/fire-editor.js
@@ -2691,7 +2774,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!f || this._edit || this._config.compact) return "";
       const live = f.mode === "on" || f.mode === "playing";
       if (!live) return "";
-      const key = (code, icon, label) => code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`;
+      const key = (code, icon, label) => code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="${esc(code === IR_POWER ? irCommand(code) : `input keyevent ${code}`)}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`;
       return `<span class="firechip chip f-${f.mode}" title="${esc(this._fireText(f, t))}">${this._appBadgeHtml(f.appInfo)}<span class="ct">${esc(t.fireLabel)}: ${esc(f.appInfo ? f.appInfo.name : t.fireStates[f.mode])}</span>${live ? key(85, f.mode === "playing" ? "mdi:pause" : "mdi:play-pause", t.firePlay) + key(223, "mdi:power", t.fireOff) : ""}</span>`;
     },
     _appBadgeHtml(info) {
@@ -2755,14 +2838,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const nowInfo = this._appInfo(nowRaw, h.id, t);
       const now = nowInfo?.name || nowRaw;
       const model = d.model || this._config.direct_model || "all";
-      const keys = model !== "all" && FIRE_MODELS[model] ? FIRE_KEYS.filter(([l]) => FIRE_MODELS[model].includes(l)) : FIRE_KEYS;
+      const keys = (model !== "all" && FIRE_MODELS[model] ? FIRE_KEYS.filter(([l]) => FIRE_MODELS[model].includes(l)) : FIRE_KEYS).filter(([, , c]) => c !== IR_POWER || model === "cube");
       const covered = new Set(Object.values(ADB_KEYS));
       const extra = keys.filter(([l, , code]) => !covered.has(code) && !(d.hiddenKeys || []).includes(l));
       const sstate = st?.state;
       const keyOn = (code) => code === 85 && sstate === "playing" || code === 223 && ["off", "standby"].includes(sstate);
       const pkgOf = appPackage;
       const curPkg = st?.attributes?.app_id;
-      const key = ([l, ic, code]) => `<button class="key cell ic-row ${keyOn(code) ? "on" : ""}" data-adb="${esc(d.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon><span>${esc(t.fireKeys?.[l] || l)}</span></button>`;
+      const key = ([l, ic, code]) => `<button class="key cell ic-row ${keyOn(code) ? "on" : ""}" data-adb="${esc(d.entity)}" data-adbcmd="${esc(code === IR_POWER ? irCommand(code) : `input keyevent ${code}`)}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon><span>${esc(t.fireKeys?.[l] || l)}</span></button>`;
       const app = (a) => `<button class="key cell appcell svc txt ${curPkg && pkgOf(a.cmd) === curPkg ? "on" : ""}" style="--c:${esc(a.color || "var(--hr-accent)")};--fg:${esc(a.fg || "#fff")}" title="${esc(a.name)}" data-adb="${esc(d.entity)}" data-adbcmd="${esc(a.cmd)}"><b>${esc(a.name)}</b></button>`;
       const body = `<div class="directbox">
       ${now ? `<div class="dnow">${this._appBadgeHtml(nowInfo)}<span>${t.directNow}: ${esc(now)}</span></div>` : ""}
@@ -3106,7 +3189,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         <button class="mentry" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${esc(t.editSettings)}</span></button>
         <button class="mentry" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${esc(t.editFavs)}</span></button>
         <button class="mentry" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${esc(t.actions)}</span></button>
-        <button class="mentry" data-edit="settings" data-goetab="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
+        <button class="mentry" data-edit="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
       const list = hints.length ? `<div class="mhints">${hints.map((x) => x.html).join("")}</div>` : admin ? "" : `<div class="mnone">${esc(t.noHints)}</div>`;
       return `<div class="hmenu" data-hmenu="${esc(h.id)}">${list}${entries}</div>`;
     },
@@ -3125,10 +3208,37 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const status = Array.isArray(t.statusLegend) ? t.statusLegend : [];
       const open = status[this._statusOpen];
       const grid = status.map((x, n) => `<button class="sbtn ${n === this._statusOpen ? "sel" : ""}" data-status="${n}"><span class="sample">${sample(x.kind)}</span><span>${esc(x.short || x.title)}</span></button>`).join("");
-      const hubs = `<div class="esec infobox" data-t="info"><div class="etitle">${t.hubsTitle}</div>${this._hubs().map((h) => this._hubInfoHtml(h, t)).join("")}</div>`;
-      return `${hubs}<div class="esec infobox" data-t="info"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
+      const hubs = `<div class="esec infobox"><div class="etitle">${t.hubsTitle}</div>${this._hubs().map((h) => this._hubInfoHtml(h, t)).join("")}</div>`;
+      return `${hubs}<div class="esec infobox"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
         <div class="ehint sexpl">${open ? `<b>${esc(open.title)}</b> ${esc(open.text)}` : esc(t.statusHint)}</div></div>
-      <details class="esec infobox" data-t="info"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
+      <details class="esec infobox"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
+    },
+    // Network devices linked to Harmony devices: platform, address (administrators), state and what they can do.
+    _netInfoHtml(t) {
+      if (!this._dd) {
+        this._ddLoad();
+        return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div><div class="ehint">${t.ddLoading}</div></div>`;
+      }
+      const stName = (on) => on === true ? t.ddOn : on === false ? t.ddOff : t.ddUnknown;
+      const rows = [];
+      for (const h of this._hubs()) {
+        for (const [dev, item] of Object.entries(this._dd.hubs?.[h.id] || {})) {
+          if (!item.entity) continue;
+          const live = this._hass.states?.[item.entity];
+          const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
+          const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
+          rows.push(`<div class="netrow"><div class="nethead"><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span class="netstate ${on === true ? "on" : on === false ? "off" : ""}">${esc(stName(on))}</span></div>
+          <div class="netmeta">${[item.platform ? PLATFORMS[item.platform] || item.platform : "", item.host || "", this._hubs().length > 1 ? h.name : ""].filter(Boolean).map(esc).join(" · ")}</div>
+          <div class="netcaps">${caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot)}</div></div>`);
+        }
+      }
+      return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.join("") || `<div class="ehint">${t.netNone}</div>`}</div>`;
+    },
+    // The Info area (own view of the gear menu): hubs, network devices, status symbols, explanations, raw data.
+    _infoArea(h, t) {
+      const raw = `<details class="esec raw infobox"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
+      <div class="ehint">${this._diagText(t)}</div>`;
+      return `${this._legendHtml(t)}${this._netInfoHtml(t)}${raw}`;
     },
     // Events of the info panel and the legend.
     _bindInfo(root) {
@@ -3676,8 +3786,19 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     return [...front, ...Object.keys(SKINS).filter((k) => !front.includes(k))];
   };
 
+  // src/shared/skin-traits.js
+  var SKIN_TRAITS = {
+    radio: { powerKnob: true, keyHoldMs: 120, dial: true },
+    terminal: { glass: true },
+    glass: { blurOption: true }
+  };
+  var skinTrait = (skin, name2, fallback = false) => SKIN_TRAITS[skin]?.[name2] ?? fallback;
+
   // src/deck/options.js
   var optionsMixin = {
+    _trait(name2, fallback = false) {
+      return skinTrait(this._skin(), name2, fallback);
+    },
     _skin() {
       const k = this._config.skin || this._settings().skin || "homebase";
       return SKINS[k] ? k : "homebase";
@@ -3856,7 +3977,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindKeys(root) {
       root.querySelectorAll("button.key, button.tile").forEach((b) => {
         const off = () => {
-          if (this._skin?.() === "radio") setTimeout(() => b.classList.remove("lit"), 120);
+          const ms = this._trait("keyHoldMs", 0);
+          if (ms) setTimeout(() => b.classList.remove("lit"), ms);
           else b.classList.remove("lit");
         };
         b.addEventListener("pointerdown", () => {
@@ -3872,7 +3994,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const send = () => {
         this._buzz();
         const pre = b.dataset.pre;
-        this._hass.callService("remote", "send_command", { entity_id: b.dataset.hub, device: b.dataset.device, command: pre ? [pre, b.dataset.cmd] : b.dataset.cmd, ...pre ? { delay_secs: 0.15 } : {}, ...this._holdOpt() });
+        this._sendCmd(b.dataset.hub, b.dataset.device, pre ? [pre, b.dataset.cmd] : b.dataset.cmd, pre ? { delay_secs: 0.15 } : {});
       };
       const stop = () => {
         clearTimeout(delay);
@@ -4327,7 +4449,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
     },
     _mode() {
-      return ["settings", "profiles", "actions"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : this._modeState || "activities";
+      return ["settings", "profiles", "actions", "info"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : this._modeState || "activities";
     },
     _hubHtml(h, t, index = 0, tabs = "") {
       const busy = !!h.starting;
@@ -4607,14 +4729,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     _edModeHtml(t) {
       const m = this._editMode;
-      const icon = { favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
-      const label = { favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
+      const icon = { info: "mdi:information-outline", favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
+      const label = { info: t.menuInfo, favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
       return `<ha-icon icon="${icon}"></ha-icon><span>${label} · ${t.profLabel}: ${esc(this._prof().active)}</span>`;
     },
     // Edit view: only the tabs of the rooms and the edited area (no status line, tiles or info above it).
     _editBody(h, t, body) {
       if (this._editMode === "profiles") return `<div class="editbox">${this._profilesEdit(t)}</div>`;
       if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
+      if (this._editMode === "info") return `<div class="editbox infoarea">${this._infoArea(h, t)}</div>`;
       if (this._editMode === "favs") {
         const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
         const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
@@ -4648,7 +4771,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
-          ${skin === "glass" ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
           ${this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
         ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -4668,9 +4791,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
       ${this._directDevHtml(h, t)}
-      ${this._legendHtml(t)}
-      <details class="esec raw" data-t="info"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
-      <div class="ehint">${this._diagText(t)}</div></div>
+      </div>
       <div class="etitle outside" data-t="acts">${t.visible}</div>`;
     },
     // Icon chooser for a device: shows the current symbol; tapping opens a grid of all symbols (a native select cannot show icons).
@@ -4952,28 +5073,17 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   // src/deck/skin-decor.js
   var skinDecorMixin = {
     _skinHead(skin, h) {
-      if (skin !== "radio") return "";
+      if (!skinTrait(skin, "dial")) return "";
       const clean = (x) => String(x ?? "").replace(/[<>&"]/g, "");
-      const name2 = clean(this._config.title ?? h?.name);
       const acts = (h?.list || []).filter((a) => a !== "PowerOff");
       const idx = h?.current ? acts.indexOf(h.current) : -1;
       const run = idx >= 0;
       const needle = run ? 10 + (acts.length > 1 ? idx / (acts.length - 1) * 80 : 40) : 6;
       const lab = run ? `<span class="skin-sta ${needle > 62 ? "left" : ""}" style="--needle:${needle}%">${clean(h.current)}</span>` : "";
-      return `<div class="skin-head"><div class="skin-dial"><b>${name2}</b>${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
+      return `<div class="skin-head"><div class="skin-dial">${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
     },
     _skinTail(skin) {
-      return skin === "terminal" ? '<div class="skin-tear"></div><div class="skin-glare"></div>' : "";
-    },
-    // Volume 0..1 of the device the volume slider belongs to, else of any linked player that reports one; half open if there is none.
-    _eyeLevel(h) {
-      const s = this._sl?.[h?.id];
-      const entities = [s?.activity?.entity, ...Object.values(this._settings().directDevices?.[h?.id] || {}).map((l) => l.entity)];
-      for (const e of entities) {
-        const v = e && this._hass?.states?.[e]?.attributes?.volume_level;
-        if (typeof v === "number") return Math.min(1, Math.max(0, v)).toFixed(2);
-      }
-      return "0.5";
+      return skinTrait(skin, "glass") ? '<div class="skin-tear"></div><div class="skin-glare"></div>' : "";
     },
     // The eye follows the volume without redrawing the card.
     _eyeUpdate(hubs) {
@@ -4982,17 +5092,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const h = hubs.find((x) => x.id === this._hubSel) || hubs[0];
       el.style.setProperty("--eye", this._eyeLevel(h));
     },
-    // State of a device from its linked player: true = on, false = off, null = not known (no link, unavailable).
-    _powerState(hub, dev) {
-      const link = this._settings().directDevices?.[hub]?.[dev];
-      const st = link ? this._hass?.states?.[link.entity]?.state : null;
-      if (!st || ["unavailable", "unknown"].includes(st)) return null;
-      return !["off", "standby"].includes(st);
-    },
     // Tube radio, device view: On/Off as a sunken brass button in a bezel with a lamp behind (known state), see _bindSkinDecor.
-    _powerKnob(hub, dev, on) {
+    _powerKnob(hub, dev, real) {
+      const pend = this._powerPending(hub, dev);
+      const on = pend ?? real;
       const a = `data-swpwr data-hub="${hub.replace(/"/g, "")}" data-device="${String(dev).replace(/"/g, "&quot;")}"`;
-      return `<span class="pwknob ${on ? "on" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
+      return `<span class="pwknob ${on ? "on" : ""} ${pend !== null ? "pend" : ""}"><button type="button" class="knob" ${a} aria-pressed="${on ? "true" : "false"}"><ha-icon icon="mdi:power"></ha-icon></button></span>`;
     },
     // The collapsed header no longer sticks (0.16): the offset below the Home Assistant bar was wrong in views with tabs and pushed it over the keys.
     _bindStickyHeader() {
@@ -5006,15 +5111,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const on = el.getAttribute("aria-pressed") !== "true";
         el.setAttribute("aria-pressed", on ? "true" : "false");
         el.parentElement.classList.toggle("on", on);
+        el.parentElement.classList.add("pend");
         this._swPowerSend(hub, device, on);
       }));
-    },
-    // The switch sends On/Off itself. (Up to 0.15.4 it "clicked" the hidden On/Off key, but keys send on pointerdown,
-    // so a click never reached them and the switch did nothing.)
-    _swPowerSend(hub, device, on) {
-      this._pwrLast = { ...this._pwrLast || {}, [`${hub}/${device}`]: on };
-      this._buzz();
-      this._hass.callService("remote", "send_command", { entity_id: hub, device, command: on ? "PowerOn" : "PowerOff", ...this._holdOpt() });
     }
   };
 
@@ -5232,7 +5331,41 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .tile.holdoff.holding ha-icon { color: #fff3e0 !important; filter: drop-shadow(0 0 6px #ff6a2a); }
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
-      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse { animation: none !important; transition: none !important; } }
+      /* 0.16.1: calmer flicker (slow and smooth), thin sunken rims, pressed state keys, hold-to-switch effects */
+      ${T} .tile.dev.inuse { animation: skphos2 8s ease-in-out infinite; }
+      @keyframes skphos2 { 0%, 100% { opacity: 1; } 50% { opacity: .86; } }
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 8s ease-in-out infinite; }
+      ${R} .tile.dev.inuse { animation: rlamp2 10s ease-in-out infinite; }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 7s ease-in-out infinite; }
+      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.88); } 70% { filter: brightness(1.07); } }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel, ${R} .appcell.svc { border: 2px solid #4a3414 !important;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22) !important; }
+      /* Fire TV keys of the direct block: always dark glass, dim letters; the running app lights up */
+      ${R} .appcell.svc { background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708) !important; transform: translateY(2px); }
+      ${R} .appcell.svc * { color: #9a7633 !important; text-shadow: none; }
+      ${R} .appcell.svc.on * { color: #ffb84a !important; text-shadow: 0 0 6px rgba(255,150,30,.95), 0 0 14px rgba(255,120,20,.7); }
+      /* Mute pressed: amber ring */
+      ${R} .rocker .rk.mute.round.muted, ${R} .key.muted { box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65) !important; }
+      /* dial: only the activity */
+      ${R} .skin-dial b { display: none; }
+      /* power knob switching: the lamp pulses until the device confirms */
+      ${R} .pwknob.pend { animation: rpend .6s ease-in-out infinite alternate; }
+      @keyframes rpend { from { filter: brightness(.7); } to { filter: brightness(1.3); } }
+      /* hold to start an activity: Terminal fills with a lighter green, tube radio heats up to white-hot */
+      ${T} .tile.holdsw.holding { animation: skfillw .7s linear forwards; } ${T} .tile.holdsw.holding * { animation: skfillwtx .7s linear forwards; text-shadow: none; }
+      @keyframes skfillw { from { background: #021a05; } to { background: #c8ffd8; box-shadow: 0 0 18px rgba(200,255,216,.8); } } @keyframes skfillwtx { from { color: #3dff6b; } to { color: #021a05; } }
+      ${R} .tile.holdsw.holding::after { display: none !important; }
+      ${R} .tile.holdsw.holding { border-color: #d9d2bc; background: radial-gradient(circle at 50% 58%, #fffbe8, #ffd27a 45%, #ff9a1f 100%) !important; animation: rheat .7s ease-in forwards; }
+      ${R} .tile.holdsw.holding * { color: #3a1802 !important; text-shadow: none; }
+      @keyframes rheat { from { filter: brightness(.2) saturate(.6); box-shadow: inset 0 0 14px rgba(0,0,0,.6); } 60% { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(.7); box-shadow: 0 0 24px 8px rgba(255,235,170,.9); } }
+      /* Terminal: state keys are green blocks too */
+      ${T} .key.on, ${T} .ic-row.on, ${T} .appcell.svc.on { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.on *, ${T} .ic-row.on *, ${T} .appcell.svc.on * { color: #021a05 !important; text-shadow: none; filter: none; }
+      /* settings switches: sunken brass button with a lamp (dim = off, amber = on) instead of a lever */
+      ${R} .sw:has(> input) { width: 64px; height: 34px; border-radius: 17px; border: 2px solid #4a3414; background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708); box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22); box-sizing: border-box; }
+      ${R} .sw:has(> input) i::after { display: none; }
+      ${R} .sw:has(> input) i::before, ${R} .sw:has(> input) input:checked + i::before { top: 6px; width: 18px; height: 18px; left: 8px; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transition: left .15s; }
+      ${R} .sw:has(> input) input:checked + i::before { left: 34px; background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); }
+      @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -5331,7 +5464,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .appcell.svc.starting { animation: svcpulse 1.1s ease-in-out infinite; }
       @keyframes svcpulse { 0%, 100% { box-shadow: inset 0 0 0 2px #fff8, 0 0 6px 0 var(--c); filter: brightness(1); } 50% { box-shadow: inset 0 0 0 2px #fff, 0 0 20px 4px var(--c); filter: brightness(1.25); } }
       .key.color span { font-size: 0.62em; font-weight: 700; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.6); }
-      .ic-row.on { box-shadow: inset 0 0 0 2px var(--hr-accent); background: linear-gradient(color-mix(in srgb, var(--hr-accent) 18%, transparent), color-mix(in srgb, var(--hr-accent) 18%, transparent)), var(--hr-key-bg); }
+      .ic-row.on { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0,0,0,.4), inset 0 0 0 2px var(--hr-accent); background: linear-gradient(color-mix(in srgb, var(--hr-accent) 18%, transparent), color-mix(in srgb, var(--hr-accent) 18%, transparent)), var(--hr-key-bg); }
       .ic-row.on ha-icon { color: var(--hr-accent) !important; }
       .dtext { display: flex; gap: 6px; } .dtext input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: var(--hr-radius); border: 1px solid var(--divider-color, #444); background: var(--hr-tile-bg); color: var(--hr-text); }
       .dtext .key { width: 42px; flex: none; } .dtext .key ha-icon { --mdc-icon-size: 22px; } .appcell, .ic-row { flex-direction: column; min-height: 58px; gap: 4px; } .appcell ha-icon, .ic-row ha-icon { --mdc-icon-size: 22px; } .appcell span, .ic-row span { font-size: 0.78em; }
@@ -5486,6 +5619,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
       .mmbox { display: grid; gap: 6px; margin: 8px 0; } .mmrow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warning-color, #f5a623) 16%, transparent); font-size: 13px; } .mmrow span { flex: 1; } .mmrow ha-icon { color: var(--warning-color, #f5a623); --mdc-icon-size: 20px; }
+      .netrow { padding: 8px 2px; border-top: 1px solid color-mix(in srgb, var(--hr-muted) 25%, transparent); } .netrow:first-of-type { border-top: 0; }
+      .nethead { display: flex; align-items: center; gap: 8px; } .nethead b { flex: 1; min-width: 0; } .netstate { font-size: 12px; color: var(--hr-muted); } .netstate.on { color: var(--hr-accent); }
+      .netmeta, .netcaps { font-size: 12px; color: var(--hr-muted); margin-left: 32px; }
       .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-dd [data-t]:not([data-t="dd"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
@@ -5677,7 +5813,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .mnone { padding: 12px; text-align: center; color: var(--hr-muted); font-size: 0.85em; }
       details.hubinfo { margin-bottom: 8px; } details.hubinfo > summary { cursor: pointer; list-style: none; } details.hubinfo > summary::-webkit-details-marker { display: none; } details.hubinfo:not([open]) > summary { border-bottom: none; padding-bottom: 0; margin-bottom: 0; } details.hubinfo > summary::after { content: "\\25BE"; margin-left: 6px; color: var(--hr-muted); } details.hubinfo[open] > summary::after { content: "\\25B4"; }
       @media (prefers-reduced-motion: reduce) { .ib.gear.fresh ha-icon { animation: none; } }
-      .key.muted { color: var(--hr-accent); box-shadow: inset 0 0 0 2px var(--hr-accent); }
+      .key.muted { color: var(--hr-accent); transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(0,0,0,.4), inset 0 0 0 2px var(--hr-accent); }
       .sidecol { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: space-between; }
       .key.tall { flex: 1; min-height: 40px; flex-direction: column; gap: 1px; border-radius: var(--hr-rk-radius, 14px); padding: 2px; } .key.tall ha-icon { --mdc-icon-size: 20px; }
       .key .sub { font-size: 0.62em; color: var(--hr-muted); line-height: 1.05; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -5945,7 +6081,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._actPanelOff,
         hubs.map((h) => this._links(h).map((l) => {
           const e = this._hass.states?.[l.entity];
-          return [e?.state, e?.attributes?.source, e?.attributes?.source_list?.length];
+          return [e?.state, e?.attributes?.source, e?.attributes?.source_list?.length, e?.attributes?.is_volume_muted, this._powerPending(h.id, l.device)];
         })),
         hubs.map((h) => {
           const f = this._fireInfo(h.id);
@@ -5974,7 +6110,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

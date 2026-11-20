@@ -4,7 +4,7 @@
 export const FIRE_KEYS = [
   ["Suchen", "mdi:magnify", 84], ["Einstellungen", "mdi:cog-outline", 176], ["Menü", "mdi:menu", 82], ["Home", "mdi:home-outline", 3], ["Zurück", "mdi:arrow-u-left-top", 4],
   ["Play/Pause", "mdi:play-pause", 85], ["Stop", "mdi:stop", 86], ["Zurückspulen", "mdi:rewind", 89], ["Vorspulen", "mdi:fast-forward", 90], ["Vorheriger", "mdi:skip-previous", 88], ["Nächster", "mdi:skip-next", 87],
-  ["Standby", "mdi:power-sleep", 223], ["Aufwecken", "mdi:power", 224],
+  ["Standby", "mdi:power-sleep", 223], ["Aufwecken", "mdi:power", 224], ["TV Ein/Aus", "mdi:television-off", 116],
   ["Kanal +", "mdi:chevron-up", 166], ["Kanal −", "mdi:chevron-down", 167], ["Guide", "mdi:television-guide", 172],
   ["Lauter", "mdi:volume-plus", 24], ["Leiser", "mdi:volume-minus", 25], ["Stumm", "mdi:volume-mute", 164],
 ];
@@ -13,10 +13,10 @@ export const FIRE_KEYS = [
 export const ADB_KEYS = { up: 19, down: 20, left: 21, right: 22, ok: 23, back: 4, home: 3, menu: 82, play: 126, pause: 127, stop: 86, rewind: 89, forward: 90, volume_up: 24, volume_down: 25, mute: 164, channel_up: 166, channel_down: 167 };
 
 // Key sets per model group (approximation of the original remotes; "all" shows everything).
-export const FIRE_ROWS = [["Suchen", "Einstellungen", "Guide"], ["Vorheriger", "Play/Pause", "Nächster"], ["Standby", "Aufwecken"]];
+export const FIRE_ROWS = [["Suchen", "Einstellungen", "Guide"], ["Vorheriger", "Play/Pause", "Nächster"], ["Standby", "Aufwecken"], ["TV Ein/Aus"]];
 
 export const FIRE_MODELS = {
-  cube: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Stop", "Zurückspulen", "Vorspulen", "Vorheriger", "Nächster", "Kanal +", "Kanal −", "Guide", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken"],
+  cube: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Stop", "Zurückspulen", "Vorspulen", "Vorheriger", "Nächster", "Kanal +", "Kanal −", "Guide", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken", "TV Ein/Aus"],
   stick: ["Suchen", "Einstellungen", "Menü", "Home", "Zurück", "Play/Pause", "Zurückspulen", "Vorspulen", "Lauter", "Leiser", "Stumm", "Standby", "Aufwecken"],
   lite: ["Suchen", "Menü", "Home", "Zurück", "Play/Pause", "Zurückspulen", "Vorspulen"],
 };
@@ -72,4 +72,6 @@ export const knownPackages = () => FIRE_APPS.map((a) => appPackage(a.cmd)).filte
 // Works without a Harmony activity. Key codes: mute 113, volume down 114, volume up 115.
 export const IR_DEVICE = "/dev/input/event2";
 export const IR_KEYS = { mute: 113, volume_down: 114, volume_up: 115 };
+// Power key of the Cube remote (code 116 on the same IR keypad): switches the TV, not the Cube.
+export const IR_POWER = 116;
 export const irCommand = (code, dev = IR_DEVICE) => `sendevent ${dev} 1 ${code} 1 && sendevent ${dev} 0 0 0 && sendevent ${dev} 1 ${code} 0 && sendevent ${dev} 0 0 0`;

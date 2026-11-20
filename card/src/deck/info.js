@@ -1,4 +1,5 @@
 // Info panel of a hub, diagnostics line and the legend.
+import { PLATFORMS } from "../shared/platforms.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 
@@ -75,7 +76,7 @@ export const infoMixin = {
         <button class="mentry" data-edit="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span>${esc(t.editSettings)}</span></button>
         <button class="mentry" data-edit="favs"><ha-icon icon="mdi:star-outline"></ha-icon><span>${esc(t.editFavs)}</span></button>
         <button class="mentry" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${esc(t.actions)}</span></button>
-        <button class="mentry" data-edit="settings" data-goetab="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
+        <button class="mentry" data-edit="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
     const list = hints.length ? `<div class="mhints">${hints.map((x) => x.html).join("")}</div>` : (admin ? "" : `<div class="mnone">${esc(t.noHints)}</div>`);
     return `<div class="hmenu" data-hmenu="${esc(h.id)}">${list}${entries}</div>`;
   },
@@ -91,10 +92,36 @@ export const infoMixin = {
     const status = Array.isArray(t.statusLegend) ? t.statusLegend : [];
     const open = status[this._statusOpen];
     const grid = status.map((x, n) => `<button class="sbtn ${n === this._statusOpen ? "sel" : ""}" data-status="${n}"><span class="sample">${sample(x.kind)}</span><span>${esc(x.short || x.title)}</span></button>`).join("");
-    const hubs = `<div class="esec infobox" data-t="info"><div class="etitle">${t.hubsTitle}</div>${this._hubs().map((h) => this._hubInfoHtml(h, t)).join("")}</div>`;
-    return `${hubs}<div class="esec infobox" data-t="info"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
+    const hubs = `<div class="esec infobox"><div class="etitle">${t.hubsTitle}</div>${this._hubs().map((h) => this._hubInfoHtml(h, t)).join("")}</div>`;
+    return `${hubs}<div class="esec infobox"><div class="etitle">${t.statusTitle}</div><div class="sgrid">${grid}</div>
         <div class="ehint sexpl">${open ? `<b>${esc(open.title)}</b> ${esc(open.text)}` : esc(t.statusHint)}</div></div>
-      <details class="esec infobox" data-t="info"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
+      <details class="esec infobox"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
+  },
+
+  // Network devices linked to Harmony devices: platform, address (administrators), state and what they can do.
+  _netInfoHtml(t) {
+    if (!this._dd) { this._ddLoad(); return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div><div class="ehint">${t.ddLoading}</div></div>`; }
+    const stName = (on) => (on === true ? t.ddOn : on === false ? t.ddOff : t.ddUnknown);
+    const rows = [];
+    for (const h of this._hubs()) {
+      for (const [dev, item] of Object.entries(this._dd.hubs?.[h.id] || {})) {
+        if (!item.entity) continue;
+        const live = this._hass.states?.[item.entity];
+        const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
+        const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
+        rows.push(`<div class="netrow"><div class="nethead"><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span class="netstate ${on === true ? "on" : on === false ? "off" : ""}">${esc(stName(on))}</span></div>
+          <div class="netmeta">${[item.platform ? PLATFORMS[item.platform] || item.platform : "", item.host || "", this._hubs().length > 1 ? h.name : ""].filter(Boolean).map(esc).join(" · ")}</div>
+          <div class="netcaps">${caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot)}</div></div>`);
+      }
+    }
+    return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.join("") || `<div class="ehint">${t.netNone}</div>`}</div>`;
+  },
+
+  // The Info area (own view of the gear menu): hubs, network devices, status symbols, explanations, raw data.
+  _infoArea(h, t) {
+    const raw = `<details class="esec raw infobox"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
+      <div class="ehint">${this._diagText(t)}</div>`;
+    return `${this._legendHtml(t)}${this._netInfoHtml(t)}${raw}`;
   },
 
   // Events of the info panel and the legend.

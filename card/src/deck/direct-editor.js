@@ -1,10 +1,10 @@
 // Settings tab "Direct devices": link a Harmony device to a Home Assistant media player (see directdev.py).
 // The integration says which players are possible, what each one can do and what it reports now; the card
 // only shows that and stores the link ({hub: {device: {entity, volumeDirect}}}).
+import { PLATFORMS } from "../shared/platforms.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 
-const PLATFORMS = { lg_netcast: "LG Netcast", webostv: "LG webOS", samsungtv: "Samsung TV", sonos: "Sonos", androidtv: "Android TV (ADB)", androidtv_remote: "Android TV", cast: "Google Cast", apple_tv: "Apple TV", denonavr: "Denon AVR", yamaha_musiccast: "Yamaha MusicCast", onkyo: "Onkyo", bravia: "Sony Bravia", philips_js: "Philips TV", roku: "Roku", panasonic_viera: "Panasonic Viera" };
 const CAPS = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read"];
 
 export const directEditorMixin = {
@@ -114,7 +114,7 @@ export const directEditorMixin = {
     const head = `<div class="ddpagehead"><button type="button" class="mini txt" data-ddback><ha-icon icon="mdi:arrow-left"></ha-icon><span>${t.ddBack}</span></button><span class="ddpagetitle">${esc(d)}${item.platform ? ` <small>${esc(PLATFORMS[item.platform] || item.platform)}</small>` : ""}</span></div>`;
     if (!link) return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}<div class="ehint">${t.ddNone}</div></div>`;
     if (item.page === "firetv") {
-      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
+      return `<div class="ddpage" data-hub="${esc(h.id)}" data-t="dd">${head}${this._ddCapList(item, item.caps || [], t)}${this._directEdit(h, t, true).replace('data-t="fire"', 'data-t="dd"')}</div>`;
     }
     const caps = item.caps || [];
     const has = (c) => caps.includes(c);
@@ -133,15 +133,20 @@ export const directEditorMixin = {
     ].join("");
     const caption = caps.length ? "" : `<div class="ehint">${t.ddCanNot}</div>`;
     // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
-    const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
-    const liveCaps = item.capsLive || caps;
-    const capList = `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
+    const capList = this._ddCapList(item, caps, t);
     const rescan = `<div class="egrp ddrescan"><button type="button" class="mini txt" data-ddrescan data-dev="${esc(d)}" title="${esc(t.ddRescanHint)}"><ha-icon icon="mdi:refresh"></ha-icon><span>${t.ddRescan}</span></button><span class="ehint" data-ddrescanmsg>${this._ddRescanMsg?.[d] || ""}</span></div>`;
     return `<div class="esec" data-t="dd" data-hub="${esc(h.id)}">${head}${capList}${rescan}
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
       ${this._ddInputsHtml(item, link, () => item.sources, d, t)}
       ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
+  },
+
+  // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
+  _ddCapList(item, caps, t) {
+    const ALL = ["state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list"];
+    const liveCaps = item.capsLive || caps;
+    return `<details class="ddcaps"><summary>${fmtText(t.ddCapsTitle, [ALL.filter((c) => caps.includes(c)).length, ALL.length])}</summary><div class="ddcapgrid">${ALL.map((c) => `<span class="ddcap ${caps.includes(c) ? "yes" : "no"} ${caps.includes(c) && !liveCaps.includes(c) ? "seen" : ""}"><ha-icon icon="${caps.includes(c) ? "mdi:check-circle-outline" : "mdi:close-circle-outline"}"></ha-icon>${esc(t.ddCapName[c])}${caps.includes(c) && !liveCaps.includes(c) ? ` <small>${t.ddCapSeen}</small>` : ""}</span>`).join("")}</div></details>`;
   },
 
   async _ddControl(hub, device, op, value, box) {

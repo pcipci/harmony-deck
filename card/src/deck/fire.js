@@ -1,5 +1,5 @@
 // Fire TV (direct, ADB): state, apps, keys, text row, status chip.
-import { FIRE_KEYS, ADB_KEYS, FIRE_ROWS, FIRE_MODELS, FIRE_APPS, appPackage, APP_ALIASES, SYS_APPS, prettyPkg, IR_KEYS, irCommand } from "../shared/fire.js";
+import { FIRE_KEYS, ADB_KEYS, FIRE_ROWS, FIRE_MODELS, FIRE_APPS, appPackage, APP_ALIASES, SYS_APPS, prettyPkg, IR_KEYS, IR_POWER, irCommand } from "../shared/fire.js";
 import { RING_IB, esc } from "../shared/util.js";
 
 export const fireMixin = {
@@ -122,7 +122,7 @@ export const fireMixin = {
     if (!f || this._edit || this._config.compact) return "";
     const live = f.mode === "on" || f.mode === "playing";
     if (!live) return "";   // the status line shows only what runs
-    const key = (code, icon, label) => (code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`);
+    const key = (code, icon, label) => (code === 223 ? `<button class="ib holdoff" data-hold="fire" data-hub="${esc(hubId)}" data-entity="${esc(f.entity)}" data-hinttext="${esc(t.holdHint)}" title="${esc(label)}">${RING_IB}<ha-icon icon="${icon}"></ha-icon></button>` : `<button class="ib" data-adb="${esc(f.entity)}" data-adbcmd="${esc(code === IR_POWER ? irCommand(code) : `input keyevent ${code}`)}" title="${esc(label)}"><ha-icon icon="${icon}"></ha-icon></button>`);
     return `<span class="firechip chip f-${f.mode}" title="${esc(this._fireText(f, t))}">${this._appBadgeHtml(f.appInfo)}<span class="ct">${esc(t.fireLabel)}: ${esc(f.appInfo ? f.appInfo.name : t.fireStates[f.mode])}</span>${live ? key(85, f.mode === "playing" ? "mdi:pause" : "mdi:play-pause", t.firePlay) + key(223, "mdi:power", t.fireOff) : ""}</span>`;
   },
 
@@ -191,14 +191,14 @@ export const fireMixin = {
     const nowInfo = this._appInfo(nowRaw, h.id, t);
     const now = nowInfo?.name || nowRaw;
     const model = d.model || this._config.direct_model || "all";
-    const keys = model !== "all" && FIRE_MODELS[model] ? FIRE_KEYS.filter(([l]) => FIRE_MODELS[model].includes(l)) : FIRE_KEYS;
+    const keys = (model !== "all" && FIRE_MODELS[model] ? FIRE_KEYS.filter(([l]) => FIRE_MODELS[model].includes(l)) : FIRE_KEYS).filter(([, , c]) => c !== IR_POWER || model === "cube");
     const covered = new Set(Object.values(ADB_KEYS));
     const extra = keys.filter(([l, , code]) => !covered.has(code) && !(d.hiddenKeys || []).includes(l));
     const sstate = st?.state;
     const keyOn = (code) => (code === 85 && sstate === "playing") || (code === 223 && ["off", "standby"].includes(sstate));
     const pkgOf = appPackage;
     const curPkg = st?.attributes?.app_id;
-    const key = ([l, ic, code]) => `<button class="key cell ic-row ${keyOn(code) ? "on" : ""}" data-adb="${esc(d.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon><span>${esc(t.fireKeys?.[l] || l)}</span></button>`;
+    const key = ([l, ic, code]) => `<button class="key cell ic-row ${keyOn(code) ? "on" : ""}" data-adb="${esc(d.entity)}" data-adbcmd="${esc(code === IR_POWER ? irCommand(code) : `input keyevent ${code}`)}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon><span>${esc(t.fireKeys?.[l] || l)}</span></button>`;
     const app = (a) => `<button class="key cell appcell svc txt ${curPkg && pkgOf(a.cmd) === curPkg ? "on" : ""}" style="--c:${esc(a.color || "var(--hr-accent)")};--fg:${esc(a.fg || "#fff")}" title="${esc(a.name)}" data-adb="${esc(d.entity)}" data-adbcmd="${esc(a.cmd)}"><b>${esc(a.name)}</b></button>`;
     const body = `<div class="directbox">
       ${now ? `<div class="dnow">${this._appBadgeHtml(nowInfo)}<span>${t.directNow}: ${esc(now)}</span></div>` : ""}

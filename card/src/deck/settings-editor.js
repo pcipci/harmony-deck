@@ -10,8 +10,8 @@ export const settingsEditorMixin = {
 
   _edModeHtml(t) {
     const m = this._editMode;
-    const icon = { favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
-    const label = { favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
+    const icon = { info: "mdi:information-outline", favs: "mdi:star-outline", profiles: "mdi:account-circle-outline", actions: "mdi:flash" }[m] || "mdi:cog-outline";
+    const label = { info: t.menuInfo, favs: t.editFavs, profiles: t.editProfiles, actions: t.actions }[m] || t.editSettings;
     return `<ha-icon icon="${icon}"></ha-icon><span>${label} · ${t.profLabel}: ${esc(this._prof().active)}</span>`;
   },
 
@@ -19,6 +19,7 @@ export const settingsEditorMixin = {
   _editBody(h, t, body) {
     if (this._editMode === "profiles") return `<div class="editbox">${this._profilesEdit(t)}</div>`;
     if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
+    if (this._editMode === "info") return `<div class="editbox infoarea">${this._infoArea(h, t)}</div>`;
     if (this._editMode === "favs") {
       const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
       const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
@@ -48,7 +49,7 @@ export const settingsEditorMixin = {
         ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skin)}
-          ${skin === "glass" ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
+          ${this._trait("blurOption") ? this._swRow(t.noBlur, 'data-setting="noBlur"', this._noBlur()) : ""}
           ${this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful())}`)}
         ${this._grp(g.tiles, `${this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle())}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -68,9 +69,7 @@ export const settingsEditorMixin = {
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
       ${this._directDevHtml(h, t)}
-      ${this._legendHtml(t)}
-      <details class="esec raw" data-t="info"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
-      <div class="ehint">${this._diagText(t)}</div></div>
+      </div>
       <div class="etitle outside" data-t="acts">${t.visible}</div>`;
   },
 

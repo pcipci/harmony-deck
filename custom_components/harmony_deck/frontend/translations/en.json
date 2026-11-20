@@ -119,9 +119,10 @@
     "devs": "Devices",
     "acts": "Activities",
     "dd": "Network control",
-    "misc": "Hub",
-    "info": "Info"
+    "misc": "Hub"
   },
+  "netTitle": "Network devices",
+  "netNone": "No device is linked to a network device.",
   "directShowKeys": "Show keys",
   "actions": "Actions",
   "actionsHint": "Actions are your own buttons: Harmony keys, pauses and Home Assistant entities (lights, scenes, scripts …), alone or as a sequence of several steps. The integration carries them out, also when the page is closed.",
@@ -489,6 +490,7 @@
     "Vorheriger": "Previous",
     "Nächster": "Next",
     "Standby": "Standby",
+    "TV Ein/Aus": "TV on/off",
     "Aufwecken": "Wake up",
     "Kanal +": "Channel +",
     "Kanal −": "Channel −",

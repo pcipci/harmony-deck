@@ -133,8 +133,8 @@ export const devicesMixin = {
     }).join("");
     const dp = this._directHtml(h, dev, t, false, "", true) || {};
     const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
-    // Tube radio: with a known state On/Off is one sunken button with a lamp (0.16); without, two short keys I and O. Toggle stays a key.
-    const swPower = this._skin() === "radio" && power.includes("PowerOn") && power.includes("PowerOff");
+    // Skins with a power knob (tube radio): with a known state On/Off is one sunken button with a lamp (0.16); without, two short keys I and O. Toggle stays a key.
+    const swPower = this._trait("powerKnob") && power.includes("PowerOn") && power.includes("PowerOff");
     const pstate = swPower ? this._powerState(h.id, dev) : null;
     let pw;
     if (swPower) {

@@ -20,6 +20,22 @@ export const deviceStateMixin = {
     return !["off", "standby"].includes(st);
   },
 
+  // What makes the card redraw: state, source, mute and the pending switch of EVERY player linked to a device of the hub
+  // (not only those of the running activity: a device Harmony thinks is inactive must still follow its player) and of the activity links.
+  _watched(h) {
+    const out = [];
+    const seen = new Set();
+    const add = (entity, device) => {
+      if (!entity || seen.has(entity)) return;
+      seen.add(entity);
+      const e = this._hass?.states?.[entity];
+      out.push([entity, e?.state, e?.attributes?.source, e?.attributes?.source_list?.length, e?.attributes?.is_volume_muted, e?.attributes?.app_id, device ? this._powerPending(h.id, device) : null]);
+    };
+    for (const [device, l] of Object.entries(this._settings().directDevices?.[h.id] || {})) add(l.entity, device);
+    for (const l of this._links(h)) add(l.entity, l.device);
+    return out;
+  },
+
   // Player of a Harmony device that can be addressed directly now (linked, reachable), with its supported feature bits; else null.
   _reach(hub, dev) {
     const link = this._settings().directDevices?.[hub]?.[dev];

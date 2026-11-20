@@ -1,7 +1,9 @@
 // Info panel of a hub, diagnostics line and the legend.
 import { PLATFORMS } from "../shared/platforms.js";
+import { VERSION } from "../shared/version.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
+import { prettyCommand } from "../shared/commands.js";
 
 export const infoMixin = {
   _diagText(t) {
@@ -50,6 +52,8 @@ export const infoMixin = {
       const tm = isNaN(d) ? "" : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
       out.push({ sev: "r", key: "down", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(fmtText(t.hintDown, [h.name, tm]))}</span></div>` });
     }
+    const iv = this._info?.version;
+    if (iv && iv !== VERSION) out.push({ sev: "o", key: `stale:${iv}`, html: `<div class="hint-row o"><ha-icon icon="mdi:update"></ha-icon><span>${esc(fmtText(t.hintStale, [VERSION, iv]))}</span><button type="button" data-reload>${esc(t.hintReload)}</button></div>` });
     const errs = this._info?.diagnostics?.errors || [];
     if (errs.length) out.push({ sev: "r", key: "diag", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(errs.join("; "))}</span></div>` });
     for (const l of this._linkHints(h, t)) out.push({ sev: "o", key: `link:${l.key}`, html: l.html });
@@ -68,8 +72,28 @@ export const infoMixin = {
   },
 
   // Window under the gear: hints with their action on top, below always the way to settings (admins).
-  _menuHtml(h, t) {
-    if (!this._menuOpen?.[h.id] || this._edit) return "";
+  // One window for gear, help and profile: at most one is open; the same symbol closes it, another symbol switches.
+  _winKind(hub) { return this._menuOpen?.[hub] ? "menu" : this._helpOpen?.[hub] ? "help" : this._profOpen?.[hub] ? "prof" : null; },
+  _winSet(hub, kind) {
+    this._menuOpen = kind === "menu" ? { [hub]: true } : {};
+    this._helpOpen = { ...(this._helpOpen || {}), [hub]: kind === "help" };
+    this._profOpen = kind === "prof" ? { [hub]: true } : {};
+  },
+  _winToggle(hub, kind) { this._winSet(hub, this._winKind(hub) === kind ? null : kind); },
+
+  // The common frame (title, close, scrolling body) around the three windows.
+  _winHtml(h, t, helpAct) {
+    if (this._edit) return "";
+    const kind = this._winKind(h.id);
+    if (!kind) return "";
+    let body = "", title = "";
+    if (kind === "menu") { title = t.menuTitle; body = this._menuBody(h, t); }
+    else if (kind === "help") { if (!helpAct) return ""; title = t.helpTitle; body = this._helpHtml(h, helpAct, t); }
+    else { title = t.profLabel; body = this._profList(t); }
+    return `<div class="hmenu win" data-hmenu="${esc(h.id)}" data-kind="${kind}"><div class="whead"><span class="wtitle">${esc(title)}</span><button type="button" class="ib wclose" data-winclose="${esc(h.id)}" title="${esc(t.winClose)}"><ha-icon icon="mdi:close"></ha-icon></button></div><div class="wbody">${body}</div></div>`;
+  },
+
+  _menuBody(h, t) {
     const hints = this._hintsOf(h, t);
     const admin = this._hass?.user?.is_admin !== false;
     const entries = admin ? `<div class="mentries">
@@ -78,7 +102,7 @@ export const infoMixin = {
         <button class="mentry" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${esc(t.actions)}</span></button>
         <button class="mentry" data-edit="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
     const list = hints.length ? `<div class="mhints">${hints.map((x) => x.html).join("")}</div>` : (admin ? "" : `<div class="mnone">${esc(t.noHints)}</div>`);
-    return `<div class="hmenu" data-hmenu="${esc(h.id)}">${list}${entries}</div>`;
+    return `${list}${entries}`;
   },
 
   _legendHtml(t) {
@@ -98,7 +122,7 @@ export const infoMixin = {
       <details class="esec infobox"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
   },
 
-  // Network devices linked to Harmony devices: platform, address (administrators), state and what they can do.
+  // Network devices linked to Harmony devices as a table (narrow: one card per device with labelled lines).
   _netInfoHtml(t) {
     if (!this._dd) { this._ddLoad(); return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div><div class="ehint">${t.ddLoading}</div></div>`; }
     const stName = (on) => (on === true ? t.ddOn : on === false ? t.ddOff : t.ddUnknown);
@@ -109,30 +133,55 @@ export const infoMixin = {
         const live = this._hass.states?.[item.entity];
         const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
         const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
-        rows.push(`<div class="netrow"><div class="nethead"><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span class="netstate ${on === true ? "on" : on === false ? "off" : ""}">${esc(stName(on))}</span></div>
-          <div class="netmeta">${[item.platform ? PLATFORMS[item.platform] || item.platform : "", item.host || "", this._hubs().length > 1 ? h.name : ""].filter(Boolean).map(esc).join(" · ")}</div>
-          <div class="netcaps">${caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot)}</div></div>`);
+        const cell = (label, v, cls = "") => `<td data-l="${esc(label)}" class="${cls}">${v}</td>`;
+        rows.push(`<tr>${cell(t.netColDevice, `<ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b>${this._hubs().length > 1 ? `<small>${esc(h.name)}</small>` : ""}`, "ndev")}${cell(t.netColPlatform, esc(item.platform ? PLATFORMS[item.platform] || item.platform : "–"))}${cell(t.netColAddress, esc(item.host || "–"))}${cell(t.netColState, esc(stName(on)), `nstate ${on === true ? "on" : on === false ? "off" : ""}`)}${cell(t.netColCaps, caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot))}</tr>`);
       }
     }
-    return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.join("") || `<div class="ehint">${t.netNone}</div>`}</div>`;
+    const head = [t.netColDevice, t.netColPlatform, t.netColAddress, t.netColState, t.netColCaps].map((x) => `<th>${esc(x)}</th>`).join("");
+    return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.length ? `<table class="nettab"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="ehint">${t.netNone}</div>`}</div>`;
+  },
+
+  // Which keys of the running activity go straight to the device and which over Harmony (same decision as _sendCmd).
+  _keyMapHtml(h, t) {
+    const cur = h.current && h.current !== "PowerOff" ? h.current : null;
+    const act = cur || ((this._fireInfo(h.id)?.mode === "on" || this._fireInfo(h.id)?.mode === "playing") ? this._fireActivity(h) : null);
+    if (!act) return `<div class="esec infobox"><div class="etitle">${t.kbTitle}</div><div class="ehint">${t.kbNone}</div></div>`;
+    const probe = ["PowerOff", "Mute", "VolumeUp", "VolumeDown", "Play", "Pause", "Stop"];
+    const devices = this._devicesOf(h.id);
+    const rows = this._setupOf(h, act).map((it) => {
+      const cmds = devices[it.device] || [];
+      const norm = (x) => String(x).toLowerCase();
+      const direct = probe.filter((c) => cmds.some((x) => norm(x) === norm(c)) && this._directRoute(h.id, it.device, cmds.find((x) => norm(x) === norm(c))));
+      const fire = this._linkedFire(h.id, it.device);
+      const link = this._settings().directDevices?.[h.id]?.[it.device];
+      const reach = this._reach(h.id, it.device);
+      const chips = direct.map((c) => `<span class="kbchip"><ha-icon icon="mdi:lan-connect"></ha-icon>${esc(prettyCommand(c))}</span>`).join("") + (fire ? `<span class="kbchip"><ha-icon icon="mdi:lan-connect"></ha-icon>${esc(t.kbFire)}</span>` : "");
+      const note = !link ? t.kbNoLink : !reach ? t.kbDown : "";
+      const cell = (label, v) => `<td data-l="${esc(label)}">${v}</td>`;
+      return `<tr>${cell(t.kbDev, `<b>${esc(it.device)}</b>`)}${cell(t.kbDirect, chips || `<span class="kbnone">${esc(note || t.kbNothing)}</span>`)}${cell(t.kbHarmony, esc(direct.length || fire ? t.kbRest : t.kbAll))}</tr>`;
+    });
+    const head = [t.kbDev, t.kbDirect, t.kbHarmony].map((x) => `<th>${esc(x)}</th>`).join("");
+    return `<div class="esec infobox"><div class="etitle">${t.kbTitle}: ${esc(act)}</div>${rows.length ? `<table class="nettab"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="ehint">${t.kbNone}</div>`}<div class="ehint">${t.kbOn}</div></div>`;
   },
 
   // The Info area (own view of the gear menu): hubs, network devices, status symbols, explanations, raw data.
   _infoArea(h, t) {
     const raw = `<details class="esec raw infobox"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
       <div class="ehint">${this._diagText(t)}</div>`;
-    return `${this._legendHtml(t)}${this._netInfoHtml(t)}${raw}`;
+    return `${this._legendHtml(t)}${this._keyMapHtml(h, t)}${this._netInfoHtml(t)}${raw}`;
   },
 
   // Events of the info panel and the legend.
   _bindInfo(root) {
     root.querySelectorAll("[data-menu]").forEach((b) => b.addEventListener("click", () => {
       const hub = b.dataset.menu;
-      const open = !this._menuOpen?.[hub];
-      this._menuOpen = { [hub]: open };
+      this._winToggle(hub, "menu");
+      const open = !!this._menuOpen?.[hub];
       if (open) this._hintSeen = { ...(this._hintSeen || {}), [hub]: b.dataset.sig };
       this._rerender();
     }));
+    root.querySelectorAll("[data-reload]").forEach((b) => b.addEventListener("click", () => window.location.reload()));
+    root.querySelectorAll("[data-winclose]").forEach((b) => b.addEventListener("click", () => { this._winSet(b.dataset.winclose, null); this._rerender(); }));
     root.querySelectorAll("[data-copyinfo]").forEach((b) => b.addEventListener("click", async (e) => {
       e.preventDefault();
       let ok = false;

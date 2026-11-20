@@ -12,7 +12,7 @@ export const skinDecorMixin = {
     const run = idx >= 0;
     const needle = run ? 10 + (acts.length > 1 ? (idx / (acts.length - 1)) * 80 : 40) : 6;
     const lab = run ? `<span class="skin-sta ${needle > 62 ? "left" : ""}" style="--needle:${needle}%">${clean(h.current)}</span>` : "";
-    return `<div class="skin-head"><div class="skin-dial">${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
+    return `<div class="skin-head"><div class="skin-wrap"><div class="skin-dial"><i style="--needle:${needle}%"></i></div>${lab}</div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
   },
 
   _skinTail(skin) {

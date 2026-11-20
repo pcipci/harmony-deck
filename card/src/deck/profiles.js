@@ -47,11 +47,18 @@ export const profilesMixin = {
     const admin = this._hass?.user?.is_admin !== false;
     const fixed = this._config.profile;
     if (!admin && (fixed || pr.names.length < 2)) return "";
+    const open = !!this._profOpen?.[this._hubSel];
+    return `<button type="button" class="profchip ${open ? "sel" : ""}" data-win-prof title="${esc(t.profLabel)}"><ha-icon icon="mdi:account-circle-outline"></ha-icon><span>${esc(pr.active)}</span></button>`;
+  },
+
+  // Window of the profile: the profiles to pick (or automatic), new and edit for administrators.
+  _profList(t) {
+    const pr = this._prof();
+    const admin = this._hass?.user?.is_admin !== false;
+    const fixed = this._config.profile;
     const chosen = fixed ? pr.active : this._choiceGet();
-    const opts = [fixed ? "" : `<option value="" ${chosen ? "" : "selected"}>${esc(t.profAutoOpt)}</option>`,
-      ...pr.names.map((n) => `<option value="${esc(n)}" ${n === chosen ? "selected" : ""} ${fixed ? "disabled" : ""}>${esc(n)}</option>`),
-      admin ? `<option disabled>──────────</option><option value="__new">＋ ${esc(t.profNewEntry)}</option><option value="__edit">✎ ${esc(t.profEditEntry)}</option>` : ""].join("");
-    return `<label class="profchip" title="${esc(t.profLabel)}"><ha-icon icon="mdi:account-circle-outline"></ha-icon><span>${esc(pr.active)}</span><select data-profsel aria-label="${esc(t.profLabel)}">${opts}</select></label>`;
+    const item = (v, label, on, icon, off = false) => `<button type="button" class="mentry pitem ${on ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
+    return `<div class="plist">${fixed ? "" : item("", t.profAutoOpt, !chosen, "mdi:auto-fix")}${pr.names.map((n) => item(n, n, n === chosen, "mdi:account-circle-outline", !!fixed)).join("")}${admin ? item("__new", t.profNewEntry, false, "mdi:plus") + item("__edit", t.profEditEntry, false, "mdi:pencil-outline") : ""}</div>`;
   },
 
   // Profiles tab: which profile is edited, load / rename / delete, save as new, assign users. Dangerous steps ask first.
@@ -114,8 +121,10 @@ export const profilesMixin = {
     root.querySelector("input[data-prof-name]")?.addEventListener("input", (e) => { this._profName = e.target.value; });
     root.querySelector("input[data-prof-rename]")?.addEventListener("input", (e) => { this._profNew = e.target.value; });
     root.querySelectorAll("select[data-prof-assign]").forEach((sel) => sel.addEventListener("change", async () => { await this._profAction({ action: "assign", user_id: sel.dataset.profAssign, profile: sel.value || null }); await this._loadInfo(); }));
-    root.querySelectorAll("select[data-profsel]").forEach((sel) => sel.addEventListener("change", async (e) => {
-      const v = e.target.value;
+    root.querySelectorAll("[data-win-prof]").forEach((b) => b.addEventListener("click", () => { this._winToggle(this._hubSel, "prof"); this._rerender(); }));
+    root.querySelectorAll("[data-profpick]").forEach((b) => b.addEventListener("click", async () => {
+      const v = b.dataset.profpick;
+      this._winSet(this._hubSel, null);
       if (v === "__new" || v === "__edit") { this._focusProfName = v === "__new"; this._profErr = ""; this._profDlg = null; await this._onEdit("profiles"); return; }
       this._choiceSet(v);
       await this._loadInfo();

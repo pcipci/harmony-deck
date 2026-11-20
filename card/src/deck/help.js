@@ -71,7 +71,8 @@ export const helpMixin = {
 
   // One device row of the help box (also used by the action panel): switch keys and the way to that device's remote.
   _helpRow(h, it, act, t, { hid, edit, names, overrides, devs }) {
-      const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
+      const viaNet = !!it.power && !!this._directRoute(h.id, it.device, it.power);
+      const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)} ${viaNet ? "viadirect" : ""}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}${viaNet ? ` · ${esc(t.keyDirectTip)}` : ""}"><ha-icon icon="mdi:power"></ha-icon>${viaNet ? '<ha-icon class="dmark" icon="mdi:lan-connect"></ha-icon>' : ""}</button>` : "";
       const ap = !it.power && it.adb ? `<button class="key helpkey pon" data-adb="${esc(it.adb)}" data-adbcmd="input keyevent 224" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
       const ic = it.input ? keyIcon(it.input, overrides, it.device) || "mdi:import" : "";
       const inp = it.input ? `<button class="key helpkey inp" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.input)}"><ha-icon icon="${ic}"></ha-icon><b>${esc(prettyCommand(it.input).replace(/^Input\s*/i, ""))}</b></button>` : "";
@@ -100,13 +101,13 @@ export const helpMixin = {
     const foot = this._config.compact ? "" : `<div class="hfoot"><button class="hlink ${edit ? "on" : ""}" data-helpedit="${esc(h.id)}"><ha-icon icon="mdi:tune-variant"></ha-icon><span>${edit ? t.helpDone : t.helpAdjust}</span></button>
       ${act === h.current ? `<label class="hlink"><span>${t.layoutMode}</span><select data-layoutmode data-hub="${esc(h.id)}" data-act="${esc(act)}">${[["auto", t.layoutAuto], ["remote", t.layoutRemote], ["keypad", t.layoutKeypad]].map(([k, v]) => `<option value="${k}" ${k === lm ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>` : ""}</div>`;
     const none = (manual.length && !edit && this._settings().helpManual ? `<div class="hint nocl">${fmtText(t.helpManual, [manual.join(", ")])}</div>` : "");
-    return `<div class="helpbox"><div class="htitle">${t.helpTitle}</div>${cards ? `<div class="hlist">${cards}</div>${all}` : `<div class="hint">${t.helpNone}</div>`}${none}${foot}</div>`;
+    return `<div class="helpbox"><div class="htitle">${t.helpTitle}</div>${cards ? `<div class="hlist">${cards}</div>${cards.includes("viadirect") ? `<div class="hint nocl dleg"><ha-icon icon="mdi:lan-connect"></ha-icon><span>${esc(t.helpDirectLegend)}</span></div>` : ""}${all}` : `<div class="hint">${t.helpNone}</div>`}${none}${foot}</div>`;
   },
 
   // Help box -> remote of one device; the device view then offers the way back to the activity.
   _gotoDevice(hub, dev) {
     this._buzz();
-    this._helpOpen = { ...(this._helpOpen || {}), [hub]: false };
+    this._winSet(hub, null);
     this._modeState = "devices";
     this._device = { ...(this._device || {}), [hub]: dev };
     if (this._collapseOn()) this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [hub]: true };
@@ -134,7 +135,7 @@ export const helpMixin = {
   _bindHelp(root) {
     root.querySelectorAll("[data-gotodev]").forEach((b) => b.addEventListener("click", () => this._gotoDevice(b.dataset.hub, b.dataset.gotodev)));
     root.querySelectorAll("[data-gotoact]").forEach((b) => b.addEventListener("click", () => this._gotoActivity(b.dataset.gotoact)));
-    root.querySelectorAll("[data-help]").forEach((b) => b.addEventListener("click", () => { this._buzz(); this._helpOpen = { ...(this._helpOpen || {}), [b.dataset.help]: !this._helpOpen?.[b.dataset.help] }; this._rerender(); }));
+    root.querySelectorAll("[data-help]").forEach((b) => b.addEventListener("click", () => { this._buzz(); this._winToggle(b.dataset.help, "help"); this._rerender(); }));
     root.querySelectorAll("[data-helpedit]").forEach((b) => b.addEventListener("click", () => { this._helpEdit = { ...(this._helpEdit || {}), [b.dataset.helpedit]: !this._helpEdit?.[b.dataset.helpedit] }; this._rerender(); }));
     root.querySelectorAll("input[data-helphide]").forEach((i) => i.addEventListener("change", () => {
       const all = JSON.parse(JSON.stringify(this._settings().helpHide || {}));

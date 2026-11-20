@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.16.1";
+  var VERSION = "0.16.2";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1766,6 +1766,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!st || ["unavailable", "unknown"].includes(st)) return null;
       return !["off", "standby"].includes(st);
     },
+    // What makes the card redraw: state, source, mute and the pending switch of EVERY player linked to a device of the hub
+    // (not only those of the running activity: a device Harmony thinks is inactive must still follow its player) and of the activity links.
+    _watched(h) {
+      const out = [];
+      const seen = /* @__PURE__ */ new Set();
+      const add = (entity, device) => {
+        if (!entity || seen.has(entity)) return;
+        seen.add(entity);
+        const e = this._hass?.states?.[entity];
+        out.push([entity, e?.state, e?.attributes?.source, e?.attributes?.source_list?.length, e?.attributes?.is_volume_muted, e?.attributes?.app_id, device ? this._powerPending(h.id, device) : null]);
+      };
+      for (const [device, l] of Object.entries(this._settings().directDevices?.[h.id] || {})) add(l.entity, device);
+      for (const l of this._links(h)) add(l.entity, l.device);
+      return out;
+    },
     // Player of a Harmony device that can be addressed directly now (linked, reachable), with its supported feature bits; else null.
     _reach(hub, dev) {
       const link = this._settings().directDevices?.[hub]?.[dev];
@@ -2859,7 +2874,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const keysBlock = extra.length ? `<div class="block dkeys"><span class="dname">${t.directKeys}</span>${rowsHtml}${rest.length ? `<div class="krow">${rest.map(key).join("")}</div>` : ""}</div>` : "";
         return { keys: keysBlock, main: `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>` };
       }
-      return collapsed ? `<details class="block direct"><summary class="dname">${t.direct}</summary>${body}</details>` : `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>`;
+      return collapsed ? `<details class="block direct" data-dtog="${esc(h.id)}" ${this._dOpen?.[h.id] ? "open" : ""}><summary class="dname">${t.direct}</summary>${body}</details>` : `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>`;
     },
     // Text row: field + send (types the text and presses Enter) + delete. Under the D-pad it folds out from a slim key.
     _textForm(entity, closable = false) {
@@ -2873,6 +2888,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // Events of the Fire TV keys, apps and the text row.
     _bindFire(root) {
+      root.querySelectorAll("details[data-dtog]").forEach((d) => d.addEventListener("toggle", () => {
+        this._dOpen = { ...this._dOpen || {}, [d.dataset.dtog]: d.open };
+      }));
       root.querySelectorAll("[data-adb]").forEach((b) => b.addEventListener("click", () => {
         if (this._edit) return;
         this._adb(b.dataset.adb, b.dataset.adbcmd);
@@ -2973,7 +2991,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // One device row of the help box (also used by the action panel): switch keys and the way to that device's remote.
     _helpRow(h, it, act, t, { hid, edit, names, overrides, devs }) {
-      const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
+      const viaNet = !!it.power && !!this._directRoute(h.id, it.device, it.power);
+      const pw = it.power ? `<button class="key helpkey ${powerCls(it.power)} ${viaNet ? "viadirect" : ""}" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.power)}" title="${esc(it.device)}${viaNet ? ` · ${esc(t.keyDirectTip)}` : ""}"><ha-icon icon="mdi:power"></ha-icon>${viaNet ? '<ha-icon class="dmark" icon="mdi:lan-connect"></ha-icon>' : ""}</button>` : "";
       const ap = !it.power && it.adb ? `<button class="key helpkey pon" data-adb="${esc(it.adb)}" data-adbcmd="input keyevent 224" title="${esc(it.device)}"><ha-icon icon="mdi:power"></ha-icon></button>` : "";
       const ic = it.input ? keyIcon(it.input, overrides, it.device) || "mdi:import" : "";
       const inp = it.input ? `<button class="key helpkey inp" data-hub="${esc(h.id)}" data-device="${esc(it.device)}" data-cmd="${esc(it.input)}"><ha-icon icon="${ic}"></ha-icon><b>${esc(prettyCommand(it.input).replace(/^Input\s*/i, ""))}</b></button>` : "";
@@ -3000,12 +3019,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const foot = this._config.compact ? "" : `<div class="hfoot"><button class="hlink ${edit ? "on" : ""}" data-helpedit="${esc(h.id)}"><ha-icon icon="mdi:tune-variant"></ha-icon><span>${edit ? t.helpDone : t.helpAdjust}</span></button>
       ${act === h.current ? `<label class="hlink"><span>${t.layoutMode}</span><select data-layoutmode data-hub="${esc(h.id)}" data-act="${esc(act)}">${[["auto", t.layoutAuto], ["remote", t.layoutRemote], ["keypad", t.layoutKeypad]].map(([k, v]) => `<option value="${k}" ${k === lm ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>` : ""}</div>`;
       const none = manual.length && !edit && this._settings().helpManual ? `<div class="hint nocl">${fmtText(t.helpManual, [manual.join(", ")])}</div>` : "";
-      return `<div class="helpbox"><div class="htitle">${t.helpTitle}</div>${cards ? `<div class="hlist">${cards}</div>${all}` : `<div class="hint">${t.helpNone}</div>`}${none}${foot}</div>`;
+      return `<div class="helpbox"><div class="htitle">${t.helpTitle}</div>${cards ? `<div class="hlist">${cards}</div>${cards.includes("viadirect") ? `<div class="hint nocl dleg"><ha-icon icon="mdi:lan-connect"></ha-icon><span>${esc(t.helpDirectLegend)}</span></div>` : ""}${all}` : `<div class="hint">${t.helpNone}</div>`}${none}${foot}</div>`;
     },
     // Help box -> remote of one device; the device view then offers the way back to the activity.
     _gotoDevice(hub, dev) {
       this._buzz();
-      this._helpOpen = { ...this._helpOpen || {}, [hub]: false };
+      this._winSet(hub, null);
       this._modeState = "devices";
       this._device = { ...this._device || {}, [hub]: dev };
       if (this._collapseOn()) this._hdrCollapsed = { ...this._hdrCollapsed || {}, [hub]: true };
@@ -3034,7 +3053,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelectorAll("[data-gotoact]").forEach((b) => b.addEventListener("click", () => this._gotoActivity(b.dataset.gotoact)));
       root.querySelectorAll("[data-help]").forEach((b) => b.addEventListener("click", () => {
         this._buzz();
-        this._helpOpen = { ...this._helpOpen || {}, [b.dataset.help]: !this._helpOpen?.[b.dataset.help] };
+        this._winToggle(b.dataset.help, "help");
         this._rerender();
       }));
       root.querySelectorAll("[data-helpedit]").forEach((b) => b.addEventListener("click", () => {
@@ -3165,6 +3184,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const tm = isNaN(d) ? "" : d.toLocaleTimeString(void 0, { hour: "2-digit", minute: "2-digit" });
         out.push({ sev: "r", key: "down", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(fmtText(t.hintDown, [h.name, tm]))}</span></div>` });
       }
+      const iv = this._info?.version;
+      if (iv && iv !== VERSION) out.push({ sev: "o", key: `stale:${iv}`, html: `<div class="hint-row o"><ha-icon icon="mdi:update"></ha-icon><span>${esc(fmtText(t.hintStale, [VERSION, iv]))}</span><button type="button" data-reload>${esc(t.hintReload)}</button></div>` });
       const errs = this._info?.diagnostics?.errors || [];
       if (errs.length) out.push({ sev: "r", key: "diag", html: `<div class="hint-row r"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span>${esc(errs.join("; "))}</span></div>` });
       for (const l of this._linkHints(h, t)) out.push({ sev: "o", key: `link:${l.key}`, html: l.html });
@@ -3181,8 +3202,38 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return `<button class="ib gear ${sev ? `sev-${sev}` : ""} ${fresh ? "fresh" : ""} ${this._menuOpen?.[h.id] ? "sel" : ""}" data-menu="${esc(h.id)}" data-sig="${esc(sig)}" title="${esc(tip)}" aria-label="${esc(tip)}"><ha-icon icon="mdi:cog-outline"></ha-icon>${hints.length ? `<i class="gbadge">${hints.length}</i>` : ""}</button>`;
     },
     // Window under the gear: hints with their action on top, below always the way to settings (admins).
-    _menuHtml(h, t) {
-      if (!this._menuOpen?.[h.id] || this._edit) return "";
+    // One window for gear, help and profile: at most one is open; the same symbol closes it, another symbol switches.
+    _winKind(hub) {
+      return this._menuOpen?.[hub] ? "menu" : this._helpOpen?.[hub] ? "help" : this._profOpen?.[hub] ? "prof" : null;
+    },
+    _winSet(hub, kind) {
+      this._menuOpen = kind === "menu" ? { [hub]: true } : {};
+      this._helpOpen = { ...this._helpOpen || {}, [hub]: kind === "help" };
+      this._profOpen = kind === "prof" ? { [hub]: true } : {};
+    },
+    _winToggle(hub, kind) {
+      this._winSet(hub, this._winKind(hub) === kind ? null : kind);
+    },
+    // The common frame (title, close, scrolling body) around the three windows.
+    _winHtml(h, t, helpAct) {
+      if (this._edit) return "";
+      const kind = this._winKind(h.id);
+      if (!kind) return "";
+      let body = "", title = "";
+      if (kind === "menu") {
+        title = t.menuTitle;
+        body = this._menuBody(h, t);
+      } else if (kind === "help") {
+        if (!helpAct) return "";
+        title = t.helpTitle;
+        body = this._helpHtml(h, helpAct, t);
+      } else {
+        title = t.profLabel;
+        body = this._profList(t);
+      }
+      return `<div class="hmenu win" data-hmenu="${esc(h.id)}" data-kind="${kind}"><div class="whead"><span class="wtitle">${esc(title)}</span><button type="button" class="ib wclose" data-winclose="${esc(h.id)}" title="${esc(t.winClose)}"><ha-icon icon="mdi:close"></ha-icon></button></div><div class="wbody">${body}</div></div>`;
+    },
+    _menuBody(h, t) {
       const hints = this._hintsOf(h, t);
       const admin = this._hass?.user?.is_admin !== false;
       const entries = admin ? `<div class="mentries">
@@ -3191,7 +3242,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         <button class="mentry" data-edit="actions"><ha-icon icon="mdi:flash"></ha-icon><span>${esc(t.actions)}</span></button>
         <button class="mentry" data-edit="info"><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(t.menuInfo)}</span></button></div>` : "";
       const list = hints.length ? `<div class="mhints">${hints.map((x) => x.html).join("")}</div>` : admin ? "" : `<div class="mnone">${esc(t.noHints)}</div>`;
-      return `<div class="hmenu" data-hmenu="${esc(h.id)}">${list}${entries}</div>`;
+      return `${list}${entries}`;
     },
     _legendHtml(t) {
       const items = Array.isArray(t.legend) ? t.legend : [];
@@ -3213,7 +3264,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         <div class="ehint sexpl">${open ? `<b>${esc(open.title)}</b> ${esc(open.text)}` : esc(t.statusHint)}</div></div>
       <details class="esec infobox"><summary class="etitle">${t.infoTitle}</summary>${items.map((x) => `<div class="infoitem"><ha-icon icon="${esc(x.icon || "mdi:information-outline")}"></ha-icon><div><b>${esc(x.title)}</b><div>${esc(x.text)}</div></div></div>`).join("")}</details>`;
     },
-    // Network devices linked to Harmony devices: platform, address (administrators), state and what they can do.
+    // Network devices linked to Harmony devices as a table (narrow: one card per device with labelled lines).
     _netInfoHtml(t) {
       if (!this._dd) {
         this._ddLoad();
@@ -3227,26 +3278,53 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           const live = this._hass.states?.[item.entity];
           const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
           const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
-          rows.push(`<div class="netrow"><div class="nethead"><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span class="netstate ${on === true ? "on" : on === false ? "off" : ""}">${esc(stName(on))}</span></div>
-          <div class="netmeta">${[item.platform ? PLATFORMS[item.platform] || item.platform : "", item.host || "", this._hubs().length > 1 ? h.name : ""].filter(Boolean).map(esc).join(" · ")}</div>
-          <div class="netcaps">${caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot)}</div></div>`);
+          const cell = (label, v, cls = "") => `<td data-l="${esc(label)}" class="${cls}">${v}</td>`;
+          rows.push(`<tr>${cell(t.netColDevice, `<ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b>${this._hubs().length > 1 ? `<small>${esc(h.name)}</small>` : ""}`, "ndev")}${cell(t.netColPlatform, esc(item.platform ? PLATFORMS[item.platform] || item.platform : "–"))}${cell(t.netColAddress, esc(item.host || "–"))}${cell(t.netColState, esc(stName(on)), `nstate ${on === true ? "on" : on === false ? "off" : ""}`)}${cell(t.netColCaps, caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot))}</tr>`);
         }
       }
-      return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.join("") || `<div class="ehint">${t.netNone}</div>`}</div>`;
+      const head = [t.netColDevice, t.netColPlatform, t.netColAddress, t.netColState, t.netColCaps].map((x) => `<th>${esc(x)}</th>`).join("");
+      return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.length ? `<table class="nettab"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="ehint">${t.netNone}</div>`}</div>`;
+    },
+    // Which keys of the running activity go straight to the device and which over Harmony (same decision as _sendCmd).
+    _keyMapHtml(h, t) {
+      const cur = h.current && h.current !== "PowerOff" ? h.current : null;
+      const act = cur || (this._fireInfo(h.id)?.mode === "on" || this._fireInfo(h.id)?.mode === "playing" ? this._fireActivity(h) : null);
+      if (!act) return `<div class="esec infobox"><div class="etitle">${t.kbTitle}</div><div class="ehint">${t.kbNone}</div></div>`;
+      const probe = ["PowerOff", "Mute", "VolumeUp", "VolumeDown", "Play", "Pause", "Stop"];
+      const devices = this._devicesOf(h.id);
+      const rows = this._setupOf(h, act).map((it) => {
+        const cmds = devices[it.device] || [];
+        const norm = (x) => String(x).toLowerCase();
+        const direct = probe.filter((c) => cmds.some((x) => norm(x) === norm(c)) && this._directRoute(h.id, it.device, cmds.find((x) => norm(x) === norm(c))));
+        const fire = this._linkedFire(h.id, it.device);
+        const link = this._settings().directDevices?.[h.id]?.[it.device];
+        const reach = this._reach(h.id, it.device);
+        const chips = direct.map((c) => `<span class="kbchip"><ha-icon icon="mdi:lan-connect"></ha-icon>${esc(prettyCommand(c))}</span>`).join("") + (fire ? `<span class="kbchip"><ha-icon icon="mdi:lan-connect"></ha-icon>${esc(t.kbFire)}</span>` : "");
+        const note = !link ? t.kbNoLink : !reach ? t.kbDown : "";
+        const cell = (label, v) => `<td data-l="${esc(label)}">${v}</td>`;
+        return `<tr>${cell(t.kbDev, `<b>${esc(it.device)}</b>`)}${cell(t.kbDirect, chips || `<span class="kbnone">${esc(note || t.kbNothing)}</span>`)}${cell(t.kbHarmony, esc(direct.length || fire ? t.kbRest : t.kbAll))}</tr>`;
+      });
+      const head = [t.kbDev, t.kbDirect, t.kbHarmony].map((x) => `<th>${esc(x)}</th>`).join("");
+      return `<div class="esec infobox"><div class="etitle">${t.kbTitle}: ${esc(act)}</div>${rows.length ? `<table class="nettab"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="ehint">${t.kbNone}</div>`}<div class="ehint">${t.kbOn}</div></div>`;
     },
     // The Info area (own view of the gear menu): hubs, network devices, status symbols, explanations, raw data.
     _infoArea(h, t) {
       const raw = `<details class="esec raw infobox"><summary class="etitle">${t.raw}</summary><button class="hlink copyraw" data-copyraw><ha-icon icon="mdi:content-copy"></ha-icon><span>${t.copy}</span></button><pre>${esc(JSON.stringify({ commandSource: this._info?.hubs?.[h.id]?.commandSource || "live", setup: this._info?.hubs?.[h.id]?.setup || {}, fixit: this._info?.hubs?.[h.id]?.fixit || {}, roles: this._info?.hubs?.[h.id]?.activities || {} }, null, 1))}</pre></details>
       <div class="ehint">${this._diagText(t)}</div>`;
-      return `${this._legendHtml(t)}${this._netInfoHtml(t)}${raw}`;
+      return `${this._legendHtml(t)}${this._keyMapHtml(h, t)}${this._netInfoHtml(t)}${raw}`;
     },
     // Events of the info panel and the legend.
     _bindInfo(root) {
       root.querySelectorAll("[data-menu]").forEach((b) => b.addEventListener("click", () => {
         const hub = b.dataset.menu;
-        const open = !this._menuOpen?.[hub];
-        this._menuOpen = { [hub]: open };
+        this._winToggle(hub, "menu");
+        const open = !!this._menuOpen?.[hub];
         if (open) this._hintSeen = { ...this._hintSeen || {}, [hub]: b.dataset.sig };
+        this._rerender();
+      }));
+      root.querySelectorAll("[data-reload]").forEach((b) => b.addEventListener("click", () => window.location.reload()));
+      root.querySelectorAll("[data-winclose]").forEach((b) => b.addEventListener("click", () => {
+        this._winSet(b.dataset.winclose, null);
         this._rerender();
       }));
       root.querySelectorAll("[data-copyinfo]").forEach((b) => b.addEventListener("click", async (e) => {
@@ -4182,13 +4260,17 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const admin = this._hass?.user?.is_admin !== false;
       const fixed = this._config.profile;
       if (!admin && (fixed || pr.names.length < 2)) return "";
+      const open = !!this._profOpen?.[this._hubSel];
+      return `<button type="button" class="profchip ${open ? "sel" : ""}" data-win-prof title="${esc(t.profLabel)}"><ha-icon icon="mdi:account-circle-outline"></ha-icon><span>${esc(pr.active)}</span></button>`;
+    },
+    // Window of the profile: the profiles to pick (or automatic), new and edit for administrators.
+    _profList(t) {
+      const pr = this._prof();
+      const admin = this._hass?.user?.is_admin !== false;
+      const fixed = this._config.profile;
       const chosen = fixed ? pr.active : this._choiceGet();
-      const opts = [
-        fixed ? "" : `<option value="" ${chosen ? "" : "selected"}>${esc(t.profAutoOpt)}</option>`,
-        ...pr.names.map((n) => `<option value="${esc(n)}" ${n === chosen ? "selected" : ""} ${fixed ? "disabled" : ""}>${esc(n)}</option>`),
-        admin ? `<option disabled>──────────</option><option value="__new">＋ ${esc(t.profNewEntry)}</option><option value="__edit">✎ ${esc(t.profEditEntry)}</option>` : ""
-      ].join("");
-      return `<label class="profchip" title="${esc(t.profLabel)}"><ha-icon icon="mdi:account-circle-outline"></ha-icon><span>${esc(pr.active)}</span><select data-profsel aria-label="${esc(t.profLabel)}">${opts}</select></label>`;
+      const item = (v, label, on, icon, off = false) => `<button type="button" class="mentry pitem ${on ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
+      return `<div class="plist">${fixed ? "" : item("", t.profAutoOpt, !chosen, "mdi:auto-fix")}${pr.names.map((n) => item(n, n, n === chosen, "mdi:account-circle-outline", !!fixed)).join("")}${admin ? item("__new", t.profNewEntry, false, "mdi:plus") + item("__edit", t.profEditEntry, false, "mdi:pencil-outline") : ""}</div>`;
     },
     // Profiles tab: which profile is edited, load / rename / delete, save as new, assign users. Dangerous steps ask first.
     _profilesEdit(t) {
@@ -4282,8 +4364,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         await this._profAction({ action: "assign", user_id: sel.dataset.profAssign, profile: sel.value || null });
         await this._loadInfo();
       }));
-      root.querySelectorAll("select[data-profsel]").forEach((sel) => sel.addEventListener("change", async (e) => {
-        const v = e.target.value;
+      root.querySelectorAll("[data-win-prof]").forEach((b) => b.addEventListener("click", () => {
+        this._winToggle(this._hubSel, "prof");
+        this._rerender();
+      }));
+      root.querySelectorAll("[data-profpick]").forEach((b) => b.addEventListener("click", async () => {
+        const v = b.dataset.profpick;
+        this._winSet(this._hubSel, null);
         if (v === "__new" || v === "__edit") {
           this._focusProfName = v === "__new";
           this._profErr = "";
@@ -4358,7 +4445,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!vis.length) vis = hubs;
       if (!vis.some((h) => h.id === this._hubSel)) this._hubSel = vis[0]?.id;
       const sel = vis.find((h) => h.id === this._hubSel);
-      const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${esc(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
+      const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${this._roomName(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
       this._tabsShown = !!tabs;
       const blocks = sel ? this._hubHtml(sel, t, 0, tabs) : "";
       const held = this.offsetHeight;
@@ -4448,6 +4535,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         setTimeout(() => parts.forEach(clear), 260);
       }
     },
+    // Room name for the tab: the selected room in full, the others by their first word (CSS shows the rest only on the selected tab).
+    _roomName(name2) {
+      const m = String(name2 ?? "").match(/^(\S+)(\s+[\s\S]*)?$/);
+      return m && m[2] ? `${esc(m[1])}<span class="rn2">${esc(m[2])}</span>` : esc(name2);
+    },
     _mode() {
       return ["settings", "profiles", "actions", "info"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : this._modeState || "activities";
     },
@@ -4474,9 +4566,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const collapsedNow = !this._edit && !compact && !!openNow && !!this._hdrCollapsed?.[h.id];
       const toggleBtn = this._edit || compact ? "" : collapsedNow ? `<button class="ib subtle" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="mdi:chevron-down"></ha-icon></button>` : collapseBtn;
       const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-      const top = `<div class="toprow">${this._menuHtml(h, t)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+      const top = `<div class="toprow">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
       const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
-      const boxes = `${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
+      const boxes = "";
       let body;
       if (this._edit || !hasDevices) {
         body = mode === "devices" ? this._devicesView(h, cur, t) : this._activitiesView(h, cur, busy, t, index);
@@ -5011,7 +5103,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       } else {
         if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings()));
         this._editMode = act;
-        this._menuOpen = {};
+        this._winSet(this._hubSel, null);
       }
       if (act !== "cancel" && act !== "cancelno") {
         this._ddPage = null;
@@ -5080,7 +5172,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const run = idx >= 0;
       const needle = run ? 10 + (acts.length > 1 ? idx / (acts.length - 1) * 80 : 40) : 6;
       const lab = run ? `<span class="skin-sta ${needle > 62 ? "left" : ""}" style="--needle:${needle}%">${clean(h.current)}</span>` : "";
-      return `<div class="skin-head"><div class="skin-dial">${lab}<i style="--needle:${needle}%"></i></div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
+      return `<div class="skin-head"><div class="skin-wrap"><div class="skin-dial"><i style="--needle:${needle}%"></i></div>${lab}</div><div class="skin-eye" style="--eye:${this._eyeLevel(h)}"></div></div>`;
     },
     _skinTail(skin) {
       return skinTrait(skin, "glass") ? '<div class="skin-tear"></div><div class="skin-glare"></div>' : "";
@@ -5218,8 +5310,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         background: repeating-linear-gradient(90deg, rgba(241,227,193,.55) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(241,227,193,.9) 0 1px, transparent 1px 60px); background-size: 100% 10px, 100% 18px; background-repeat: no-repeat; background-position: 0 0, 0 0; }
       ${R} .skin-dial b { position: absolute; top: 20px; left: 12px; font: 600 11px Georgia, serif; letter-spacing: .2em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; }
       ${R} .skin-dial i { position: absolute; top: 0; bottom: 0; left: var(--needle, 40%); width: 2px; background: #ff7a1a; box-shadow: 0 0 8px 2px rgba(255,120,20,.8); transition: left .8s; }
-      ${R} .skin-sta { position: absolute; top: 3px; left: calc(var(--needle, 40%) + 6px); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
-      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%) + 6px); }
+      ${R} .skin-wrap { flex: 1; min-width: 0; position: relative; padding-bottom: 18px; }
+      ${R} .skin-sta { position: absolute; bottom: 0; left: var(--needle, 40%); max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
+      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%)); }
       ${R} .skin-eye { position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #c8a24a;
         box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(255,170,60,.55); filter: drop-shadow(0 0 6px rgba(255,170,60,.6));
         --w: calc((1 - var(--eye, .5)) * 150deg);
@@ -5290,7 +5383,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .bbtns .ib.gear { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #c8a24a; background: radial-gradient(circle at 40% 35%, #6b4a1a, #2a170a); box-shadow: 0 2px 4px #000; } ${R} .ib.gear ha-icon { color: #c8a24a !important; --mdc-icon-size: 18px; filter: none; }
       ${R} .ib.gear.sev-r { background: radial-gradient(circle at 40% 35%, #ffd0b0, #ff5a2a 50%, #7a1a05); box-shadow: 0 0 14px 4px rgba(255,80,30,.8); } ${R} .ib.gear.sev-o, ${R} .ib.gear.sev-b { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb347 50%, #a8480a); box-shadow: 0 0 14px 4px rgba(255,150,30,.8); }
       ${R} .ib.gear[class*="sev-"] ha-icon { color: #2a170a !important; } ${R} .gbadge { background: #2a170a !important; color: #ffcf70 !important; border: 1px solid #c8a24a; }
-      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
+      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .whead { border-color: #6b4a1a; } ${R} .wtitle { color: #ffcf70; font-family: Georgia, serif; letter-spacing: .06em; text-transform: uppercase; font-size: .8em; } ${R} .win .helpbox, ${R} .win .hrow { color: #e2c58a; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -5332,12 +5425,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
       /* 0.16.1: calmer flicker (slow and smooth), thin sunken rims, pressed state keys, hold-to-switch effects */
-      ${T} .tile.dev.inuse { animation: skphos2 8s ease-in-out infinite; }
-      @keyframes skphos2 { 0%, 100% { opacity: 1; } 50% { opacity: .86; } }
-      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 8s ease-in-out infinite; }
-      ${R} .tile.dev.inuse { animation: rlamp2 10s ease-in-out infinite; }
-      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 7s ease-in-out infinite; }
-      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.88); } 70% { filter: brightness(1.07); } }
+      ${T} .tile.dev.inuse { animation: skphos2 5s ease-in-out infinite; }
+      @keyframes skphos2 { 0%, 100% { opacity: 1; box-shadow: 0 0 16px 2px rgba(61,255,107,.65); } 50% { opacity: .55; box-shadow: 0 0 0 0 rgba(61,255,107,0); } }
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 6s ease-in-out infinite; }
+      ${R} .tile.dev.inuse { animation: rinuse 5s ease-in-out infinite; }
+      @keyframes rinuse { 0%, 100% { filter: brightness(1.1); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 22px 5px rgba(255,150,30,.75), 0 3px 6px rgba(0,0,0,.6); } 50% { filter: brightness(.7); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 6px 0 rgba(255,150,30,.2), 0 3px 6px rgba(0,0,0,.6); } }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 5.5s ease-in-out infinite; }
+      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.7); } 70% { filter: brightness(1.2); } }
       ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel, ${R} .appcell.svc { border: 2px solid #4a3414 !important;
         box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22) !important; }
       /* Fire TV keys of the direct block: always dark glass, dim letters; the running app lights up */
@@ -5348,6 +5442,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R} .rocker .rk.mute.round.muted, ${R} .key.muted { box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65) !important; }
       /* dial: only the activity */
       ${R} .skin-dial b { display: none; }
+      /* keys without a memory: while pressed they glow around the edge, gone on release */
+      ${R} .key.lit, ${R} .key:active, ${R} .mini.lit, ${R} .tile.lit { box-shadow: 0 1px 0 #6b4a1a, 0 0 0 3px rgba(255,184,74,.45), 0 0 18px 6px rgba(255,150,30,.75) !important; }
       /* power knob switching: the lamp pulses until the device confirms */
       ${R} .pwknob.pend { animation: rpend .6s ease-in-out infinite alternate; }
       @keyframes rpend { from { filter: brightness(.7); } to { filter: brightness(1.3); } }
@@ -5360,11 +5456,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes rheat { from { filter: brightness(.2) saturate(.6); box-shadow: inset 0 0 14px rgba(0,0,0,.6); } 60% { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(.7); box-shadow: 0 0 24px 8px rgba(255,235,170,.9); } }
       /* Terminal: state keys are green blocks too */
       ${T} .key.on, ${T} .ic-row.on, ${T} .appcell.svc.on { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.on *, ${T} .ic-row.on *, ${T} .appcell.svc.on * { color: #021a05 !important; text-shadow: none; filter: none; }
-      /* settings switches: sunken brass button with a lamp (dim = off, amber = on) instead of a lever */
-      ${R} .sw:has(> input) { width: 64px; height: 34px; border-radius: 17px; border: 2px solid #4a3414; background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708); box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22); box-sizing: border-box; }
+      /* settings switches: a round brass button to press (out = off, pressed in with an amber ring and lit = on), like Mute */
+      ${R} .sw:has(> input) { width: 46px; height: 46px; margin-left: 6px; flex: none; position: relative; }
+      ${R} .sw:has(> input) i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 4px 0 #3b2a14, 0 6px 6px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s, filter .12s; }
+      ${R} .sw:has(> input) i::before { content: ""; position: absolute; inset: 14px; width: auto; height: auto; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transform: none; }
       ${R} .sw:has(> input) i::after { display: none; }
-      ${R} .sw:has(> input) i::before, ${R} .sw:has(> input) input:checked + i::before { top: 6px; width: 18px; height: 18px; left: 8px; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transition: left .15s; }
-      ${R} .sw:has(> input) input:checked + i::before { left: 34px; background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); }
+      ${R} .sw:has(> input) input:checked + i { transform: translateY(3px); filter: brightness(.88); box-shadow: inset 0 3px 6px rgba(0,0,0,.6), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65); }
+      ${R} .sw:has(> input) input:checked + i::before { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); left: auto; transform: none; }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;
 
@@ -5619,9 +5717,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .adbtest { gap: 8px; padding: 8px 14px; margin: 6px 0; display: inline-flex; } .adbres { margin-left: 8px; font-size: 0.85em; color: var(--hr-muted); }
       .etabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; } .etabs button { flex: 1 0 auto; border: none; font: inherit; padding: 8px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; white-space: nowrap; } .etabs button.sel { background: var(--hr-accent); color: var(--hr-on-accent); font-weight: 600; }
       .mmbox { display: grid; gap: 6px; margin: 8px 0; } .mmrow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warning-color, #f5a623) 16%, transparent); font-size: 13px; } .mmrow span { flex: 1; } .mmrow ha-icon { color: var(--warning-color, #f5a623); --mdc-icon-size: 20px; }
-      .netrow { padding: 8px 2px; border-top: 1px solid color-mix(in srgb, var(--hr-muted) 25%, transparent); } .netrow:first-of-type { border-top: 0; }
-      .nethead { display: flex; align-items: center; gap: 8px; } .nethead b { flex: 1; min-width: 0; } .netstate { font-size: 12px; color: var(--hr-muted); } .netstate.on { color: var(--hr-accent); }
-      .netmeta, .netcaps { font-size: 12px; color: var(--hr-muted); margin-left: 32px; }
+      .nettab { width: 100%; border-collapse: collapse; font-size: .85em; } .nettab th { text-align: left; font-weight: 600; color: var(--hr-muted); padding: 4px 8px 6px; border-bottom: 1px solid color-mix(in srgb, var(--hr-muted) 35%, transparent); } .nettab td { padding: 8px; vertical-align: top; border-bottom: 1px solid color-mix(in srgb, var(--hr-muted) 18%, transparent); }
+      .nettab .ndev { display: flex; align-items: center; gap: 6px; } .nettab .ndev ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-muted); } .nettab .ndev small { color: var(--hr-muted); } .nstate.on { color: var(--hr-accent); font-weight: 600; }
+      .kbchip { display: inline-flex; align-items: center; gap: 3px; margin: 0 6px 4px 0; padding: 2px 8px; border-radius: 999px; background: var(--hr-tile-bg); } .kbchip ha-icon { --mdc-icon-size: 14px; color: var(--hr-accent); } .kbnone { color: var(--hr-muted); }
+      @container (max-width: 560px) { .nettab thead { display: none; } .nettab, .nettab tbody, .nettab tr, .nettab td { display: block; } .nettab tr { padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--hr-muted) 30%, transparent); } .nettab td { border: 0; padding: 2px 4px; } .nettab td[data-l]::before { content: attr(data-l) ": "; color: var(--hr-muted); } .nettab td.ndev::before { content: none; } }
       .et-look [data-t]:not([data-t="look"]), .et-behave [data-t]:not([data-t="behave"]), .et-acts [data-t]:not([data-t="acts"]), .et-devs [data-t]:not([data-t="devs"]), .et-fire [data-t]:not([data-t="fire"]), .et-dd [data-t]:not([data-t="dd"]), .et-misc [data-t]:not([data-t="misc"]), .et-info [data-t]:not([data-t="info"]) { display: none; }
       ha-card:not(.ed).hl-auto .block.dkeys > .dname, ha-card:not(.ed).hl-auto .block.favs > .dname, ha-card:not(.ed).hl-auto .block.actions > .dname { display: none; }
       ha-card:not(.ed).hl-never .block > .dname { display: none; }
@@ -5745,7 +5844,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .pager { overflow: hidden; border-radius: var(--hr-tile-radius); }
       .pager .track { display: flex; align-items: flex-start; }
       .pager .pane { flex: 0 0 100%; min-width: 0; box-sizing: border-box; padding: 2px; }
-      .toprow { display: flex; align-items: center; gap: 8px; min-width: 0; } .toprow > .hubtabs, .toprow > .hub { flex: 1 1 auto; min-width: 0; } .toprow > .hubtabs { margin-bottom: 0; }
+      .toprow { display: flex; align-items: center; gap: 8px; min-width: 0; } .toprow > .hubtabs, .toprow > .hub { flex: 1 1 auto; min-width: 0; } .toprow > .hubtabs { margin-bottom: 0; } .toprow > .bbtns { flex: none; }
       .toprow .bbtns, .slimrow .bbtns { display: flex; align-items: center; gap: 2px; flex: none; } .bbtns .ib { width: 36px; height: 36px; } .bbtns .ib.subtle { width: 30px; } .bbtns .lockmark { margin: 0 4px; }
       .bar .netchip { font: inherit; cursor: pointer; text-align: left; color: var(--hr-text); }
       .slimbar .sw.none { color: var(--hr-muted); text-align: left; } .slimbar .sw:first-child { text-align: left; }
@@ -5758,7 +5857,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .bar .status.busy > ha-icon { animation: pulse 1s ease-in-out infinite; }
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
-      @container (max-width: 400px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      .hubtabs button:not(.sel) .rn2 { display: none; } @container (max-width: 260px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -5804,7 +5903,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .ib.gear.sev-r { --gc: #e53935; } .ib.gear.sev-o { --gc: #fb8c00; } .ib.gear.sev-b { --gc: var(--hr-accent); }
       .ib.gear[class*="sev-"] ha-icon { color: var(--gc); filter: drop-shadow(0 0 5px var(--gc)); }
       .ib.gear.fresh ha-icon { animation: gearpulse 1.6s ease-in-out infinite; } @keyframes gearpulse { 50% { opacity: .45; filter: none; } }
-      .hmenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(340px, 100%); box-sizing: border-box; padding: 6px; border-radius: 14px; background: var(--hr-card-bg, var(--card-background-color, #1e2126)); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: grid; gap: 4px; }
+      .hmenu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; width: auto; max-height: min(72vh, 560px); overflow: auto; box-sizing: border-box; padding: 8px; border-radius: 14px; background: var(--hr-card-bg, var(--card-background-color, #1e2126)); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: grid; gap: 4px; }
+      .whead { display: flex; align-items: center; gap: 8px; padding: 0 2px 6px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); position: sticky; top: -8px; background: inherit; z-index: 1; } .wtitle { flex: 1; font-weight: 600; font-size: .95em; } .whead .wclose { width: 32px; height: 32px; } .wbody { display: grid; gap: 6px; padding-top: 6px; }
+      .hmenu { overflow-x: hidden; } .win .hrow, .win .hkeys { flex-wrap: wrap; min-width: 0; } .win .hdev { min-width: 0; flex: 1 1 150px; } .wbody { min-width: 0; }
+      .win .helpbox { background: none; border: none; padding: 0; box-shadow: none; } .win .helpbox .htitle { display: none; }
+      .plist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .pitem.on { outline: 2px solid var(--hr-accent); } .pitem .pchk { margin-left: auto; color: var(--hr-accent) !important; } .pitem:disabled { opacity: .5; }
+      .helpkey.viadirect { position: relative; } .helpkey .dmark { position: absolute; right: 2px; bottom: 2px; --mdc-icon-size: 13px; color: var(--hr-accent); } .dleg { display: flex; align-items: center; gap: 6px; } .dleg ha-icon { --mdc-icon-size: 16px; color: var(--hr-accent); flex: none; }
+      .profchip.sel { box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .mhints { display: grid; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); } .mhints:last-child { border: none; padding: 0; }
       .hint-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px; border-radius: 10px; font-size: 0.85em; color: var(--hr-text); }
       .hint-row > ha-icon { --mdc-icon-size: 18px; flex: none; } .hint-row.r > ha-icon { color: #e53935; } .hint-row.o > ha-icon { color: #fb8c00; } .hint-row.b > ha-icon { color: var(--hr-accent); }
@@ -6079,10 +6184,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._hintSeen,
         this._actPanel,
         this._actPanelOff,
-        hubs.map((h) => this._links(h).map((l) => {
-          const e = this._hass.states?.[l.entity];
-          return [e?.state, e?.attributes?.source, e?.attributes?.source_list?.length, e?.attributes?.is_volume_muted, this._powerPending(h.id, l.device)];
-        })),
+        hubs.map((h) => this._watched(h)),
         hubs.map((h) => {
           const f = this._fireInfo(h.id);
           return f && [f.mode, f.app];

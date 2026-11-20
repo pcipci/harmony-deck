@@ -48,7 +48,7 @@ export const renderMixin = {
     if (!vis.length) vis = hubs;
     if (!vis.some((h) => h.id === this._hubSel)) this._hubSel = vis[0]?.id;
     const sel = vis.find((h) => h.id === this._hubSel);
-    const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${esc(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
+    const tabs = vis.length > 1 ? `<div class="hubtabs"><span class="rooms-lab">${t.rooms}</span>${vis.map((h) => `<button class="${h.id === this._hubSel ? "sel" : ""} ${h.current && h.current !== "PowerOff" ? "live" : ""} ${hiddenHubs.has(h.id) ? "off" : ""}" data-hubtab="${esc(h.id)}"><span class="ico"><ha-icon icon="${h.areaIcon || roomIcon(h.name)}"></ha-icon>${this._fireDot(h.id, t)}</span><span class="rn">${this._roomName(h.name)}</span>${h.current && h.current !== "PowerOff" ? `<small>${esc(h.current)}</small>` : ""}</button>`).join("")}</div>` : "";
     this._tabsShown = !!tabs;
     const blocks = sel ? this._hubHtml(sel, t, 0, tabs) : "";
     // Hold the card height while the markup is replaced, so the page does not shrink for a moment and the browser keeps the scroll position.
@@ -108,6 +108,12 @@ export const renderMixin = {
     }
   },
 
+  // Room name for the tab: the selected room in full, the others by their first word (CSS shows the rest only on the selected tab).
+  _roomName(name) {
+    const m = String(name ?? "").match(/^(\S+)(\s+[\s\S]*)?$/);
+    return m && m[2] ? `${esc(m[1])}<span class="rn2">${esc(m[2])}</span>` : esc(name);
+  },
+
   _mode() { return ["settings", "profiles", "actions", "info"].includes(this._editMode) ? "activities" : this._editMode === "favs" ? "devices" : this._config.compact ? "activities" : (this._modeState || "activities"); },
 
   _hubHtml(h, t, index = 0, tabs = "") {
@@ -136,10 +142,10 @@ export const renderMixin = {
       : collapseBtn;
     // Tools (lock, profile, help, info, collapse) sit right in the row of the room tabs, apart from the device controls.
     const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-    const top = `<div class="toprow">${this._menuHtml(h, t)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+    const top = `<div class="toprow">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
     // Status chips only for what runs (Harmony activity, Fire TV, linked network devices); nothing runs = no chip line.
     const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
-    const boxes = `${!this._edit && helpAct ? this._helpHtml(h, helpAct, t) : ""}`;
+    const boxes = "";
     let body;
     if (this._edit || !hasDevices) {
       body = mode === "devices" ? this._devicesView(h, cur, t) : this._activitiesView(h, cur, busy, t, index);

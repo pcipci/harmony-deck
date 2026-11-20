@@ -177,6 +177,7 @@ async def ws_info(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
         "settings": prof.merged(_data(hass), overview["active"]),
         "profile": overview,
         "diagnostics": diag,
+        "version": hass.data[DOMAIN].get("version"),
     }
     if connection.user and connection.user.is_admin:
         result["users"], result["usersAll"] = await _users(hass)

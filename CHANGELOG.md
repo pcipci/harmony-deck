@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.16.2
+
+### Added
+- **Key assignment table** in the Info area: for the running activity it lists per device which keys go straight to the device and which over Harmony ("Switching on always goes over Harmony"). **Network devices** are a table too (device, platform, address, state, capabilities); on a narrow screen each device becomes a card with labelled lines.
+- **Help (lifebuoy):** the power key of a device that is switched off directly over the network carries a small network symbol, with a legend.
+- **Version hint:** when the card in the browser is older than the integration the gear shows a hint with a Reload button.
+
+### Changed
+- **One window for everything:** gear, help and profile open in the same frame (title, close cross, same position and width, long content scrolls inside). Only one is open at a time: the same symbol closes it, another symbol switches to it. The profile is a list in this window instead of the system drop-down.
+- **Room tabs:** the selected room shows its full name ("EG Wohnzimmer"), the others the first word ("OG"), so the tool symbols no longer cover tabs.
+- **Tube radio:** settings switches are round brass buttons to press (pressed in with an amber ring = on); the dial shows the activity name below the scale; keys without a state glow around the edge while pressed; clearly visible flicker of the devices of the running activity, also in Terminal (green).
+- The "Direct" block of a device stays open when you press one of its keys.
+
+### Fixed
+- **Device state did not update** while Harmony considered the device inactive (two activities, e.g. Fire TV with TV and Fire TV device): the card now watches every linked player of the hub (state, source, mute, app), not only those of the running activity. This also fixes Mute and the power switch showing stale states.
+
+### Notes
+- Not yet tested on real hardware. If the surface does not change after an update, reload the page (hard reload); from this version on the card tells you when it is older than the integration.
+
 ## 0.16.1
 
 ### Added

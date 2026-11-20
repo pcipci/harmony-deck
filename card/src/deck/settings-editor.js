@@ -227,7 +227,7 @@ export const settingsEditorMixin = {
         try { await this._hass.callWS({ type: "harmony_deck/save_settings", settings: snap, profile: this._prof().active }); } catch (e) { /* kept for this session only */ }
       }
     } else if (act === "off") { if (this._editMode === "actions") await this._actFlush(); this._editMode = null; this._snap = null; this._cancelAsk = false; }
-    else { if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings())); this._editMode = act; this._menuOpen = {}; }
+    else { if (!this._edit) this._snap = JSON.parse(JSON.stringify(this._settings())); this._editMode = act; this._winSet(this._hubSel, null); }
     // Leaving or entering settings: no device page of the network tab stays open (the tab starts at its overview).
     if (act !== "cancel" && act !== "cancelno") { this._ddPage = null; this._iconOpen = null; }
     this._key = "";

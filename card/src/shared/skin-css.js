@@ -103,8 +103,9 @@ export const SKIN_CSS = `
         background: repeating-linear-gradient(90deg, rgba(241,227,193,.55) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(241,227,193,.9) 0 1px, transparent 1px 60px); background-size: 100% 10px, 100% 18px; background-repeat: no-repeat; background-position: 0 0, 0 0; }
       ${R} .skin-dial b { position: absolute; top: 20px; left: 12px; font: 600 11px Georgia, serif; letter-spacing: .2em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; }
       ${R} .skin-dial i { position: absolute; top: 0; bottom: 0; left: var(--needle, 40%); width: 2px; background: #ff7a1a; box-shadow: 0 0 8px 2px rgba(255,120,20,.8); transition: left .8s; }
-      ${R} .skin-sta { position: absolute; top: 3px; left: calc(var(--needle, 40%) + 6px); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
-      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%) + 6px); }
+      ${R} .skin-wrap { flex: 1; min-width: 0; position: relative; padding-bottom: 18px; }
+      ${R} .skin-sta { position: absolute; bottom: 0; left: var(--needle, 40%); max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px Georgia, serif; letter-spacing: .08em; color: #ffcf70; text-shadow: 0 0 6px rgba(255,150,30,.8); text-transform: uppercase; transition: left .8s; }
+      ${R} .skin-sta.left { left: auto; right: calc(100% - var(--needle, 40%)); }
       ${R} .skin-eye { position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #c8a24a;
         box-shadow: 0 0 0 3px #2a170a, 0 0 14px rgba(255,170,60,.55); filter: drop-shadow(0 0 6px rgba(255,170,60,.6));
         --w: calc((1 - var(--eye, .5)) * 150deg);
@@ -175,7 +176,7 @@ export const SKIN_CSS = `
       ${R} .bbtns .ib.gear { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #c8a24a; background: radial-gradient(circle at 40% 35%, #6b4a1a, #2a170a); box-shadow: 0 2px 4px #000; } ${R} .ib.gear ha-icon { color: #c8a24a !important; --mdc-icon-size: 18px; filter: none; }
       ${R} .ib.gear.sev-r { background: radial-gradient(circle at 40% 35%, #ffd0b0, #ff5a2a 50%, #7a1a05); box-shadow: 0 0 14px 4px rgba(255,80,30,.8); } ${R} .ib.gear.sev-o, ${R} .ib.gear.sev-b { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb347 50%, #a8480a); box-shadow: 0 0 14px 4px rgba(255,150,30,.8); }
       ${R} .ib.gear[class*="sev-"] ha-icon { color: #2a170a !important; } ${R} .gbadge { background: #2a170a !important; color: #ffcf70 !important; border: 1px solid #c8a24a; }
-      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
+      ${R} .hmenu { background: #2a170a; border: 3px solid #c8a24a; border-radius: 16px; } ${R} .whead { border-color: #6b4a1a; } ${R} .wtitle { color: #ffcf70; font-family: Georgia, serif; letter-spacing: .06em; text-transform: uppercase; font-size: .8em; } ${R} .win .helpbox, ${R} .win .hrow { color: #e2c58a; } ${R} .hint-row { color: #e2c58a; } ${R} .hint-row button, ${R} .mentry { background: linear-gradient(180deg, #efe3c4, #c9b78d); color: #2a170a; border: 2px solid #c8a24a; } ${R} .mentry ha-icon { color: #2a170a; }
       /* the Activities / Devices switch: a bakelite rocker plate sliding over */
       ${R} .seg { background: linear-gradient(#120804, #2b150a); border: 3px solid #b9b19a; border-radius: 16px; box-shadow: inset 0 3px 8px #000, 0 2px 0 #5a3a1a; padding: 5px; }
       ${R} .seg .th { border: 1px solid #6b5420; border-radius: 11px; box-shadow: 0 4px 0 #6b5420, 0 6px 8px rgba(0,0,0,.6), inset 0 1px 0 #fff;
@@ -217,12 +218,13 @@ export const SKIN_CSS = `
       ${R} .tile.holdoff.fired { background: radial-gradient(circle at 50% 58%, #3a1208, #120804) !important; border-color: #8a8472; box-shadow: 0 0 10px 1px rgba(255,120,60,.35), inset 0 0 14px #000 !important; color: #6b4a2a; }
       ${R} .tile.holdoff.fired ha-icon { color: #6b4a2a !important; filter: none; }
       /* 0.16.1: calmer flicker (slow and smooth), thin sunken rims, pressed state keys, hold-to-switch effects */
-      ${T} .tile.dev.inuse { animation: skphos2 8s ease-in-out infinite; }
-      @keyframes skphos2 { 0%, 100% { opacity: 1; } 50% { opacity: .86; } }
-      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 8s ease-in-out infinite; }
-      ${R} .tile.dev.inuse { animation: rlamp2 10s ease-in-out infinite; }
-      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 7s ease-in-out infinite; }
-      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.88); } 70% { filter: brightness(1.07); } }
+      ${T} .tile.dev.inuse { animation: skphos2 5s ease-in-out infinite; }
+      @keyframes skphos2 { 0%, 100% { opacity: 1; box-shadow: 0 0 16px 2px rgba(61,255,107,.65); } 50% { opacity: .55; box-shadow: 0 0 0 0 rgba(61,255,107,0); } }
+      ${R} .tile.on, ${R} .tile.dev.sel, ${R} .actbtn.acton, ${R} .pwknob.on { animation: rlamp2 6s ease-in-out infinite; }
+      ${R} .tile.dev.inuse { animation: rinuse 5s ease-in-out infinite; }
+      @keyframes rinuse { 0%, 100% { filter: brightness(1.1); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 22px 5px rgba(255,150,30,.75), 0 3px 6px rgba(0,0,0,.6); } 50% { filter: brightness(.7); box-shadow: inset 0 0 14px rgba(0,0,0,.8), 0 0 6px 0 rgba(255,150,30,.2), 0 3px 6px rgba(0,0,0,.6); } }
+      ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .appcell.svc.on, ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel { animation: rlamp2 5.5s ease-in-out infinite; }
+      @keyframes rlamp2 { 0%, 100% { filter: brightness(1); } 35% { filter: brightness(.7); } 70% { filter: brightness(1.2); } }
       ${R} .key.sel:not(.mute), ${R} .key.on:not(.mute), ${R} .ic-row.on, ${R} .mini.sel, ${R} .mini.txt.sel, ${R} .appcell.svc { border: 2px solid #4a3414 !important;
         box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22) !important; }
       /* Fire TV keys of the direct block: always dark glass, dim letters; the running app lights up */
@@ -233,6 +235,8 @@ export const SKIN_CSS = `
       ${R} .rocker .rk.mute.round.muted, ${R} .key.muted { box-shadow: inset 0 3px 6px rgba(0,0,0,.65), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65) !important; }
       /* dial: only the activity */
       ${R} .skin-dial b { display: none; }
+      /* keys without a memory: while pressed they glow around the edge, gone on release */
+      ${R} .key.lit, ${R} .key:active, ${R} .mini.lit, ${R} .tile.lit { box-shadow: 0 1px 0 #6b4a1a, 0 0 0 3px rgba(255,184,74,.45), 0 0 18px 6px rgba(255,150,30,.75) !important; }
       /* power knob switching: the lamp pulses until the device confirms */
       ${R} .pwknob.pend { animation: rpend .6s ease-in-out infinite alternate; }
       @keyframes rpend { from { filter: brightness(.7); } to { filter: brightness(1.3); } }
@@ -245,10 +249,12 @@ export const SKIN_CSS = `
       @keyframes rheat { from { filter: brightness(.2) saturate(.6); box-shadow: inset 0 0 14px rgba(0,0,0,.6); } 60% { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(.7); box-shadow: 0 0 24px 8px rgba(255,235,170,.9); } }
       /* Terminal: state keys are green blocks too */
       ${T} .key.on, ${T} .ic-row.on, ${T} .appcell.svc.on { background: #3dff6b !important; color: #021a05; box-shadow: 0 0 14px rgba(61,255,107,.55); } ${T} .key.on *, ${T} .ic-row.on *, ${T} .appcell.svc.on * { color: #021a05 !important; text-shadow: none; filter: none; }
-      /* settings switches: sunken brass button with a lamp (dim = off, amber = on) instead of a lever */
-      ${R} .sw:has(> input) { width: 64px; height: 34px; border-radius: 17px; border: 2px solid #4a3414; background: repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, transparent 1px 7px), linear-gradient(180deg, #160a04, #2e1708); box-shadow: inset 0 3px 8px rgba(0,0,0,.85), inset 0 0 0 1px rgba(200,162,74,.28), 0 1px 0 rgba(255,235,170,.22); box-sizing: border-box; }
+      /* settings switches: a round brass button to press (out = off, pressed in with an amber ring and lit = on), like Mute */
+      ${R} .sw:has(> input) { width: 46px; height: 46px; margin-left: 6px; flex: none; position: relative; }
+      ${R} .sw:has(> input) i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #2a170a; background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 55%, #5c4210); box-shadow: 0 4px 0 #3b2a14, 0 6px 6px rgba(0,0,0,.6); transition: transform .12s, box-shadow .12s, filter .12s; }
+      ${R} .sw:has(> input) i::before { content: ""; position: absolute; inset: 14px; width: auto; height: auto; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transform: none; }
       ${R} .sw:has(> input) i::after { display: none; }
-      ${R} .sw:has(> input) i::before, ${R} .sw:has(> input) input:checked + i::before { top: 6px; width: 18px; height: 18px; left: 8px; background: radial-gradient(circle at 40% 35%, #6b5a40, #2a1d0f); box-shadow: inset 0 1px 2px rgba(0,0,0,.7); transition: left .15s; }
-      ${R} .sw:has(> input) input:checked + i::before { left: 34px; background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); }
+      ${R} .sw:has(> input) input:checked + i { transform: translateY(3px); filter: brightness(.88); box-shadow: inset 0 3px 6px rgba(0,0,0,.6), 0 0 0 3px #2a170a, 0 0 0 5px #ffb84a, 0 0 16px 4px rgba(255,150,30,.65); }
+      ${R} .sw:has(> input) input:checked + i::before { background: radial-gradient(circle at 40% 35%, #fff3c4, #ffb84a 55%, #b85a10); box-shadow: 0 0 10px 3px rgba(255,150,30,.8); left: auto; transform: none; }
       @media (prefers-reduced-motion: reduce) { ${T}, ${T}::before, ${T}::after, ${T} .skin-tear, ${R} .skin-dial i, ${T} .tile.dev.inuse, ${R} .pwknob.pend, ${R} .tile.dev.inuse { animation: none !important; transition: none !important; } }
 `;

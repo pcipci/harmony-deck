@@ -212,7 +212,7 @@ export const fireMixin = {
       const keysBlock = extra.length ? `<div class="block dkeys"><span class="dname">${t.directKeys}</span>${rowsHtml}${rest.length ? `<div class="krow">${rest.map(key).join("")}</div>` : ""}</div>` : "";
       return { keys: keysBlock, main: `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>` };
     }
-    return collapsed ? `<details class="block direct"><summary class="dname">${t.direct}</summary>${body}</details>` : `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>`;
+    return collapsed ? `<details class="block direct" data-dtog="${esc(h.id)}" ${this._dOpen?.[h.id] ? "open" : ""}><summary class="dname">${t.direct}</summary>${body}</details>` : `<div class="block direct"><span class="dname">${t.direct}</span>${body}</div>`;
   },
 
   // Text row: field + send (types the text and presses Enter) + delete. Under the D-pad it folds out from a slim key.
@@ -231,6 +231,8 @@ export const fireMixin = {
 
   // Events of the Fire TV keys, apps and the text row.
   _bindFire(root) {
+    // The folded "Direct" block keeps its state (a key press redraws the card).
+    root.querySelectorAll("details[data-dtog]").forEach((d) => d.addEventListener("toggle", () => { this._dOpen = { ...(this._dOpen || {}), [d.dataset.dtog]: d.open }; }));
     root.querySelectorAll("[data-adb]").forEach((b) => b.addEventListener("click", () => { if (this._edit) return; this._adb(b.dataset.adb, b.dataset.adbcmd); if (b.classList.contains("appcell")) { b.classList.add("starting"); setTimeout(() => b.classList.remove("starting"), 6000); } }));
     root.querySelectorAll("[data-ttog]").forEach((b) => b.addEventListener("click", () => {
       const hub = b.dataset.ttog;

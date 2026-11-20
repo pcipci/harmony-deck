@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.18.1";
+  var VERSION = "0.18.2";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -5773,6 +5773,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes nxglow { 0%, 100% { box-shadow: inset 0 0 8px rgba(255,176,0,.3); } 50% { box-shadow: inset 0 0 18px rgba(255,176,0,.6); } }
       @keyframes nxrefresh { from { top: -20%; } to { top: 120%; } }
 
+      /* the pager clips its content with the tile radius: with big radii it cut the bottom corners of the last tile row */
+      ${X} .pager, ${R2} .pager { border-radius: 0; } ${X} .pager .pane, ${R2} .pager .pane { padding: 2px 2px 10px; }
       ${R2} .key.kk, ${X} .key.kk { overflow: hidden; padding-left: 3px; padding-right: 3px; letter-spacing: 0; }
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.2
+
+### Fixed
+- **Nixie and Tube radio:** the bottom corners of the last row of tiles were cut off. The tile area clipped its content with the large tile radius; it no longer does and has a little space below for the shadow.
+
 ## 0.18.1
 
 ### Changed

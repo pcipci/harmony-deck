@@ -57,7 +57,7 @@ export const profilesMixin = {
     const admin = this._hass?.user?.is_admin !== false;
     const fixed = this._config.profile;
     const chosen = fixed ? pr.active : this._choiceGet();
-    const item = (v, label, on, icon, off = false) => `<button type="button" class="mentry pitem ${on ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
+    const item = (v, label, on, icon, off = false) => `<button type="button" class="mentry pitem ${on ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span></button>`;
     return `<div class="plist">${fixed ? "" : item("", t.profAutoOpt, !chosen, "mdi:auto-fix")}${pr.names.map((n) => item(n, n, n === chosen, "mdi:account-circle-outline", !!fixed)).join("")}${admin ? item("__new", t.profNewEntry, false, "mdi:plus") + item("__edit", t.profEditEntry, false, "mdi:pencil-outline") : ""}</div>`;
   },
 

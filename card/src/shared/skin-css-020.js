@@ -5,11 +5,12 @@
 const G = 'ha-card[data-skin="glass"]';
 const C = 'ha-card[data-skin="clay"]';
 const X = 'ha-card[data-skin="nixie"]';
+const W = 'ha-card[data-skin="thermal"]';
 
 // Things that are pressed (glass: lit strongly, fades out after release) / belong to the running activity (weakly lit) / selected (brightly lit)
 const PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
 const ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel"];
+const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
 const PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
 const on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
 const onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
@@ -44,7 +45,7 @@ const LAMPS_V = lamps(true);
 // Plain surfaces (settings, profile window, info tables, help): the same square plate
 const SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
 const FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
-const BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt"];
+const BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt", ".mentry", ".profrow"];
 
 export const SKIN_CSS_020 = `
       /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
@@ -203,6 +204,11 @@ export const SKIN_CSS_020 = `
       ${on(C, BTN)} { border: none !important; border-radius: 999px !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), var(--cl-green) !important; color: var(--hr-text); box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 4px 6px rgba(50,80,40,.3) !important; }
       ${C} .etabs button.sel, ${C} .favkind button.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
       ${C} :is(.pbadge, .gbadge) { border-radius: 999px; }
+      ${C} :is(.pitem.on, .profrow.act) { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.pitem.on, .profrow.act) :is(ha-icon, small, b, span) { color: #fff !important; }
+      ${C} :is(.pbtn.pri, .editdone:not(.warn), .helpall, .addact, .profdlg .editrow button:last-child) { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.helpall, .addact, .editdone:not(.warn)) :is(ha-icon, span) { color: #fff !important; }
+      ${on(C, [".win", ".helpbox", ".infopanel", ".hmenu"])} { background: #c3d8bb !important; }
       ${C} :is(.helpbox, .infopanel, .hint-row, .profdlg) ha-icon { color: var(--hr-text) !important; }
       ${C} .sdot.lit { box-shadow: inset -1px -1px 2px rgba(110,20,5,.4), 0 0 6px var(--hr-accent); }
       /* device with a known power state: a dent with a bubble that travels and turns coral */
@@ -221,4 +227,7 @@ export const SKIN_CSS_020 = `
       ${X} .key.svc ha-icon, ${X} .key.svc b, ${X} .key.svc small, ${X} .key.svc span { color: #c8964a !important; filter: none; }
       ${X} .appcell.svc.on { border-color: #ff9a3a !important; box-shadow: inset 0 0 0 1px #ff9a3a, 0 0 10px rgba(255,154,58,.45) !important; }
       ${X} .appcell.svc.on ha-icon, ${X} .appcell.svc.on b, ${X} .appcell.svc.on small { color: #ffb84a !important; filter: drop-shadow(0 0 4px #ff9a3a); }
+
+      /* ---------- Thermal: the edit header sits on a dark plate so the lettering is readable on the heat gradient ---------- */
+      ${W} .edittool { background: #0a0614; border-radius: 3px; padding: 8px; }
 `;

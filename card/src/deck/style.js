@@ -400,7 +400,7 @@ export const styleMixin = {
       .profnow > span { flex: 1; min-width: 0; display: flex; flex-direction: column; } .profnow small, .profrow small { color: var(--hr-muted); font-size: 0.8em; overflow-wrap: anywhere; }
       .proflist { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
       .profrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--hr-tile-radius, 12px); background: var(--hr-tile-bg); border: 1px solid transparent; }
-      .profrow.act { border-color: color-mix(in srgb, var(--hr-accent) 60%, transparent); }
+      .profrow.act { border-color: color-mix(in srgb, var(--hr-accent) 60%, transparent); background: color-mix(in srgb, var(--hr-accent) 22%, var(--hr-tile-bg)); }
       .profrow .pname { flex: 1 1 140px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; } .profrow .pname ha-icon { --mdc-icon-size: 20px; color: var(--hr-muted); }
       .profrow.act .pname ha-icon { color: var(--hr-accent); } .profrow .pname small { flex-basis: 100%; padding-left: 28px; }
       .pbtns { display: flex; gap: 6px; align-items: center; margin-left: auto; }
@@ -443,7 +443,7 @@ export const styleMixin = {
       .whead { display: flex; align-items: center; gap: 8px; padding: 0 2px 6px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); position: sticky; top: -8px; background: inherit; z-index: 1; } .wtitle { flex: 1; font-weight: 600; font-size: .95em; } .whead .wclose { width: 32px; height: 32px; } .wbody { display: grid; gap: 6px; padding-top: 6px; }
       .hmenu { overflow-x: hidden; } .win .hrow, .win .hkeys { flex-wrap: wrap; min-width: 0; } .win .hdev { min-width: 0; flex: 1 1 150px; } .wbody { min-width: 0; }
       .win .helpbox { background: none; border: none; padding: 0; box-shadow: none; } .win .helpbox .htitle { display: none; }
-      .plist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .pitem.on { outline: 2px solid var(--hr-accent); } .pitem .pchk { margin-left: auto; color: var(--hr-accent) !important; } .pitem:disabled { opacity: .5; }
+      .plist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .pitem.on { background: var(--hr-accent); color: var(--hr-on-accent, #fff); font-weight: 600; } .pitem.on ha-icon { color: inherit !important; } .pitem:disabled { opacity: .5; }
       .helpkey.viadirect { position: relative; } .helpkey .dmark { position: absolute; right: 2px; bottom: 2px; --mdc-icon-size: 13px; color: var(--hr-accent); } .dleg { display: flex; align-items: center; gap: 6px; } .dleg ha-icon { --mdc-icon-size: 16px; color: var(--hr-accent); flex: none; }
       .profchip.sel { box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .mhints { display: grid; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); } .mhints:last-child { border: none; padding: 0; }

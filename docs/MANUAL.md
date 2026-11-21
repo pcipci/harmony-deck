@@ -196,3 +196,6 @@ Glass: new setting *Background* (black, black with texture, aluminium, circuit b
 
 ### 0.20.2
 Glass: light style B lights the lettering in the function colour, larger halo, calmer volume lamps, lilac headings, Activities/Devices as two plates, opaque windows, new setting *Colour per activity* (off by default).
+
+### 0.21.0
+Profile window: one profile at a time, the whole row of the chosen profile is lit in the skin's selection style (no check marks). Clay and Glass got proper primary buttons and opaque help windows, Thermal a dark edit header. The security card was checked in all own skins.

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.20.2";
+  var VERSION = "0.21.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -4443,7 +4443,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const admin = this._hass?.user?.is_admin !== false;
       const fixed = this._config.profile;
       const chosen = fixed ? pr.active : this._choiceGet();
-      const item = (v, label, on2, icon, off = false) => `<button type="button" class="mentry pitem ${on2 ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span>${on2 ? '<ha-icon class="pchk" icon="mdi:check"></ha-icon>' : ""}</button>`;
+      const item = (v, label, on2, icon, off = false) => `<button type="button" class="mentry pitem ${on2 ? "on" : ""}" data-profpick="${esc(v)}" ${off ? "disabled" : ""}><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span></button>`;
       return `<div class="plist">${fixed ? "" : item("", t.profAutoOpt, !chosen, "mdi:auto-fix")}${pr.names.map((n) => item(n, n, n === chosen, "mdi:account-circle-outline", !!fixed)).join("")}${admin ? item("__new", t.profNewEntry, false, "mdi:plus") + item("__edit", t.profEditEntry, false, "mdi:pencil-outline") : ""}</div>`;
     },
     // Profiles tab: which profile is edited, load / rename / delete, save as new, assign users. Dangerous steps ask first.
@@ -5772,9 +5772,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var G2 = 'ha-card[data-skin="glass"]';
   var C = 'ha-card[data-skin="clay"]';
   var X = 'ha-card[data-skin="nixie"]';
+  var W = 'ha-card[data-skin="thermal"]';
   var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
   var ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel"];
+  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
   var PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
   var on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
   var onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
@@ -5802,7 +5803,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var LAMPS_V = lamps(true);
   var SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
   var FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
-  var BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt"];
+  var BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt", ".mentry", ".profrow"];
   var SKIN_CSS_020 = `
       /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
       ${G2} { --gl-green: #35f08a; --gl-blue: #4aa8ff; --gl-red: #ff6a5a; --gl-amber: #ffb340; --gl-violet: #9b7bff; --gl-rest: #aab6bf; --gl-base: rgba(14,20,26,.78); --gc: var(--gl-blue); --gi: #fff; --k: 0;
@@ -5960,6 +5961,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${on(C, BTN)} { border: none !important; border-radius: 999px !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), var(--cl-green) !important; color: var(--hr-text); box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 4px 6px rgba(50,80,40,.3) !important; }
       ${C} .etabs button.sel, ${C} .favkind button.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
       ${C} :is(.pbadge, .gbadge) { border-radius: 999px; }
+      ${C} :is(.pitem.on, .profrow.act) { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.pitem.on, .profrow.act) :is(ha-icon, small, b, span) { color: #fff !important; }
+      ${C} :is(.pbtn.pri, .editdone:not(.warn), .helpall, .addact, .profdlg .editrow button:last-child) { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), var(--cl-coral) !important; color: #fff !important; }
+      ${C} :is(.helpall, .addact, .editdone:not(.warn)) :is(ha-icon, span) { color: #fff !important; }
+      ${on(C, [".win", ".helpbox", ".infopanel", ".hmenu"])} { background: #c3d8bb !important; }
       ${C} :is(.helpbox, .infopanel, .hint-row, .profdlg) ha-icon { color: var(--hr-text) !important; }
       ${C} .sdot.lit { box-shadow: inset -1px -1px 2px rgba(110,20,5,.4), 0 0 6px var(--hr-accent); }
       /* device with a known power state: a dent with a bubble that travels and turns coral */
@@ -5978,10 +5984,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${X} .key.svc ha-icon, ${X} .key.svc b, ${X} .key.svc small, ${X} .key.svc span { color: #c8964a !important; filter: none; }
       ${X} .appcell.svc.on { border-color: #ff9a3a !important; box-shadow: inset 0 0 0 1px #ff9a3a, 0 0 10px rgba(255,154,58,.45) !important; }
       ${X} .appcell.svc.on ha-icon, ${X} .appcell.svc.on b, ${X} .appcell.svc.on small { color: #ffb84a !important; filter: drop-shadow(0 0 4px #ff9a3a); }
+
+      /* ---------- Thermal: the edit header sits on a dark plate so the lettering is readable on the heat gradient ---------- */
+      ${W} .edittool { background: #0a0614; border-radius: 3px; padding: 8px; }
 `;
 
   // src/shared/skin-css-new.js
-  var W = 'ha-card[data-skin="thermal"]';
+  var W2 = 'ha-card[data-skin="thermal"]';
   var X2 = 'ha-card[data-skin="nixie"]';
   var N = 'ha-card[data-skin="nostromo"]';
   var R2 = 'ha-card[data-skin="radio"]';
@@ -5989,80 +5998,80 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
   var SKIN_CSS_NEW = `
       /* ---------- Wärmebild: violet-blue night, heat colours, segment letters ---------- */
-      ${W} { font-family: "Bahnschrift", "DIN Alternate", "Arial Narrow", Arial, sans-serif; letter-spacing: .04em; position: relative; overflow: hidden; border-radius: 10px 26px 10px 26px;
+      ${W2} { font-family: "Bahnschrift", "DIN Alternate", "Arial Narrow", Arial, sans-serif; letter-spacing: .04em; position: relative; overflow: hidden; border-radius: 10px 26px 10px 26px;
         background-color: #0a0724; background-image: radial-gradient(ellipse 70% 45% at 20% 22%, rgba(255,40,20,.85), rgba(255,210,20,.75) 30%, rgba(25,210,110,.6) 55%, rgba(25,90,255,.45) 78%, transparent 100%), radial-gradient(ellipse 60% 40% at 85% 62%, rgba(255,150,20,.7), rgba(40,220,120,.55) 50%, rgba(30,70,230,.45) 80%, transparent 100%), radial-gradient(ellipse 60% 30% at 30% 92%, rgba(255,60,40,.55), rgba(255,200,30,.4) 45%, transparent 100%); --hr-fire: #ff3a2a; --hr-danger: #ff3a2a; }
-      ${W} .segtxt { max-width: 100%; height: auto; vertical-align: middle; filter: drop-shadow(0 0 4px currentColor); }
-      ${W} .esub, ${W} .etitle, ${W} .sub, ${W} .blabel, ${W} .dname, ${W} .rooms-lab { color: #ff3a2a; text-transform: uppercase; }
-      ${W} .tile, ${W} .key, ${W} .rocker, ${W} .seg, ${W} button { background-image: none; border: 1px solid #2f8f9a; box-shadow: none; }
-      ${W} .tile { background: linear-gradient(135deg, rgba(13,10,58,.82), rgba(10,7,36,.86)); color: #6fd0c0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); position: relative; }
-      ${W} .tile ha-icon, ${W} .tile.dev ha-icon { color: #6fd0c0 !important; }
-      ${W} .tile:not(.off) ha-icon { display: none; }
-      ${W} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
-      ${W} .tile.dev.inuse * { color: #ffa060 !important; }
-      ${W} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
+      ${W2} .segtxt { max-width: 100%; height: auto; vertical-align: middle; filter: drop-shadow(0 0 4px currentColor); }
+      ${W2} .esub, ${W2} .etitle, ${W2} .sub, ${W2} .blabel, ${W2} .dname, ${W2} .rooms-lab { color: #ff3a2a; text-transform: uppercase; }
+      ${W2} .tile, ${W2} .key, ${W2} .rocker, ${W2} .seg, ${W2} button { background-image: none; border: 1px solid #2f8f9a; box-shadow: none; }
+      ${W2} .tile { background: linear-gradient(135deg, rgba(13,10,58,.82), rgba(10,7,36,.86)); color: #6fd0c0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); position: relative; }
+      ${W2} .tile ha-icon, ${W2} .tile.dev ha-icon { color: #6fd0c0 !important; }
+      ${W2} .tile:not(.off) ha-icon { display: none; }
+      ${W2} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
+      ${W2} .tile.dev.inuse * { color: #ffa060 !important; }
+      ${W2} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
       /* heat dots: one = belongs to the running activity, three = shown (selected) */
-      ${W} .tile.dev.inuse::after { display: none; }
-      ${W} .tile.dev.inuse::before, ${W} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
-      ${W} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W} .tile.dev.sel::before { background-image: ${tri(3)}; }
-      ${W} .tile.on, ${W} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
-      ${W} .tile.on *, ${W} .tile.going * { color: #ff3a2a !important; }
-      ${W} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
-      ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
-      ${W} .key ha-icon { color: #6fd0c0 !important; }
+      ${W2} .tile.dev.inuse::after { display: none; }
+      ${W2} .tile.dev.inuse::before, ${W2} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W2} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W2} .tile.dev.sel::before { background-image: ${tri(3)}; }
+      ${W2} .tile.on, ${W2} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
+      ${W2} .tile.on *, ${W2} .tile.going * { color: #ff3a2a !important; }
+      ${W2} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W2} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
+      ${W2} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
-      ${W} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
+      ${W2} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
       /* keyboard keys: icon keys keep their icon (the small label is hidden on narrow screens), held modifiers light up like any active key, narrow keys leave room for the slanted corners */
-      ${W} .kk.isfav.shiftkey, ${W} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W} .kk.isfav.shiftkey *, ${W} .kk.shiftkey.on * { color: #2a0600 !important; }
-      ${W} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
-      ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
-      ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
+      ${W2} .kk.isfav.shiftkey, ${W2} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W2} .kk.isfav.shiftkey *, ${W2} .kk.shiftkey.on * { color: #2a0600 !important; }
+      ${W2} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
+      ${W2} .key.sel:not(.mute), ${W2} .key.on:not(.mute), ${W2} .key.muted, ${W2} .appcell.svc.on, ${W2} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
+      ${W2} .key.sel *, ${W2} .key.on *, ${W2} .key.muted *, ${W2} .appcell.svc.on *, ${W2} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
       /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
-      ${W} .key, ${W} .mini, ${W} .tile { position: relative; isolation: isolate; }
-      ${W} .key::after, ${W} .mini::after, ${W} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
-      ${W} .key.lit::after, ${W} .key:active::after, ${W} .mini.lit::after, ${W} .mini:active::after, ${W} .tile.lit::after, ${W} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
-      ${W} .key.lit, ${W} .key:active, ${W} .mini.lit, ${W} .mini:active, ${W} .tile.lit, ${W} .tile:active { border-color: #ffe36a; }
-      ${W} .key *, ${W} .mini *, ${W} .tile * { transition: color 1.8s ease-out; }
-      ${W} .key.lit *, ${W} .key:active *, ${W} .mini.lit *, ${W} .mini:active *, ${W} .tile.lit *, ${W} .tile:active * { color: #2a0600 !important; transition: color .05s; }
-      ${W} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
-      ${W} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
-      ${W} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
-      ${W} .tile.holdoff.holding::before { animation: thlock .7s steps(1) forwards; }
-      ${W} .tile.holdoff.holding { animation: none; } ${W} .holdoff .hring { display: none; }
-      ${W} .holdoff.fired { background: radial-gradient(circle, #fff, #ffd24a 60%, #ff7a1c) !important; color: #2a0600; transition: background .3s; } ${W} .holdoff.fired * { color: #2a0600 !important; }
-      ${W} .seg { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
-      ${W} .seg .th { border-radius: 0; background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; } ${W} .seg .lab { color: #6fd0c0; } ${W} .seg .lab.a { color: #2a0600; }
-      ${W} .volslider.h { -webkit-appearance: none; appearance: none; height: 22px; border: 1px solid #5b3fd0; border-radius: 0; background: linear-gradient(90deg, #1a1a8a, #1f7ab0, #1fb07a, #9ad21c, #ffe85a, #ff7a1c, #ff2a1a); }
-      ${W} .volslider.h::-webkit-slider-runnable-track { height: 22px; background: transparent; } ${W} .volslider.h::-moz-range-track { height: 22px; background: transparent; }
-      ${W} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 28px; border-radius: 0; background: #fff; box-shadow: 0 0 8px #fff; border: none; margin-top: -3px; }
-      ${W} .volslider.h::-moz-range-thumb { width: 4px; height: 28px; border-radius: 0; background: #fff; border: none; }
-      ${W} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; box-shadow: none; }
-      ${W} .sw:has(> input) i::after { border-radius: 0; background: #4a3a90; box-shadow: none; }
-      ${W} .sw:has(> input) input:checked + i::after { background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; }
-      ${W} .hmenu { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; }
-      ${W} select, ${W} .profchip { background-color: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; color: #6fd0c0; }
-      ${W} .hubtabs button.sel { background: linear-gradient(90deg, #6a1fb0, #ff3a2a); color: #fff; border-color: transparent; } ${W} .hubtabs button { color: #6fd0c0; }
+      ${W2} .key, ${W2} .mini, ${W2} .tile { position: relative; isolation: isolate; }
+      ${W2} .key::after, ${W2} .mini::after, ${W2} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
+      ${W2} .key.lit::after, ${W2} .key:active::after, ${W2} .mini.lit::after, ${W2} .mini:active::after, ${W2} .tile.lit::after, ${W2} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
+      ${W2} .key.lit, ${W2} .key:active, ${W2} .mini.lit, ${W2} .mini:active, ${W2} .tile.lit, ${W2} .tile:active { border-color: #ffe36a; }
+      ${W2} .key *, ${W2} .mini *, ${W2} .tile * { transition: color 1.8s ease-out; }
+      ${W2} .key.lit *, ${W2} .key:active *, ${W2} .mini.lit *, ${W2} .mini:active *, ${W2} .tile.lit *, ${W2} .tile:active * { color: #2a0600 !important; transition: color .05s; }
+      ${W2} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
+      ${W2} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
+      ${W2} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
+      ${W2} .tile.holdoff.holding::before { animation: thlock .7s steps(1) forwards; }
+      ${W2} .tile.holdoff.holding { animation: none; } ${W2} .holdoff .hring { display: none; }
+      ${W2} .holdoff.fired { background: radial-gradient(circle, #fff, #ffd24a 60%, #ff7a1c) !important; color: #2a0600; transition: background .3s; } ${W2} .holdoff.fired * { color: #2a0600 !important; }
+      ${W2} .seg { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+      ${W2} .seg .th { border-radius: 0; background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; } ${W2} .seg .lab { color: #6fd0c0; } ${W2} .seg .lab.a { color: #2a0600; }
+      ${W2} .volslider.h { -webkit-appearance: none; appearance: none; height: 22px; border: 1px solid #5b3fd0; border-radius: 0; background: linear-gradient(90deg, #1a1a8a, #1f7ab0, #1fb07a, #9ad21c, #ffe85a, #ff7a1c, #ff2a1a); }
+      ${W2} .volslider.h::-webkit-slider-runnable-track { height: 22px; background: transparent; } ${W2} .volslider.h::-moz-range-track { height: 22px; background: transparent; }
+      ${W2} .volslider.h::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 28px; border-radius: 0; background: #fff; box-shadow: 0 0 8px #fff; border: none; margin-top: -3px; }
+      ${W2} .volslider.h::-moz-range-thumb { width: 4px; height: 28px; border-radius: 0; background: #fff; border: none; }
+      ${W2} .sw:has(> input) i { border-radius: 0; background: #0a0724; border: 1px solid #ffe36a; box-shadow: none; }
+      ${W2} .sw:has(> input) i::after { border-radius: 0; background: #4a3a90; box-shadow: none; }
+      ${W2} .sw:has(> input) input:checked + i::after { background: linear-gradient(90deg, #ffe85a, #ff4a12); box-shadow: 0 0 10px #ff7a1c; }
+      ${W2} .hmenu { background: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; }
+      ${W2} select, ${W2} .profchip { background-color: #0a0724; border: 1px solid #5b3fd0; border-radius: 0; color: #6fd0c0; }
+      ${W2} .hubtabs button.sel { background: linear-gradient(90deg, #6a1fb0, #ff3a2a); color: #fff; border-color: transparent; } ${W2} .hubtabs button { color: #6fd0c0; }
       /* settings: every field follows the skin (closed dropdown, its list where the browser allows, text fields, labels) */
-      ${W} input[type="text"], ${W} input[type="search"], ${W} input[type="number"], ${W} textarea { background: #0a0724; color: #6fd0c0; border: 1px solid #5b3fd0; border-radius: 0; } ${W} select option { background: #0a0724; color: #6fd0c0; }
+      ${W2} input[type="text"], ${W2} input[type="search"], ${W2} input[type="number"], ${W2} textarea { background: #0a0724; color: #6fd0c0; border: 1px solid #5b3fd0; border-radius: 0; } ${W2} select option { background: #0a0724; color: #6fd0c0; }
       ${X2} input[type="text"], ${X2} input[type="search"], ${X2} input[type="number"], ${X2} textarea { background: #120a08; color: #f0d9a8; border: 1px solid #8a6a2a; border-radius: 10px; } ${X2} select option { background: #120a08; color: #f0d9a8; }
       ${N} input[type="text"], ${N} input[type="search"], ${N} input[type="number"], ${N} textarea { background: #0d0700; color: #ffb000; border: 1px solid #7a5200; border-radius: 0; font-family: inherit; } ${N} select option { background: #120a00; color: #ffb000; }
       ${R2} input[type="text"], ${R2} input[type="search"], ${R2} input[type="number"], ${R2} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R2} select option { background: #2a1a10; color: #f1e3c1; }
-      ${W} .editbox, ${W} .egrp, ${W} .erow { color: #6fd0c0; } ${X2} .editbox, ${X2} .egrp, ${X2} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
-      ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X2} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
+      ${W2} .editbox, ${W2} .egrp, ${W2} .erow { color: #6fd0c0; } ${X2} .editbox, ${X2} .egrp, ${X2} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
+      ${W2} .etabs button.sel, ${W2} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X2} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
       /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
-      ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
-      ${W} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
-      ${W} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
+      ${W2} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
+      ${W2} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
+      ${W2} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
       ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
       ${R2} .fdot, ${X2} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X2} .fdot ha-icon { filter: none; }
       /* Fire TV not reachable: a clearly readable dashed badge instead of a dim black square */
-      ${W} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
-      ${W} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { color: #2a170a; }
-      ${W} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X2} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
+      ${W2} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
+      ${W2} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { color: #2a170a; }
+      ${W2} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X2} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
       ${T2} .editdone.warn, ${T2} .key.warn { color: #021a05; }
-      ${W} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W} .lockmark.free { color: #ffe85a; }
+      ${W2} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W2} .lockmark.free { color: #ffe85a; }
       ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
       ${T2} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T2} .lockmark.free { color: #1fa83c; }
       ${R2} .lockmark.on, ${X2} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R2} .lockmark.free, ${X2} .lockmark.free { color: #9c8450; }
@@ -6162,7 +6171,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R2} .key.ic-row.on:not(.mute) *, ${R2} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W2} *, ${W2} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -6563,7 +6572,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .profnow > span { flex: 1; min-width: 0; display: flex; flex-direction: column; } .profnow small, .profrow small { color: var(--hr-muted); font-size: 0.8em; overflow-wrap: anywhere; }
       .proflist { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
       .profrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--hr-tile-radius, 12px); background: var(--hr-tile-bg); border: 1px solid transparent; }
-      .profrow.act { border-color: color-mix(in srgb, var(--hr-accent) 60%, transparent); }
+      .profrow.act { border-color: color-mix(in srgb, var(--hr-accent) 60%, transparent); background: color-mix(in srgb, var(--hr-accent) 22%, var(--hr-tile-bg)); }
       .profrow .pname { flex: 1 1 140px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; } .profrow .pname ha-icon { --mdc-icon-size: 20px; color: var(--hr-muted); }
       .profrow.act .pname ha-icon { color: var(--hr-accent); } .profrow .pname small { flex-basis: 100%; padding-left: 28px; }
       .pbtns { display: flex; gap: 6px; align-items: center; margin-left: auto; }
@@ -6606,7 +6615,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .whead { display: flex; align-items: center; gap: 8px; padding: 0 2px 6px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); position: sticky; top: -8px; background: inherit; z-index: 1; } .wtitle { flex: 1; font-weight: 600; font-size: .95em; } .whead .wclose { width: 32px; height: 32px; } .wbody { display: grid; gap: 6px; padding-top: 6px; }
       .hmenu { overflow-x: hidden; } .win .hrow, .win .hkeys { flex-wrap: wrap; min-width: 0; } .win .hdev { min-width: 0; flex: 1 1 150px; } .wbody { min-width: 0; }
       .win .helpbox { background: none; border: none; padding: 0; box-shadow: none; } .win .helpbox .htitle { display: none; }
-      .plist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .pitem.on { outline: 2px solid var(--hr-accent); } .pitem .pchk { margin-left: auto; color: var(--hr-accent) !important; } .pitem:disabled { opacity: .5; }
+      .plist { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .pitem.on { background: var(--hr-accent); color: var(--hr-on-accent, #fff); font-weight: 600; } .pitem.on ha-icon { color: inherit !important; } .pitem:disabled { opacity: .5; }
       .helpkey.viadirect { position: relative; } .helpkey .dmark { position: absolute; right: 2px; bottom: 2px; --mdc-icon-size: 13px; color: var(--hr-accent); } .dleg { display: flex; align-items: center; gap: 6px; } .dleg ha-icon { --mdc-icon-size: 16px; color: var(--hr-accent); flex: none; }
       .profchip.sel { box-shadow: inset 0 0 0 2px var(--hr-accent); }
       .mhints { display: grid; gap: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--divider-color, rgba(128,128,128,.3)); } .mhints:last-child { border: none; padding: 0; }

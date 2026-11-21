@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.21.0
+
+Aligns all own skins (Terminal, Radio, Thermal, Nixie, Nostromo, Glass, Clay) and the security card with the skin model. The classic looks are unchanged.
+
+### Changed
+- **Profile window:** only one profile can be chosen; the chosen row is filled completely in the selection style of the skin, no check marks any more. The profile rows in the editor use the same tint.
+- **Clay:** help and info windows are opaque, primary buttons (Done, Rename, Turn all on, Add) are coral, the chosen profile is coral, windows and icons have readable contrast.
+- **Glass:** the profile window, check boxes and small text buttons use the lit plates; primary buttons are lit green plates.
+- **Thermal:** the edit header has a dark plate, so the tool symbols stay readable.
+- **Security card:** checked in every own skin at 320 to 1150 px width in German, English and Russian; no layout gaps found.
+
+Includes 0.20.2.
+
 ## 0.20.2
 
 ### Changed

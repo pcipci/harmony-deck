@@ -196,3 +196,6 @@ Glas: neue Einstellung *Hintergrund* (Schwarz, Schwarz mit Textur, Aluminium, Pl
 
 ### 0.20.2
 Glas: Leuchtart B lässt die Schrift in der Funktionsfarbe leuchten, größerer Halo, ruhigere Lautstärke-Lampen, helle Überschriften in Lila, Umschalter Aktivitäten/Geräte als zwei Platten, deckende Fenster, neue Einstellung *Farbe pro Aktivität* (Standard aus).
+
+### 0.21.0
+Profilfenster: nur ein Profil gleichzeitig, die ganze Zeile des gewählten Profils leuchtet im Auswahlstil des Skins (keine Häkchen mehr). Clay und Glas haben jetzt richtige Hauptbuttons und undurchsichtige Hilfefenster, Thermal eine dunkle Bearbeiten-Kopfzeile. Die Sicherheitskarte wurde in allen eigenen Skins geprüft.

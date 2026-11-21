@@ -46,7 +46,8 @@ export const devicesMixin = {
     const roleName = { volume: t.volume, nav: t.navigation, channel: t.channel };
     const list = names.map((n) => {
       const roles = (used[n] || []).map((r) => roleName[r]).join(" · ");
-      return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" data-hub="${esc(h.id)}" data-dev="${esc(n)}">
+      const ac = used[n] ? this._actColor(h, cur) : "";
+      return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" ${ac ? `style="--gac: ${ac}"` : ""} data-hub="${esc(h.id)}" data-dev="${esc(n)}">
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
     }).join("");
     const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;

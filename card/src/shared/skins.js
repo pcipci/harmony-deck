@@ -47,7 +47,7 @@ export const SKINS = {
     "--hr-text": "#e9f0f4", "--hr-muted": "#8fa3b2", "--hr-panel-sep": "rgba(255,255,255,.16)",
     "--hr-opt-bg": "#131a20", "color-scheme": "dark",
     "--hr-tile-bg": "#131a20", "--hr-key-bg": "#131a20", "--hr-radius": "2px", "--hr-tile-radius": "2px", "--hr-panel-bg": "rgba(255,255,255,.03)",
-    "--hr-accent": "#ffb340", "--hr-on-accent": "#2a1700", "--hr-card-bg": "#0d1318", "--hr-select-bg": "#131a20",
+    "--hr-accent": "#c9b8ff", "--hr-on-accent": "#1a1230", "--hr-card-bg": "#0d1318", "--hr-select-bg": "#131a20",
     "--hr-rocker-radius": "2px", "--hr-rk-radius": "2px", "--hr-seg-radius": "2px", "--hr-dpad-radius": "2px", "--hr-ok-radius": "2px", "--hr-d-big": "2px", "--hr-d-small": "2px",
     "--hr-key-shadow": "none",
   },

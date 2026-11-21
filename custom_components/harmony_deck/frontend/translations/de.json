@@ -192,6 +192,8 @@
   "glassLooks": { "a": "Platte leuchtet", "b": "Schrift leuchtet", "c": "Mischung" },
   "glassBg": "Hintergrund",
   "glassBgs": {"dark": "Schwarz", "carbon": "Schwarz mit Textur", "alu": "Aluminium", "board": "Platine"},
+  "glassActColors": "Farbe pro Aktivität",
+  "glassActColorsOpts": {"off": "Einheitlich (Violett)", "on": "Pro Aktivität"},
   "keyStyle": "Tastenform",
   "keyStyles": {
     "skin": "Wie der Look",
@@ -322,6 +324,7 @@
     "actScope": "„Immer“ zeigt die Taste in jeder Aktivität. Wählst du eine Aktivität, erscheint sie nur dort.",
     "glassLook": "Nur für den Look Glas. Platte leuchtet: die ganze Acrylplatte leuchtet in der Funktionsfarbe. Schrift leuchtet: die Platte bleibt dunkel, nur die Schrift glüht mit Halo. Mischung: Platte halb eingefärbt, helle Schrift mit Halo.",
     "glassBg": "Nur für den Look Glas. Schwarz ist der Standard. Mit Textur: feines Karbon-Gewebe. Aluminium und Platine zeigen mehr Material hinter den Platten.",
+    "glassActColors": "Nur für den Look Glas. Einheitlich: laufende Aktivität und ihre Geräte leuchten violett. Pro Aktivität: jede Aktivität hat ihre eigene Farbe (Violett, Cyan, Magenta, Orange, Indigo), die Geräte der laufenden Aktivität leuchten in deren Farbe.",
     "jumpRunning": "Beim Öffnen der Karte springt sie zu dem Raum, in dem gerade etwas läuft (Aktivität, Fire TV oder ein verknüpftes Gerät). Laufen mehrere, gilt der zuletzt benutzte. Ist alles aus, siehst du die Standardansicht.",
     "offRelated": "Gilt für diesen Raum. Schaltest du den Fire TV mit dem Power-Knopf oder dem roten Aus-Knopf aus, geht auch alles aus, was die Fire-TV-Aktivität einschaltet (z. B. Fernseher, Verstärker), sofern das Gerät einen PowerOff-Befehl hat. Geräte, die eine andere laufende Aktivität braucht, und in der Hilfe ausgeblendete Geräte bleiben an.",
     "helpManual": "Manche Geräte schaltet der Hub nicht selbst (im Hub: „von Hand einschalten“). Mit diesem Schalter nennt die Hilfe sie in einer Zeile, damit du sie nicht vergisst.",

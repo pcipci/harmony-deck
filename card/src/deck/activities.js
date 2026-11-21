@@ -30,7 +30,8 @@ export const activitiesMixin = {
       }
       const lk = locks.acts.has(n), st = this._tileStyle();
       const hs = !lk && this._holdSwitchOn() && !on && !going && !!(cur || h.starting);
-      return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
+      const ac = this._actColor(h, n);
+      return `<button class="tile ${on ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" ${ac ? `style="--gac: ${ac}"` : ""} title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
         ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
     }).join("");
     const aTiles = this._edit ? [] : this._actionTiles(h, cur, t);

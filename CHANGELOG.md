@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.20.2
+
+### Changed
+- **Glass, light style:** *Text lights* (B) now lets the lettering glow in the function colour (green, blue, red, violet) with a halo of the same colour, *Mix* (C) has light lettering with a coloured halo, *Plate lights* (A) lights the plate. In 0.20.1 B and C showed white lettering.
+- **Glass, halo:** the halo around lit plates is larger and brighter.
+- **Glass, volume:** the lamps are a little calmer, unlit lamps are no longer drawn (no dark dots).
+- **Glass, colours:** headings and accents are a light lilac instead of amber, amber stays for hints. Primary buttons (Done, Rename, Turn all on, Add) are lit green plates.
+- **Glass, Activities/Devices switch:** two plates instead of a slider, the chosen one lights.
+- **Glass, windows:** hints, info and help windows are opaque, keys behind no longer shine through.
+
+### Added
+- **Glass: colour per activity (setting, off by default):** each activity gets its own colour (violet, cyan, magenta, orange, indigo; green, blue, red and amber stay reserved), the devices of the running activity glow in that colour.
+
 ## 0.20.1
 
 ### Changed

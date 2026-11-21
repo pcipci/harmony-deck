@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.20.1";
+  var VERSION = "0.20.2";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1406,7 +1406,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         }
         const lk = locks.acts.has(n), st = this._tileStyle();
         const hs = !lk && this._holdSwitchOn() && !on2 && !going && !!(cur || h.starting);
-        return `<button class="tile ${on2 ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
+        const ac = this._actColor(h, n);
+        return `<button class="tile ${on2 ? "on" : ""} ${going ? "going" : ""} ${lk ? "locked" : ""} ${hs ? "holdsw" : ""} ts-${st}" ${ac ? `style="--gac: ${ac}"` : ""} title="${esc(lk ? `${n} – ${t.locked} · ${t.longPress}` : hs ? `${n} – ${t.switchHold}` : n)}" ${lk ? "data-locked" : ""} ${hs ? `data-holdsw data-hinttext="${esc(t.switchHold)}"` : ""} data-hub="${esc(h.id)}" data-act="${esc(n)}">
         ${st === "text" ? "" : `<ha-icon icon="${esc(this._actIcon(h.id, n))}"></ha-icon>`}${st === "icon" ? "" : `<span>${esc(n)}</span>`}${lk ? `<ha-icon class="lockic" icon="mdi:lock"></ha-icon>` : ""}</button>`;
       }).join("");
       const aTiles = this._edit ? [] : this._actionTiles(h, cur, t);
@@ -2035,7 +2036,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const roleName = { volume: t.volume, nav: t.navigation, channel: t.channel };
       const list = names.map((n) => {
         const roles = (used[n] || []).map((r) => roleName[r]).join(" · ");
-        return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" data-hub="${esc(h.id)}" data-dev="${esc(n)}">
+        const ac = used[n] ? this._actColor(h, cur) : "";
+        return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" ${ac ? `style="--gac: ${ac}"` : ""} data-hub="${esc(h.id)}" data-dev="${esc(n)}">
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
       }).join("");
       const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
@@ -3814,8 +3816,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       "--hr-radius": "2px",
       "--hr-tile-radius": "2px",
       "--hr-panel-bg": "rgba(255,255,255,.03)",
-      "--hr-accent": "#ffb340",
-      "--hr-on-accent": "#2a1700",
+      "--hr-accent": "#c9b8ff",
+      "--hr-on-accent": "#1a1230",
       "--hr-card-bg": "#0d1318",
       "--hr-select-bg": "#131a20",
       "--hr-rocker-radius": "2px",
@@ -4052,6 +4054,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return a === "fill" || a === "icon" ? a : "ring";
     },
     // Look of the Glas skin: a = plate lights, b = text lights, c = mix (default).
+    _actColors() {
+      return (this._config.glass_act_colors ?? this._settings().glassActColors) === "on";
+    },
+    // Colour of an activity when "colour per activity" is on: a fixed place in the full list, colours the function colours do not use
+    _actColor(h, n) {
+      if (!this._actColors() || !this._trait("glassLook")) return "";
+      const pal = ["#9b7bff", "#2fd8e8", "#ff5fd2", "#ff9a3a", "#8fa0ff"];
+      const i = (h.list || []).filter((x) => x !== "PowerOff").indexOf(n);
+      return i < 0 ? "" : pal[i % pal.length];
+    },
     _glassBg() {
       const g = this._config.glass_bg ?? this._settings().glassBg;
       return ["dark", "carbon", "alu", "board"].includes(g) ? g : "dark";
@@ -5045,6 +5057,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
           ${this._trait("glassLook") ? this._selRow(t.glassLook, "data-glasslook", t.glassLooks, this._glassLook()) : ""}
           ${this._trait("glassLook") ? this._selRow(t.glassBg, "data-glassbg", t.glassBgs, this._glassBg()) : ""}
+          ${this._trait("glassLook") ? this._selRow(t.glassActColors, "data-glassac", t.glassActColorsOpts, this._actColors() ? "on" : "off") : ""}
           ${plain ? this._swRow(t.colorIcons, 'data-setting="colorIcons"', this._colorful()) : ""}`)}
         ${this._grp(g.tiles, `${plain ? this._selRow(t.tileStyle, "data-tilestyle", t.tileStyles, this._tileStyle()) : ""}
           ${this._selRow(t.layout, "data-layout", t.layouts, this._layout())}
@@ -5179,7 +5192,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-labels]": "labels",
         "[data-glow]": "glow",
         "[data-glasslook]": "glass_look",
-        "[data-glassbg]": "glass_bg"
+        "[data-glassbg]": "glass_bg",
+        "[data-glassac]": "glass_act_colors"
       };
       const locked = /* @__PURE__ */ new Map();
       Object.entries(keys).forEach(([sel, key]) => {
@@ -5221,6 +5235,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-hubvis]": "hubVis",
         "[data-glasslook]": "glassLook",
         "[data-glassbg]": "glassBg",
+        "[data-glassac]": "glassActColors",
         '[data-setting="jumpRunning"]': "jumpRunning",
         "[data-offrel]": "offRelated",
         '[data-setting="helpManual"]': "helpManual",
@@ -5342,6 +5357,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-activestyle]")?.addEventListener("change", (e) => this._saveSettings({ activeStyle: e.target.value }));
       root.querySelector("select[data-keystyle]")?.addEventListener("change", (e) => this._saveSettings({ keyStyle: e.target.value }));
       root.querySelector("select[data-glasslook]")?.addEventListener("change", (e) => this._saveSettings({ glassLook: e.target.value }));
+      root.querySelector("select[data-glassac]")?.addEventListener("change", (e) => this._saveSettings({ glassActColors: e.target.value }));
       root.querySelector("select[data-glassbg]")?.addEventListener("change", (e) => this._saveSettings({ glassBg: e.target.value }));
       root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
       const applyLook = (hub, key) => {
@@ -5758,36 +5774,35 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var X = 'ha-card[data-skin="nixie"]';
   var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
   var ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico"];
+  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel"];
+  var PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
   var on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
   var onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
   var SPOT = "radial-gradient(ellipse 55% 140% at var(--lx, 50%) var(--ly, 50%), color-mix(in srgb, color-mix(in srgb, var(--gc) 85%, #fff) calc(var(--k) * 1%), transparent) 0, color-mix(in srgb, var(--gc) calc(var(--k) * .6%), transparent) 45%, color-mix(in srgb, var(--gc) calc(var(--k) * .15%), transparent) 100%)";
   var SHEEN = "linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%)";
   var lit = (list, kA, kB, kC, tone) => {
     const l = list.join(", ");
-    const hi = (shadow) => `color: #fff !important; text-shadow: ${shadow};`;
-    const halo = "0 0 5px #fff, 0 0 14px color-mix(in srgb, var(--gc) 60%, #fff), 0 0 26px var(--gc)";
-    const soft = "0 0 6px color-mix(in srgb, var(--gc) 70%, transparent)";
     const mid = "color: color-mix(in srgb, var(--gc) 35%, #fff) !important;";
-    const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? hi("0 0 8px #fff") : `${mid} text-shadow: none;`;
-    const textBC = tone === "belong" ? `${mid} text-shadow: ${soft};` : hi(halo);
+    const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? "color: #fff !important; text-shadow: 0 0 8px #fff;" : `${mid} text-shadow: none;`;
+    const textB = tone === "belong" ? `${mid} text-shadow: 0 0 6px color-mix(in srgb, var(--gc) 70%, transparent);` : "color: color-mix(in srgb, var(--gc) 70%, #fff) !important; text-shadow: 0 0 4px var(--gc), 0 0 16px var(--gc), 0 0 34px var(--gc);";
+    const textC = tone === "belong" ? `${mid} text-shadow: 0 0 6px color-mix(in srgb, var(--gc) 70%, transparent);` : "color: color-mix(in srgb, var(--gc) 25%, #fff) !important; text-shadow: 0 0 5px #fff, 0 0 18px var(--gc), 0 0 34px var(--gc);";
     return `
       ${on(G2, list)} { background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; border-top-color: rgba(255,255,255,${tone === "belong" ? ".5" : ".85"}) !important;
-        box-shadow: inset 0 0 22px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, transparent), 0 0 ${tone === "belong" ? 12 : 24}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 22 : 50}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
-      ${G2}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G2}.gl-b :is(${l}) { --k: ${kB}; ${textBC} } ${G2}.gl-c :is(${l}) { --k: ${kC}; ${textBC} }
+        box-shadow: inset 0 0 ${tone === "belong" ? 22 : 18}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, ${tone === "belong" ? "transparent" : "rgba(255,255,255,.4)"}), 0 0 ${tone === "belong" ? 14 : 42}px ${tone === "belong" ? 0 : 3}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 24 : 75}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
+      ${G2}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G2}.gl-b :is(${l}) { --k: ${kB}; ${textB} } ${G2}.gl-c :is(${l}) { --k: ${kC}; ${textC} }
       ${G2}.gl-b :is(${l}) ha-icon, ${G2}.gl-c :is(${l}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); } ${G2} :is(${l}) ha-icon { color: inherit !important; }`;
   };
   var LAMPS = ["#35f08a", "#5ae87a", "#8ee068", "#c4dc55", "#e8cf4a", "#ffbd47", "#ffa24a", "#ff864c", "#ff6a50", "#ff5a4a"];
   var lamps = (vertical) => LAMPS.map((c, i) => {
     const at = vertical ? `50% ${100 - (5 + 10 * i)}%` : `${5 + 10 * i}% 50%`;
-    const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * 1%)`;
-    return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px), radial-gradient(circle at ${at}, rgba(255,255,255,.2) 0 2.5px, transparent 3.5px)`;
+    const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * .72%)`;
+    return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px)`;
   }).join(", ");
   var LAMPS_H = lamps(false);
   var LAMPS_V = lamps(true);
   var SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
   var FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
-  var BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk"];
+  var BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt"];
   var SKIN_CSS_020 = `
       /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
       ${G2} { --gl-green: #35f08a; --gl-blue: #4aa8ff; --gl-red: #ff6a5a; --gl-amber: #ffb340; --gl-violet: #9b7bff; --gl-rest: #aab6bf; --gl-base: rgba(14,20,26,.78); --gc: var(--gl-blue); --gi: #fff; --k: 0;
@@ -5798,17 +5813,18 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G2}.gb-alu { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.05) 1px 3px), linear-gradient(180deg, #6a737c, #3b4249 40%, #555e67 60%, #2a3036); --gl-base: rgba(14,20,26,.62); }
       ${G2}.gb-board { background-color: #0b3a2c; background-image: repeating-linear-gradient(0deg, rgba(255,214,120,.09) 0 1px, transparent 1px 16px), repeating-linear-gradient(90deg, rgba(255,214,120,.07) 0 1px, transparent 1px 22px), radial-gradient(circle at 20% 30%, rgba(255,214,120,.1) 0 2px, transparent 3px), linear-gradient(135deg, #0e4a38, #072a20); background-size: auto, auto, 44px 44px, auto; --gl-base: rgba(8,20,18,.68); }
       /* where the lamp sits behind each plate (uneven, stable per position) */
-      ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
+      ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button, .seg .lab):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
       ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+3) { --lx: 40%; --ly: 30%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+4) { --lx: 78%; --ly: 45%; }
       ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+5) { --lx: 30%; --ly: 65%; } ${G2} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n) { --lx: 60%; --ly: 35%; }
       /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, violet = running / selected, amber = hint */
       ${G2} .key[data-cmd*="Ok"], ${G2} .key[data-cmd*="Select"], ${G2} .key[data-cmd*="Play"], ${G2} .key[data-cmd*="Enter"], ${G2} .d.ok, ${G2} .pbtn.pri { --gc: var(--gl-green); --gi: #05261a; }
       ${G2} .key[data-cmd*="Power"], ${G2} .key[data-cmd*="Stop"], ${G2} .key[data-cmd*="Record"], ${G2} .key.pon, ${G2} .key.warn, ${G2} .tile.off, ${G2} .editdone.warn { --gc: var(--gl-red); --gi: #fff; }
-      ${G2} .tile:not(.dev), ${G2} .actbtn, ${G2} .tile.dev.inuse, ${G2} .tile.dev.sel, ${G2} .key.sel, ${G2} .mini.sel, ${G2} .etabs button, ${G2} .favkind button, ${G2} .hubtabs button.sel .ico { --gc: var(--gl-violet); --gi: #fff; }
+      ${G2} .tile:not(.dev), ${G2} .actbtn, ${G2} .tile.dev.inuse, ${G2} .tile.dev.sel, ${G2} .key.sel, ${G2} .mini.sel, ${G2} .etabs button, ${G2} .favkind button, ${G2} .hubtabs button.sel .ico, ${G2} .seg .lab { --gc: var(--gac, var(--gl-violet)); --gi: #fff; }
       ${G2} .tile.off { --gc: var(--gl-red); }
+      ${on(G2, PRIMARY)} { --gc: var(--gl-green); --gi: #05261a; }
       ${G2} .hint-row.r { --gc: var(--gl-red); --gi: #fff; } ${G2} .hint-row.o { --gc: var(--gl-amber); --gi: #2a1700; } ${G2} .hint-row.b { --gc: var(--gl-blue); --gi: #fff; }
       /* the resting plate: dark, half transparent, light edge on top, light grey lettering; after a press the light fades out over a second */
-      ${onNot(G2, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
+      ${onNot(G2, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg .lab", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
         border: 1px solid rgba(255,255,255,.2) !important; border-top: 2px solid rgba(255,255,255,.55) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text);
         box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: box-shadow 1s ease-out, text-shadow 1s ease-out, color 1s ease-out, border-color 1s ease-out; }
       ${G2} .key:not(.ghost):not(.svc), ${G2} .kk, ${G2} .pill, ${G2} .chip, ${G2} .d, ${G2} .actbtn, ${G2} .tile { color: var(--gl-rest); }
@@ -5822,18 +5838,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G2} .tile.locked, ${G2} .key:disabled, ${G2} .actbtn.miss { opacity: .55; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
       ${lit(ACTIVE, 45, 8, 32, "belong")}
-      ${lit(SEL, 100, 28, 62, "sel")}
-      ${lit(PRESSED, 95, 30, 70, "press")}
+      ${lit(SEL, 100, 14, 56, "sel")}
+      ${lit(PRESSED, 95, 18, 62, "press")}
+      ${lit(PRIMARY, 34, 6, 26, "belong")}
       /* hint and info lines: the whole plate lights in the colour of the message */
       ${G2} .hint-row { padding: 8px 10px; --k: 36; background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; }
       ${G2}.gl-a .hint-row { --k: 60; } ${G2}.gl-b .hint-row { --k: 16; } ${G2}.gl-c .hint-row { --k: 38; }
-      ${G2}.gl-a .hint-row, ${G2}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G2}.gl-b .hint-row, ${G2}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 40%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
-      ${G2}.gl-c .hint-row, ${G2}.gl-c .hint-row > ha-icon { color: #fff !important; text-shadow: 0 0 5px var(--gc); }
+      ${G2}.gl-a .hint-row, ${G2}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G2}.gl-b .hint-row, ${G2}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 70%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 10px var(--gc); }
+      ${G2}.gl-c .hint-row, ${G2}.gl-c .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 25%, #fff) !important; text-shadow: 0 0 5px var(--gc), 0 0 12px var(--gc); }
       ${G2} .hint-row button { border-radius: 2px; background: rgba(255,255,255,.14); color: inherit; border: 1px solid rgba(255,255,255,.35); }
       /* device page: no squares or dots, only light (belongs = weak violet, shown = bright violet) */
       ${G2} .tile.dev.inuse::after, ${G2} .tile.dev.inuse::before, ${G2} .tile.dev.sel::after, ${G2} .tile.dev.sel::before { display: none; }
       /* plain surfaces, fields, tabs and buttons of the settings, the profile window, hints and info tables: the same square plate */
       ${on(G2, SURF)} { border: 1px solid rgba(255,255,255,.18) !important; border-top: 2px solid rgba(255,255,255,.4) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text); box-shadow: 0 4px 8px rgba(0,0,0,.35); }
+      ${on(G2, [".win", ".helpbox", ".infopanel", ".hmenu"])} { background: ${SHEEN}, #0e1419 !important; }
       ${on(G2, FIELD)} { border: 1px solid rgba(255,255,255,.24) !important; border-radius: 2px !important; background: rgba(6,9,12,.72) !important; color: var(--hr-text); color-scheme: dark; box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
       ${G2} select option, ${G2} select optgroup { background-color: #12181e; color: var(--hr-text); }
       ${G2} .etabs button.sel, ${G2} .favkind button.sel { font-weight: 700; }
@@ -5851,8 +5869,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G2} .hubtabs ha-icon, ${G2} .ib ha-icon { --mdc-icon-size: 22px; color: #fff; filter: drop-shadow(0 0 4px rgba(255,255,255,.7)); }
       ${G2} .ib { color: #fff; }
       ${G2} .ib.gear[class*="sev-"] ha-icon { color: var(--gc, #fff); }
-      ${G2} .seg .th { background: color-mix(in srgb, var(--gl-violet) 55%, #0e1318); border-radius: 2px; box-shadow: 0 0 10px rgba(155,123,255,.4); }
-      ${G2} .seg .lab.a { color: #fff; }
+      ${G2} .seg { background: none !important; box-shadow: none !important; border: none !important; padding: 0; gap: 8px; }
+      ${G2} .seg .th { display: none; }
+      ${G2} .seg .lab { color: var(--gl-rest); } ${G2} .seg .lab.a { color: #fff; }
       /* Ja/Nein: a plate that lights red or green, no symbol, no sliding */
       ${G2} .sw i { border-radius: 2px; --gc: var(--gl-red); --k: 55; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
       ${G2} .sw i::after { display: none !important; }

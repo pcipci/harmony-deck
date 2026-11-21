@@ -19,6 +19,14 @@ export const optionsMixin = {
   _activeStyle() { const a = this._config.active_style ?? this._settings().activeStyle; return a === "fill" || a === "icon" ? a : "ring"; },
 
   // Look of the Glas skin: a = plate lights, b = text lights, c = mix (default).
+  _actColors() { return (this._config.glass_act_colors ?? this._settings().glassActColors) === "on"; },
+  // Colour of an activity when "colour per activity" is on: a fixed place in the full list, colours the function colours do not use
+  _actColor(h, n) {
+    if (!this._actColors() || !this._trait("glassLook")) return "";
+    const pal = ["#9b7bff", "#2fd8e8", "#ff5fd2", "#ff9a3a", "#8fa0ff"];
+    const i = (h.list || []).filter((x) => x !== "PowerOff").indexOf(n);
+    return i < 0 ? "" : pal[i % pal.length];
+  },
   _glassBg() { const g = this._config.glass_bg ?? this._settings().glassBg; return ["dark", "carbon", "alu", "board"].includes(g) ? g : "dark"; },
   _glassLook() { const g = this._config.glass_look ?? this._settings().glassLook; return ["a", "b", "c"].includes(g) ? g : "c"; },
 

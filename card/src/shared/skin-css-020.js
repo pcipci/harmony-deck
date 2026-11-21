@@ -9,7 +9,8 @@ const X = 'ha-card[data-skin="nixie"]';
 // Things that are pressed (glass: lit strongly, fades out after release) / belong to the running activity (weakly lit) / selected (brightly lit)
 const PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
 const ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico"];
+const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel"];
+const PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
 const on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
 const onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
 
@@ -18,16 +19,15 @@ const SPOT = "radial-gradient(ellipse 55% 140% at var(--lx, 50%) var(--ly, 50%),
 const SHEEN = "linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%)";
 const lit = (list, kA, kB, kC, tone) => {
   const l = list.join(", ");
-  const hi = (shadow) => `color: #fff !important; text-shadow: ${shadow};`;
-  const halo = "0 0 5px #fff, 0 0 14px color-mix(in srgb, var(--gc) 60%, #fff), 0 0 26px var(--gc)";
-  const soft = "0 0 6px color-mix(in srgb, var(--gc) 70%, transparent)";
   const mid = "color: color-mix(in srgb, var(--gc) 35%, #fff) !important;";
-  const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? hi("0 0 8px #fff") : `${mid} text-shadow: none;`;
-  const textBC = tone === "belong" ? `${mid} text-shadow: ${soft};` : hi(halo);
+  const textA = tone === "press" ? "color: var(--gi) !important; text-shadow: none;" : tone === "sel" ? "color: #fff !important; text-shadow: 0 0 8px #fff;" : `${mid} text-shadow: none;`;
+  // B: the lettering glows in the function colour; C: light lettering with a coloured halo
+  const textB = tone === "belong" ? `${mid} text-shadow: 0 0 6px color-mix(in srgb, var(--gc) 70%, transparent);` : "color: color-mix(in srgb, var(--gc) 70%, #fff) !important; text-shadow: 0 0 4px var(--gc), 0 0 16px var(--gc), 0 0 34px var(--gc);";
+  const textC = tone === "belong" ? `${mid} text-shadow: 0 0 6px color-mix(in srgb, var(--gc) 70%, transparent);` : "color: color-mix(in srgb, var(--gc) 25%, #fff) !important; text-shadow: 0 0 5px #fff, 0 0 18px var(--gc), 0 0 34px var(--gc);";
   return `
       ${on(G, list)} { background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; border-top-color: rgba(255,255,255,${tone === "belong" ? ".5" : ".85"}) !important;
-        box-shadow: inset 0 0 22px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, transparent), 0 0 ${tone === "belong" ? 12 : 24}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 22 : 50}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
-      ${G}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G}.gl-b :is(${l}) { --k: ${kB}; ${textBC} } ${G}.gl-c :is(${l}) { --k: ${kC}; ${textBC} }
+        box-shadow: inset 0 0 ${tone === "belong" ? 22 : 18}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 14 : 30}%, ${tone === "belong" ? "transparent" : "rgba(255,255,255,.4)"}), 0 0 ${tone === "belong" ? 14 : 42}px ${tone === "belong" ? 0 : 3}px color-mix(in srgb, var(--gc) ${tone === "belong" ? 24 : 75}%, transparent), 0 4px 8px rgba(0,0,0,.45) !important; ${tone === "press" ? "transition: none !important;" : ""} }
+      ${G}.gl-a :is(${l}) { --k: ${kA}; ${textA} } ${G}.gl-b :is(${l}) { --k: ${kB}; ${textB} } ${G}.gl-c :is(${l}) { --k: ${kC}; ${textC} }
       ${G}.gl-b :is(${l}) ha-icon, ${G}.gl-c :is(${l}) ha-icon { filter: drop-shadow(0 0 4px var(--gc)); } ${G} :is(${l}) ha-icon { color: inherit !important; }`;
 };
 
@@ -35,8 +35,8 @@ const lit = (list, kA, kB, kC, tone) => {
 const LAMPS = ["#35f08a", "#5ae87a", "#8ee068", "#c4dc55", "#e8cf4a", "#ffbd47", "#ffa24a", "#ff864c", "#ff6a50", "#ff5a4a"];
 const lamps = (vertical) => LAMPS.map((c, i) => {
   const at = vertical ? `50% ${100 - (5 + 10 * i)}%` : `${5 + 10 * i}% 50%`;
-  const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * 1%)`;
-  return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px), radial-gradient(circle at ${at}, rgba(255,255,255,.2) 0 2.5px, transparent 3.5px)`;
+  const p = `calc(clamp(0, (var(--v, 0) - ${10 * i}) * 10, 100) * .72%)`;
+  return `radial-gradient(circle 46px at ${at}, color-mix(in srgb, #fff ${p}, transparent) 0 2px, color-mix(in srgb, ${c} ${p}, transparent) 3px 5px, color-mix(in srgb, ${c} calc(${p} * .7), transparent) 9px, color-mix(in srgb, ${c} calc(${p} * .3), transparent) 24px, transparent 46px)`;
 }).join(", ");
 const LAMPS_H = lamps(false);
 const LAMPS_V = lamps(true);
@@ -44,7 +44,7 @@ const LAMPS_V = lamps(true);
 // Plain surfaces (settings, profile window, info tables, help): the same square plate
 const SURF = [".panel", ".infopanel", ".infoitem", ".infohead", ".helpbox", ".infobox", ".profdlg", ".proflist", ".hmenu", ".hlist", ".editbox", ".esec", ".egroup", ".hubinfo", ".chipbox", ".linkbox", ".entlist", ".win"];
 const FIELD = ["select", "input[type=text]", "input[type=number]", "input:not([type])", ".psearch", ".entpick", ".picker", ".inp"];
-const BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk"];
+const BTN = [".etabs button", ".favkind button", ".iconbtn", ".copyraw", ".editdone", ".editcancel", ".profchip", ".infobtn", ".golink", ".nettab", ".hlink", ".fchip", ".kbchip", ".pchk", ".helpall", ".addact", ".chk", ".mini.txt"];
 
 export const SKIN_CSS_020 = `
       /* ---------- Glas: dark acrylic plates, a lamp behind each plate lights it from an uneven spot ---------- */
@@ -56,17 +56,18 @@ export const SKIN_CSS_020 = `
       ${G}.gb-alu { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.05) 1px 3px), linear-gradient(180deg, #6a737c, #3b4249 40%, #555e67 60%, #2a3036); --gl-base: rgba(14,20,26,.62); }
       ${G}.gb-board { background-color: #0b3a2c; background-image: repeating-linear-gradient(0deg, rgba(255,214,120,.09) 0 1px, transparent 1px 16px), repeating-linear-gradient(90deg, rgba(255,214,120,.07) 0 1px, transparent 1px 22px), radial-gradient(circle at 20% 30%, rgba(255,214,120,.1) 0 2px, transparent 3px), linear-gradient(135deg, #0e4a38, #072a20); background-size: auto, auto, 44px 44px, auto; --gl-base: rgba(8,20,18,.68); }
       /* where the lamp sits behind each plate (uneven, stable per position) */
-      ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
+      ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button, .seg .lab):nth-child(6n+1) { --lx: 22%; --ly: 40%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+2) { --lx: 70%; --ly: 60%; }
       ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+3) { --lx: 40%; --ly: 30%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+4) { --lx: 78%; --ly: 45%; }
       ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n+5) { --lx: 30%; --ly: 65%; } ${G} :is(.key, .tile, .actbtn, .kk, .pill, .chip, .d, .hint-row, .etabs button, .favkind button):nth-child(6n) { --lx: 60%; --ly: 35%; }
       /* function colours: green = OK / play / confirm, blue = navigation, red = off / stop, violet = running / selected, amber = hint */
       ${G} .key[data-cmd*="Ok"], ${G} .key[data-cmd*="Select"], ${G} .key[data-cmd*="Play"], ${G} .key[data-cmd*="Enter"], ${G} .d.ok, ${G} .pbtn.pri { --gc: var(--gl-green); --gi: #05261a; }
       ${G} .key[data-cmd*="Power"], ${G} .key[data-cmd*="Stop"], ${G} .key[data-cmd*="Record"], ${G} .key.pon, ${G} .key.warn, ${G} .tile.off, ${G} .editdone.warn { --gc: var(--gl-red); --gi: #fff; }
-      ${G} .tile:not(.dev), ${G} .actbtn, ${G} .tile.dev.inuse, ${G} .tile.dev.sel, ${G} .key.sel, ${G} .mini.sel, ${G} .etabs button, ${G} .favkind button, ${G} .hubtabs button.sel .ico { --gc: var(--gl-violet); --gi: #fff; }
+      ${G} .tile:not(.dev), ${G} .actbtn, ${G} .tile.dev.inuse, ${G} .tile.dev.sel, ${G} .key.sel, ${G} .mini.sel, ${G} .etabs button, ${G} .favkind button, ${G} .hubtabs button.sel .ico, ${G} .seg .lab { --gc: var(--gac, var(--gl-violet)); --gi: #fff; }
       ${G} .tile.off { --gc: var(--gl-red); }
+      ${on(G, PRIMARY)} { --gc: var(--gl-green); --gi: #05261a; }
       ${G} .hint-row.r { --gc: var(--gl-red); --gi: #fff; } ${G} .hint-row.o { --gc: var(--gl-amber); --gi: #2a1700; } ${G} .hint-row.b { --gc: var(--gl-blue); --gi: #fff; }
       /* the resting plate: dark, half transparent, light edge on top, light grey lettering; after a press the light fades out over a second */
-      ${onNot(G, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
+      ${onNot(G, [".key", ".kk", ".pill", ".chip", ".d", ".actbtn", ".tile", ".seg .lab", ".ib", ".hubtabs .ico", ".linkbar", ".hint-row", ".helpbtn", ".infohead", ...BTN], ":not(.ghost):not(.svc)")} {
         border: 1px solid rgba(255,255,255,.2) !important; border-top: 2px solid rgba(255,255,255,.55) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text);
         box-shadow: 0 4px 8px rgba(0,0,0,.45) !important; transition: box-shadow 1s ease-out, text-shadow 1s ease-out, color 1s ease-out, border-color 1s ease-out; }
       ${G} .key:not(.ghost):not(.svc), ${G} .kk, ${G} .pill, ${G} .chip, ${G} .d, ${G} .actbtn, ${G} .tile { color: var(--gl-rest); }
@@ -80,18 +81,20 @@ export const SKIN_CSS_020 = `
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
       ${lit(ACTIVE, 45, 8, 32, "belong")}
-      ${lit(SEL, 100, 28, 62, "sel")}
-      ${lit(PRESSED, 95, 30, 70, "press")}
+      ${lit(SEL, 100, 14, 56, "sel")}
+      ${lit(PRESSED, 95, 18, 62, "press")}
+      ${lit(PRIMARY, 34, 6, 26, "belong")}
       /* hint and info lines: the whole plate lights in the colour of the message */
       ${G} .hint-row { padding: 8px 10px; --k: 36; background: ${SPOT}, ${SHEEN}, var(--gl-base) !important; border-color: color-mix(in srgb, var(--gc) 55%, transparent) !important; }
       ${G}.gl-a .hint-row { --k: 60; } ${G}.gl-b .hint-row { --k: 16; } ${G}.gl-c .hint-row { --k: 38; }
-      ${G}.gl-a .hint-row, ${G}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G}.gl-b .hint-row, ${G}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 40%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 8px var(--gc); }
-      ${G}.gl-c .hint-row, ${G}.gl-c .hint-row > ha-icon { color: #fff !important; text-shadow: 0 0 5px var(--gc); }
+      ${G}.gl-a .hint-row, ${G}.gl-a .hint-row > ha-icon { color: var(--gi) !important; } ${G}.gl-b .hint-row, ${G}.gl-b .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 70%, #fff) !important; text-shadow: 0 0 3px var(--gc), 0 0 10px var(--gc); }
+      ${G}.gl-c .hint-row, ${G}.gl-c .hint-row > ha-icon { color: color-mix(in srgb, var(--gc) 25%, #fff) !important; text-shadow: 0 0 5px var(--gc), 0 0 12px var(--gc); }
       ${G} .hint-row button { border-radius: 2px; background: rgba(255,255,255,.14); color: inherit; border: 1px solid rgba(255,255,255,.35); }
       /* device page: no squares or dots, only light (belongs = weak violet, shown = bright violet) */
       ${G} .tile.dev.inuse::after, ${G} .tile.dev.inuse::before, ${G} .tile.dev.sel::after, ${G} .tile.dev.sel::before { display: none; }
       /* plain surfaces, fields, tabs and buttons of the settings, the profile window, hints and info tables: the same square plate */
       ${on(G, SURF)} { border: 1px solid rgba(255,255,255,.18) !important; border-top: 2px solid rgba(255,255,255,.4) !important; border-radius: 2px !important; background: ${SHEEN}, var(--gl-base) !important; color: var(--hr-text); box-shadow: 0 4px 8px rgba(0,0,0,.35); }
+      ${on(G, [".win", ".helpbox", ".infopanel", ".hmenu"])} { background: ${SHEEN}, #0e1419 !important; }
       ${on(G, FIELD)} { border: 1px solid rgba(255,255,255,.24) !important; border-radius: 2px !important; background: rgba(6,9,12,.72) !important; color: var(--hr-text); color-scheme: dark; box-shadow: inset 0 2px 5px rgba(0,0,0,.5); }
       ${G} select option, ${G} select optgroup { background-color: #12181e; color: var(--hr-text); }
       ${G} .etabs button.sel, ${G} .favkind button.sel { font-weight: 700; }
@@ -109,8 +112,9 @@ export const SKIN_CSS_020 = `
       ${G} .hubtabs ha-icon, ${G} .ib ha-icon { --mdc-icon-size: 22px; color: #fff; filter: drop-shadow(0 0 4px rgba(255,255,255,.7)); }
       ${G} .ib { color: #fff; }
       ${G} .ib.gear[class*="sev-"] ha-icon { color: var(--gc, #fff); }
-      ${G} .seg .th { background: color-mix(in srgb, var(--gl-violet) 55%, #0e1318); border-radius: 2px; box-shadow: 0 0 10px rgba(155,123,255,.4); }
-      ${G} .seg .lab.a { color: #fff; }
+      ${G} .seg { background: none !important; box-shadow: none !important; border: none !important; padding: 0; gap: 8px; }
+      ${G} .seg .th { display: none; }
+      ${G} .seg .lab { color: var(--gl-rest); } ${G} .seg .lab.a { color: #fff; }
       /* Ja/Nein: a plate that lights red or green, no symbol, no sliding */
       ${G} .sw i { border-radius: 2px; --gc: var(--gl-red); --k: 55; background: ${SPOT}, var(--gl-base); border: 1px solid color-mix(in srgb, var(--gc) 60%, transparent); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 30%, transparent); transition: box-shadow .4s ease-out; }
       ${G} .sw i::after { display: none !important; }

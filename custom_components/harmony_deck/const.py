@@ -11,7 +11,7 @@ CARD_URL = f"/{DOMAIN}/{CARD_FILE}"
 TRANSLATIONS_URL = f"/{DOMAIN}/translations"
 
 # Keys that the shared settings may contain (set from the card editor).
-SETTING_KEYS = ("skin", "names", "hidden", "hiddenHubs", "devices", "favorites", "keyIcons", "vibrate", "helpNames", "links", "tileStyle", "keyboardControl", "holdSwitch", "direct", "glow", "keyStyle", "deviceIcons", "layout", "activeStyle", "activityFavs", "actions", "labels", "activityIcons", "collapseHeader", "colorIcons", "jumpRunning", "noBlur", "glassLook", "glassBg", "helpHide", "layoutMode", "offRelated", "helpManual", "hideKeys", "irVolume", "volumeCap", "directDevices", "directSuggest", "roomSkins")
+SETTING_KEYS = ("skin", "names", "hidden", "hiddenHubs", "devices", "favorites", "keyIcons", "vibrate", "helpNames", "links", "tileStyle", "keyboardControl", "holdSwitch", "direct", "glow", "keyStyle", "deviceIcons", "layout", "activeStyle", "activityFavs", "actions", "labels", "activityIcons", "collapseHeader", "colorIcons", "jumpRunning", "noBlur", "glassLook", "glassBg", "glassActColors", "helpHide", "layoutMode", "offRelated", "helpManual", "hideKeys", "irVolume", "volumeCap", "directDevices", "directSuggest", "roomSkins")
 
 # Sent when the stored actions changed (buttons and the sensor "Actions" follow).
 SIGNAL_ACTIONS = f"{DOMAIN}_actions_changed"

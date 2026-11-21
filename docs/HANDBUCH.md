@@ -193,3 +193,6 @@ Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erla
 
 ### 0.20.1
 Glas: neue Einstellung *Hintergrund* (Schwarz, Schwarz mit Textur, Aluminium, Platine). Die Platten sind halbtransparent und werden von einem Lämpchen dahinter angeleuchtet. Ruhe, gehört zur laufenden Aktivität (schwaches Violett) und gewählt (helles Violett, weiße Schrift mit Halo) gelten gleich für Aktivitäten, Geräte und Tabs. Tasten leuchten nach dem Loslassen aus. Die Lautstärke sind zehn Lämpchen hinter dem Glas. Knetmasse: kein Punkt mehr auf Gerätekacheln, Raum-Tab nicht mehr abgeschnitten, Einstellungen und Fenster sind Mulden und Blasen.
+
+### 0.20.2
+Glas: Leuchtart B lässt die Schrift in der Funktionsfarbe leuchten, größerer Halo, ruhigere Lautstärke-Lampen, helle Überschriften in Lila, Umschalter Aktivitäten/Geräte als zwei Platten, deckende Fenster, neue Einstellung *Farbe pro Aktivität* (Standard aus).

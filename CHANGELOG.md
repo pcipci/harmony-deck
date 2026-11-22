@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.23.2
+
+### Changed
+- **Pebble: sand everywhere.** Settings, Info, help window, pop-up menus, dropdowns and fields are sand with brown text; no dark windows, black rings or black borders any more. Header lines (Info / Settings / Profile) are white on the ground.
+- **Pebble: eight clearly different stone shapes** (fat and slim ends, slanted tips), also for the Fire TV app stones (no rectangles any more), settings tabs, room tabs and small buttons.
+- **Pebble: painting follows the setting *Painted* everywhere:** rooms, header buttons, settings tabs and the other small stones are painted in colour (or not, per option); the active stone keeps its colour and gets droplets.
+- **Pebble: badges are clear water drops** (counter at the gear, brand badges of the apps).
+- **Pebble: no lock symbol in the sand imprint** of a locked thing (the lock above and the tooltip explain it).
+- **Security card legend** shows real sample chips of the skin instead of the words "bright / dimmed".
+
+### Added
+- **Setting *Background fills the view*** (Behaviour, all skins, default off): the card fills the full height of the view so the background does not stop halfway.
+
+### Fixed
+- Pebble: On/Off keys I and O of a device had lost their stones.
+
 ## 0.23.1
 
 ### Changed

@@ -378,6 +378,7 @@ export const styleMixin = {
       .seg .lab.a { color: var(--hr-on-accent); }
       .seg .lab ha-icon { --mdc-icon-size: 24px; }
       @container (max-width: 380px) { .seg .lab span { display: none; } }
+      ha-card.fv { min-height: calc(100vh - var(--header-height, 56px) - 16px); box-sizing: border-box; }
       .pager { overflow: hidden; border-radius: var(--hr-tile-radius); }
       .pager .track { display: flex; align-items: flex-start; }
       .pager .pane { flex: 0 0 100%; min-width: 0; box-sizing: border-box; padding: 2px; }

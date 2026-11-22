@@ -44,6 +44,7 @@ export const optionsMixin = {
 
   _jumpOn() { return this._config.jump_running ?? this._settings().jumpRunning ?? true; },
 
+  _fillView() { return !!(this._config.fill_view ?? this._settings().fillView); },
   _noBlur() { return !!(this._config.no_blur ?? this._settings().noBlur); },
 
   // Switching from a running activity to another needs a long press (card option hold_switch wins over the shared setting).

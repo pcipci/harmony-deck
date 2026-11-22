@@ -32,15 +32,17 @@ const GHOST = [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".
 
 // Eight different shapes and flaws, handed out by position so neighbours differ.
 const SHAPES = [
-  ["70% 30% 46% 54% / 56% 44% 62% 38%", "#cdd1d2", "#9ea5a7", "radial-gradient(circle at 88% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px), radial-gradient(circle at 12% 30%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
-  ["34% 66% 58% 42% / 46% 61% 39% 54%", "#c8cdcf", "#98a0a4", "radial-gradient(circle at 70% 30%, rgba(0,0,0,.24) 0 1px, transparent 2px), radial-gradient(ellipse at 25% 72%, rgba(255,255,255,.2), transparent 40%)"],
-  ["55% 45% 36% 64% / 66% 40% 60% 34%", "#d0cfca", "#a1a19b", "radial-gradient(circle at 82% 28%, rgba(150,95,50,.14) 0 8px, transparent 15px), radial-gradient(circle at 20% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px)"],
-  ["47% 53% 62% 38% / 38% 57% 43% 62%", "#c6cdcf", "#97a2a6", "radial-gradient(ellipse at 96% 46%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
-  ["66% 34% 52% 48% / 50% 64% 36% 50%", "#cdcdcc", "#a0a2a1", "radial-gradient(ellipse at 70% 60%, rgba(60,60,55,.22), transparent 40%), radial-gradient(circle at 30% 24%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
-  ["30% 70% 44% 56% / 60% 36% 64% 40%", "#caced0", "#9aa2a5", "radial-gradient(ellipse at 3% 55%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
-  ["52% 48% 66% 34% / 44% 52% 48% 56%", "#cfd2d1", "#a3a8a8", NONE],
-  ["44% 56% 40% 60% / 64% 46% 54% 36%", "#c9cdce", "#9ba3a5", "radial-gradient(circle at 24% 76%, rgba(0,0,0,.28) 0 1px, transparent 2px), radial-gradient(circle at 15% 78%, rgba(0,0,0,.24) 0 1px, transparent 2px)"],
+  ["72% 28% 56% 44% / 62% 38% 62% 38%", "#cdd1d2", "#9ea5a7", "radial-gradient(circle at 88% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px), radial-gradient(circle at 12% 30%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
+  ["34% 66% 40% 60% / 48% 66% 34% 52%", "#c8cdcf", "#98a0a4", "radial-gradient(circle at 70% 30%, rgba(0,0,0,.24) 0 1px, transparent 2px), radial-gradient(ellipse at 25% 72%, rgba(255,255,255,.2), transparent 40%)"],
+  ["58% 42% 30% 70% / 70% 40% 60% 30%", "#d0cfca", "#a1a19b", "radial-gradient(circle at 82% 28%, rgba(150,95,50,.14) 0 8px, transparent 15px), radial-gradient(circle at 20% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px)"],
+  ["28% 72% 62% 38% / 40% 58% 42% 60%", "#c6cdcf", "#97a2a6", "radial-gradient(ellipse at 96% 46%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
+  ["64% 36% 66% 34% / 34% 62% 38% 66%", "#cdcdcc", "#a0a2a1", "radial-gradient(ellipse at 70% 60%, rgba(60,60,55,.22), transparent 40%), radial-gradient(circle at 30% 24%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
+  ["46% 54% 24% 76% / 56% 36% 64% 44%", "#caced0", "#9aa2a5", "radial-gradient(ellipse at 3% 55%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
+  ["80% 20% 44% 56% / 52% 48% 52% 48%", "#cfd2d1", "#a3a8a8", NONE],
+  ["38% 62% 70% 30% / 70% 70% 30% 40%", "#c9cdce", "#9ba3a5", "radial-gradient(circle at 24% 76%, rgba(0,0,0,.28) 0 1px, transparent 2px), radial-gradient(circle at 15% 78%, rgba(0,0,0,.24) 0 1px, transparent 2px)"],
 ];
+const SHP_LIST = [".etabs button", ".favkind button", ".profchip", ".pbtn", ".sbtn", ".golink", ".infobtn", ".helpall", ".addact", ".editdone", ".editcancel", ".iconbtn", ".kbchip", ".fchip", ".hlink", ".key.svc", ".appcell.svc"];
+const shapes2 = SHAPES.map(([r], i) => `${SHP_LIST.map((x) => `${P} ${x}:nth-child(8n+${i + 1})`).join(", ")} { --pr: ${r}; }`).join("\n      ");
 const shapes = SHAPES.map(([r, a, b, f], i) => `${STONE.map((s) => `${P} ${s}:nth-child(8n+${i + 1})`).join(", ")} { --pr: ${r}; --s1: ${a}; --s2: ${b}; --fl: ${f}; }`).join("\n      ");
 
 // Droplets: a few clear drops sit on the stone (running activity, running app)
@@ -68,8 +70,7 @@ export const SKIN_CSS_023 = `
         box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.07) !important;
         transition: transform .2s, box-shadow .2s, filter 1s ease-out; }
       ${shapes}
-      /* nearly square stones (device tiles, apps) get calmer shapes, so they do not turn into leaves */
-      ${P} .tile.dev:nth-child(4n+1) { --pr: 54% 46% 50% 50% / 52% 52% 48% 48%; } ${P} .tile.dev:nth-child(4n+2) { --pr: 47% 53% 52% 48% / 50% 46% 54% 50%; } ${P} .tile.dev:nth-child(4n+3) { --pr: 51% 49% 46% 54% / 54% 50% 50% 46%; } ${P} .tile.dev:nth-child(4n+4) { --pr: 49% 51% 54% 46% / 46% 54% 46% 54%; }
+      ${shapes2}
       ${on(P, STONE.map((s) => `${s} :is(span, small, b, i)`))} { color: inherit; }
       ${on(P, STONE.map((s) => `${s} ha-icon`))} { color: #3b4346; }
 
@@ -80,7 +81,7 @@ export const SKIN_CSS_023 = `
       /* running / selected: wet stone with a teal glow, clear droplets on it */
       ${on(P, [...ACTIVE, ...SEL, ".tile.going"])} { --fl: ${DROPS}; color: #17403e !important; text-shadow: 0 0 6px rgba(70,220,205,.35);
         box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.25), 0 5px 7px rgba(0,0,0,.5), 0 0 14px rgba(60,200,190,.4) !important; }
-      ${on(P, [...ACTIVE, ...SEL].map((s) => `${s} :is(span, small, b, i, ha-icon)`))} { color: #17403e !important; }
+      ${on(P, [...ACTIVE, ...SEL].map((s) => `${s}:not(.tile) :is(span, small, b, i, ha-icon)`))} { color: #17403e !important; }
       ${on(P, [".tile.dev.inuse:not(.sel)"])} { --fl: ${NONE}; box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), inset 0 -14px 16px -10px rgba(60,190,180,.6), 0 6px 9px rgba(0,0,0,.5) !important; color: #2b3032 !important; }
       ${on(P, [".tile.dev.inuse:not(.sel) ha-icon"])} { color: var(--kv) !important; }
       ${P} .tile.dev::after, ${P} .tile.dev.inuse::after, ${P} .tile.dev.sel::after { display: none; }
@@ -109,13 +110,26 @@ export const SKIN_CSS_023 = `
       ${P} .key.color.red { --cc: #d9534f; } ${P} .key.color.green { --cc: #3fae68; } ${P} .key.color.yellow { --cc: #e6b830; } ${P} .key.color.blue { --cc: #3f84d9; }
       ${on(P, [...SURF, ".block"])} { border: none !important; border-radius: 30px 34px 28px 32px / 32px 28px 34px 30px !important; color: var(--sandtx);
         background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 4px 9px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
-      ${on(P, [".win", ".helpbox", ".infopanel", ".hmenu", ".profdlg"])} { background: ${NOISE}, linear-gradient(180deg, #2a3234, #222a2c) !important; }
+      ${on(P, [".win", ".helpbox", ".infopanel", ".hmenu", ".profdlg", ".hubinfo", ".infobox"])} { border: none !important; color: var(--sandtx) !important; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: 0 8px 20px rgba(0,60,70,.4), inset 0 1px 1px rgba(255,255,255,.5) !important; }
+      ${on(P, [".win", ".helpbox", ".infopanel", ".hmenu", ".profdlg", ".infoitem", ".infohead", ".hubinfo", ".infobox"].map((x) => `${x} :is(b, span, small, summary, div, p, td, th, label)`))} { color: var(--sandtx); }
+      ${on(P, [".infohead", ".infoitem", ".infopanel > summary", ".hubinfo summary"])} { border: none !important; background: none !important; box-shadow: none !important; }
+      ${P} :is(.win, .helpbox, .infopanel, .hmenu, .profdlg, .infoitem, .infohead) ha-icon { color: #17706d; }
+      ${P} .hmenu .hdev, ${P} .win .hdev { color: var(--sandtx); }
+      ${P} .edittool { border: none !important; background: none !important; box-shadow: none !important; }
+      ${P} .edmode, ${P} .edmode :is(span, b, div, ha-icon) { color: #fff !important; text-shadow: 0 1px 2px rgba(0,60,70,.55); }
+      ${P} :is(.win, .helpbox, .infopanel, .hmenu, .profdlg, .esec, .egroup, .panel) .etitle { color: var(--sandtx); }
+      ${P} :is(.win, .helpbox, .infopanel, .hmenu, .profdlg, .esec, .egroup, .panel) .esub, ${P} :is(.esec, .egroup, .panel, .block, .infopanel) :is(.ehint, .ddname, .dname) { color: #7a6030; }
+      ${P} .tip, ${P} .tip ha-icon { color: #7a6030; }
+      ${P}.pp-a :is(.esec, .egroup, .egrp, .panel, .block, .infopanel, .win, .helpbox, .hmenu, .profdlg, .editbox) :is(.etitle, .esub), ${P}.pp-c :is(.esec, .egroup, .egrp, .panel, .block, .infopanel, .win, .helpbox, .hmenu, .profdlg, .editbox) :is(.etitle, .esub), ${P}.pp-off :is(.esec, .egroup, .egrp, .panel, .block, .infopanel, .win, .helpbox, .hmenu, .profdlg, .editbox) :is(.etitle, .esub) { color: #5e4620; filter: var(--kfs); text-shadow: none; }
+      ${P}.pp-b :is(.esec, .egroup, .egrp, .panel, .block, .infopanel, .win, .helpbox, .hmenu, .profdlg, .editbox) :is(.etitle, .esub) { background: linear-gradient(90deg, #a8321f, #b5651b 20%, #8a7410 40%, #1f7a55 60%, #1f5fa3 80%, #6b3fa3); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+      ${P} :is(.esec, .egroup, .egrp, .panel, .block, .infopanel, .win, .helpbox, .hmenu, .profdlg, .chipbox, .seclegend, .ehint, .erow, .editbox) { --hr-text: #5e4620; --hr-muted: #7a6030; color: var(--sandtx); }
       ${P} .textopen, ${P} .dfield, ${P} .kbsw { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--sandtx) !important; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 4px 7px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
       ${P} .textopen :is(span, ha-icon), ${P} .dfield :is(ha-icon, input) { color: var(--sandtx) !important; }
       ${P} .kbsw button { color: var(--sandtx); } ${P} .kbsw button.sel { color: #0f5a57; background: rgba(40,170,160,.3); }
-      ${on(P, FIELD)} { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--hr-text) !important;
-        background: ${NOISE}, linear-gradient(180deg, #1b2022, #2d3436) !important; box-shadow: inset 0 4px 7px rgba(0,0,0,.7), inset 0 -1px 1px rgba(255,255,255,.12) !important; }
-      ${on(P, PBTN)} { border: none !important; border-radius: 52% 48% 54% 46% / 56% 50% 50% 44% !important; color: #2b3032; text-shadow: 0 1px 0 rgba(255,255,255,.45);
+      ${on(P, FIELD)} { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--sandtx) !important;
+        background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 4px 7px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
+      ${P} select option, ${P} select optgroup { background: #e6d5a8; color: #5e4620; }
+      ${on(P, PBTN)} { border: none !important; border-radius: var(--pr, 52% 48% 54% 46% / 56% 50% 50% 44%) !important; color: #2b3032; text-shadow: 0 1px 0 rgba(255,255,255,.45);
         background: ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.55), transparent 44%), radial-gradient(ellipse at 78% 96%, rgba(0,0,0,.28), transparent 60%), linear-gradient(150deg, #cbcfd0, #9ba2a4) !important;
         box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 4px 7px rgba(0,0,0,.5) !important; }
       ${on(P, PBTN.map((s) => `${s} :is(span, small, b, ha-icon)`))} { color: #2b3032 !important; }
@@ -210,6 +224,46 @@ export const SKIN_CSS_023 = `
 
 
       ${P} :is(.bar, .seg, .chips) { border: none !important; }
+
+      /* no lock symbol inside the sand imprint (the lock above and the tooltip say it) */
+      ${P} .lockic { display: none !important; }
+
+      /* badges are clear water drops: highlight, dark rim, number in the drop */
+      ${P} .ib.gear .gbadge { background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.9) 0 2px, transparent 3.5px), radial-gradient(circle closest-side at 50% 52%, rgba(255,255,255,.22) 0 55%, rgba(20,40,45,.45) 94%, transparent 100%) !important; color: #a8261a !important; text-shadow: 0 0 2px rgba(255,255,255,.7); box-shadow: 0 2px 3px rgba(0,40,45,.4) !important; border: 0 !important; border-radius: 50% 50% 50% 46% !important; }
+      ${P} .appbadge { background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.9) 0 1.5px, transparent 3px), radial-gradient(circle closest-side at 50% 52%, rgba(255,255,255,.2) 0 55%, rgba(20,40,45,.45) 94%, transparent 100%) !important; color: color-mix(in srgb, var(--c) 75%, #000) !important; box-shadow: 0 2px 3px rgba(0,40,45,.35); }
+      ${P} .appbadge :is(b, ha-icon) { color: color-mix(in srgb, var(--c) 75%, #000) !important; filter: none; }
+
+      /* painted rooms, buttons and tabs follow the setting Painted (colour per position, like the activities) */
+      ${P} :is(.hubtabs button, .etabs button, .favkind button, .profchip, .seg .lab) ha-icon { filter: var(--kfl) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}.pp-off :is(.hubtabs button, .etabs button, .favkind button, .profchip, .seg .lab) ha-icon { filter: none; color: #4d5759; }
+      ${P}.pp-off .bbtns .ib ha-icon { filter: none; color: #4d5759; }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+1) ha-icon { color: #ff7a6b; } ${P}.pp-a .hubtabs button:nth-child(6n+1) span, ${P}.pp-c .hubtabs button:nth-child(6n+1) span { color: #b5342a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+1) ha-icon { color: #ff7a6b; } ${P}.pp-a .etabs button:nth-child(6n+1) span, ${P}.pp-c .etabs button:nth-child(6n+1) span { color: #b5342a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+1) ha-icon { color: #ff7a6b; } ${P}.pp-a .favkind button:nth-child(6n+1) span, ${P}.pp-c .favkind button:nth-child(6n+1) span { color: #b5342a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(1) ha-icon { color: #ff7a6b; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+2) ha-icon { color: #ffd84a; } ${P}.pp-a .hubtabs button:nth-child(6n+2) span, ${P}.pp-c .hubtabs button:nth-child(6n+2) span { color: #9a7a00; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+2) ha-icon { color: #ffd84a; } ${P}.pp-a .etabs button:nth-child(6n+2) span, ${P}.pp-c .etabs button:nth-child(6n+2) span { color: #9a7a00; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+2) ha-icon { color: #ffd84a; } ${P}.pp-a .favkind button:nth-child(6n+2) span, ${P}.pp-c .favkind button:nth-child(6n+2) span { color: #9a7a00; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(2) ha-icon { color: #ffd84a; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+3) ha-icon { color: #4fd1c5; } ${P}.pp-a .hubtabs button:nth-child(6n+3) span, ${P}.pp-c .hubtabs button:nth-child(6n+3) span { color: #0f7a72; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+3) ha-icon { color: #4fd1c5; } ${P}.pp-a .etabs button:nth-child(6n+3) span, ${P}.pp-c .etabs button:nth-child(6n+3) span { color: #0f7a72; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+3) ha-icon { color: #4fd1c5; } ${P}.pp-a .favkind button:nth-child(6n+3) span, ${P}.pp-c .favkind button:nth-child(6n+3) span { color: #0f7a72; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(3) ha-icon { color: #4fd1c5; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+4) ha-icon { color: #ffa94d; } ${P}.pp-a .hubtabs button:nth-child(6n+4) span, ${P}.pp-c .hubtabs button:nth-child(6n+4) span { color: #b3601a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+4) ha-icon { color: #ffa94d; } ${P}.pp-a .etabs button:nth-child(6n+4) span, ${P}.pp-c .etabs button:nth-child(6n+4) span { color: #b3601a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+4) ha-icon { color: #ffa94d; } ${P}.pp-a .favkind button:nth-child(6n+4) span, ${P}.pp-c .favkind button:nth-child(6n+4) span { color: #b3601a; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(4) ha-icon { color: #ffa94d; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+5) ha-icon { color: #6ec6ff; } ${P}.pp-a .hubtabs button:nth-child(6n+5) span, ${P}.pp-c .hubtabs button:nth-child(6n+5) span { color: #1f5fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+5) ha-icon { color: #6ec6ff; } ${P}.pp-a .etabs button:nth-child(6n+5) span, ${P}.pp-c .etabs button:nth-child(6n+5) span { color: #1f5fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+5) ha-icon { color: #6ec6ff; } ${P}.pp-a .favkind button:nth-child(6n+5) span, ${P}.pp-c .favkind button:nth-child(6n+5) span { color: #1f5fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(5) ha-icon { color: #6ec6ff; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}:not(.pp-off) .hubtabs button:nth-child(6n+6) ha-icon { color: #c9a3ff; } ${P}.pp-a .hubtabs button:nth-child(6n+6) span, ${P}.pp-c .hubtabs button:nth-child(6n+6) span { color: #7a3fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .etabs button:nth-child(6n+6) ha-icon { color: #c9a3ff; } ${P}.pp-a .etabs button:nth-child(6n+6) span, ${P}.pp-c .etabs button:nth-child(6n+6) span { color: #7a3fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .favkind button:nth-child(6n+6) ha-icon { color: #c9a3ff; } ${P}.pp-a .favkind button:nth-child(6n+6) span, ${P}.pp-c .favkind button:nth-child(6n+6) span { color: #7a3fa3; filter: var(--kfs); }
+      ${P}:not(.pp-off) .bbtns .ib:nth-child(6) ha-icon { color: #c9a3ff; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}.pp-b :is(.hubtabs button, .etabs button, .favkind button) span { background: linear-gradient(90deg, #c0392b, #d9822b 20%, #c9a21f 40%, #2f9e6f 60%, #2b78c9 80%, #8a4fc9); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: var(--kfl); }
+      ${P}.pp-off :is(.hubtabs button, .etabs button, .favkind button) span { color: #4d5759; }
+
       /* Aktivitäten / Geräte: two stones, the active one wet with droplets */
       ${P} .seg { background: none !important; box-shadow: none !important; padding: 2px 2px 8px; gap: 12px; border-radius: 0; }
       ${P} .seg .th { display: none; }
@@ -224,7 +278,7 @@ export const SKIN_CSS_023 = `
       /* power row of a device: I / O / Toggle as one full-width row of three stones */
       ${P} .rpow .pwrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 6px 0; }
       ${P} .pwlab { grid-column: 1 / -1; color: var(--hr-text); font-weight: 600; text-shadow: 0 1px 2px rgba(0,60,70,.45); }
-      ${P} .pwio { display: contents; } ${P} .key.pwio, ${P} .key.pwtg { width: auto; min-height: 50px; flex-direction: column; gap: 1px; padding: 4px 8px; }
+      ${P} span.pwio { display: contents; } ${P} .key.pwio, ${P} .key.pwtg { width: auto; min-height: 50px; flex-direction: column; gap: 1px; padding: 4px 8px; }
       ${P} .pwrow > .pwknob { grid-column: span 2; justify-self: start; }
       ${P} .key.pwio:nth-child(1) { --pr: 60% 40% 48% 52% / 56% 48% 52% 44%; } ${P} .key.pwio:nth-child(2) { --pr: 38% 62% 54% 46% / 48% 58% 42% 52%; } ${P} .key.pwtg { --pr: 52% 48% 40% 60% / 60% 44% 56% 40%; }
 

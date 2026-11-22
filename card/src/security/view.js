@@ -149,7 +149,7 @@ export const securityViewMixin = {
       ${now ? `<div class="secnow"><ha-icon icon="mdi:television-play"></ha-icon><span>${esc(fmtText(s.fireNow, [appLabel(now, t, h.app_names || {})]))}</span></div>` : ""}
       <div class="chipbox">${chips}</div>
       ${home ? "" : `<div class="ehint secnote err"><ha-icon icon="mdi:home-off-outline"></ha-icon><span>${esc(s.launcherOff)}</span></div>`}
-      <div class="ehint seclegend"><span class="lc">${esc(s.legendOn)}</span> ${esc(s.legendInstalled)} <span class="lc off">${esc(s.legendOff)}</span> ${esc(s.legendMissing)}</div>
+      <div class="ehint seclegend"><label class="fchip lgd"><input type="checkbox" disabled><span>${esc(s.legendOn)}</span></label> ${esc(s.legendInstalled)} <label class="fchip lgd noinst"><input type="checkbox" disabled><span>${esc(s.legendOff)}</span></label> ${esc(s.legendMissing)}</div>
       <div class="secrel"><button class="pbtn" data-read-apps="${esc(h.fire_entity)}" ${dis}><ha-icon icon="mdi:package-variant"></ha-icon><span>${esc(t.pkgRead)}</span></button><span class="ehint">${esc(msg || (cache?.at ? fmtText(s.appsRead, [dayTime(cache.at)]) : s.appsNever))}</span></div>`;
   },
 

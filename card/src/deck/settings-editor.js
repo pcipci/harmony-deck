@@ -74,7 +74,8 @@ export const settingsEditorMixin = {
           ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
-          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}
+          ${this._swRow(t.fillView, 'data-setting="fillView"', this._fillView())}`)}
         ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
@@ -189,7 +190,7 @@ export const settingsEditorMixin = {
       '[data-setting="keyboardControl"]': "keyCtl", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapseHeader", '[data-setting="holdSwitch"]': "holdSwitch", "[data-layout]": "layout", "[data-activestyle]": "activeStyle",
       "[data-keystyle]": "keyStyle", "[data-labels]": "labels", "[data-glow]": "glow", '[data-direct="entity"]': "directEntity", '[data-direct="device"]': "directDevice",
       '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel",
-      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", "[data-glasslook]": "glassLook", "[data-glassbg]": "glassBg", "[data-pebblepaint]": "pebblePaint", "[data-pebblebg]": "pebbleBg", "[data-pebbleflaw]": "pebbleFlaw", "[data-glassac]": "glassActColors", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual", '[data-setting="trafficLog"]': "trafficLog",
+      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", "[data-glasslook]": "glassLook", "[data-glassbg]": "glassBg", "[data-pebblepaint]": "pebblePaint", "[data-pebblebg]": "pebbleBg", "[data-pebbleflaw]": "pebbleFlaw", "[data-glassac]": "glassActColors", '[data-setting="jumpRunning"]': "jumpRunning", '[data-setting="fillView"]': "fillView", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual", '[data-setting="trafficLog"]': "trafficLog",
       '[data-link="entity"]': "linkEntity", '[data-link="activity"]': "linkActivity",
       '[data-actname]': "actName", '[data-hent="entity"]': "actEntity", "[data-hop]": "actOp", "[data-actscope]": "actScope", "[data-acttile]": "actTile",
     };

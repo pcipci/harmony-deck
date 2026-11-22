@@ -18,7 +18,7 @@ export const securityStyle = `<style>
   .secrel select, .sectimes input { font: inherit; padding: 8px 10px; border-radius: 10px; background: var(--hr-select-bg, var(--hr-card-bg, var(--card-background-color))); color: var(--hr-text); border: 1px solid var(--divider-color, #444); min-width: 0; box-sizing: border-box; }
   .secrel select { flex: 1 1 130px; }
   .sec .chipbox { max-height: none; } .sec .fchip span { display: inline-flex; align-items: center; gap: 5px; } .sec .fchip span ha-icon { margin: 0; } .sec .fchip span { background: var(--hr-card-bg, var(--card-background-color)); } .sec .fchip input:checked + span { background: var(--hr-accent); color: var(--hr-on-accent); }
-  .sec .fchip input:disabled + span { cursor: default; opacity: .8; } .sec .fchip.noinst input:not(:checked) + span { opacity: .6; }
+  .sec .fchip input:disabled + span { cursor: default; opacity: .8; } .sec .fchip.noinst:not(:has(input:checked)) { opacity: .6; } .sec .fchip.lgd { pointer-events: none; margin: 0 2px; }
   .sec .favkind button { background: var(--hr-card-bg, var(--card-background-color)); } .sec .favkind button.sel { background: var(--hr-accent); color: var(--hr-on-accent); } .sec .favkind button[disabled] { cursor: default; }
   .secnow { display: flex; align-items: center; gap: 8px; font-size: 0.9em; } .secnow ha-icon { --mdc-icon-size: 20px; color: var(--hr-fire, var(--hr-accent)); flex: none; }
   .secwin { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: var(--hr-card-bg, var(--card-background-color)); }

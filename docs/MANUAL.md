@@ -200,5 +200,8 @@ Glass: light style B lights the lettering in the function colour, larger halo, c
 ### 0.21.0
 Profile window: one profile at a time, the whole row of the chosen profile is lit in the skin's selection style (no check marks). Clay and Glass got proper primary buttons and opaque help windows, Thermal a dark edit header. The security card was checked in all own skins.
 
+### 0.23.0
+Pebble (Kiesel) is a skin of its own: grey river stones with irregular shapes, carved hollows and water in the volume groove. New settings *Painted* (Off / A one colour / B rainbow / C painted pictures, default A) and *Background* (dark teal, slate, warm anthracite, river bed) appear in Settings > Look when Pebble is chosen. Holding "all off" no longer draws a ring: the key turns red step by step. Holding an activity tile tints the whole tile instead of filling it from below. In the Info area network devices are folded lines like the hubs and the area has a single Close button.
+
 ### 0.22.0
 New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.

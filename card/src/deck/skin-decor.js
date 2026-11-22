@@ -1,5 +1,6 @@
 // Decoration of the effect skins (see shared/skin-css.js): glass reflection and torn band (terminal),
 // dial with magic eye (radio). The eye follows the volume of the running activity's device.
+import { PEBBLE_DEFS } from "../shared/skin-css-023.js";
 import { segSvg } from "../shared/segfont.js";
 import { skinTrait } from "../shared/skin-traits.js";
 
@@ -31,6 +32,7 @@ export const skinDecorMixin = {
   },
 
   _skinTail(skin) {
+    if (skinTrait(skin, "pebbleLook")) return PEBBLE_DEFS;
     return skinTrait(skin, "glass") ? '<div class="skin-tear"></div><div class="skin-glare"></div>' : "";
   },
 

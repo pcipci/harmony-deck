@@ -36,7 +36,7 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 | **Netzwerksteuerung** | Harmony-Gerät mit seinem Mediaplayer (TV, Receiver) verbinden: Zustand, genaue Lautstärke (Regler statt Lauter/Leiser in der Fernbedienung) und Quelle übers Netzwerk, erkannte Plattform mit ihren Eigenheiten, Soll/Ist-Prüfung mit Korrektur per Tipp, vorsichtige Vorschläge, abschaltbar |
 | **Fire TV** | Apps, Wiedergabe/Pause, Standby, Texteingabe und Zusatztasten per ADB; beim Fire TV Cube Lautstärke über den Infrarot-Sender |
 | **Sperre** | Aus / Immer / Zeitplan, zeitliche Freigabe, erlaubte Aktivitäten und Apps, Geräte, die mit dem Fire TV ausgehen, letzte 100 Eingriffe |
-| **Looks** | 15 Looks, darunter die Effekt-Looks Wärmebild, Nixie, Nostromo, Glas (von hinten beleuchtete Acrylplatten, drei Leuchtarten), Knetmasse (pralle Blasen zum Drücken), Terminal (grünes Röhrenglas mit Störungen) und Röhrenradio; eigener Look pro Raum (flackernde Kontrolllampen, versenkbare Messingknöpfe, magisches Auge); Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
+| **Looks** | 15 Looks, darunter die Effekt-Looks Wärmebild, Nixie, Nostromo, Glas (von hinten beleuchtete Acrylplatten, drei Leuchtarten), Knetmasse (pralle Blasen zum Drücken), Kiesel (graue Flusssteine mit bemalten Symbolen und Wasser in der Lautstärke-Rille), Terminal (grünes Röhrenglas mit Störungen) und Röhrenradio; eigener Look pro Raum (flackernde Kontrolllampen, versenkbare Messingknöpfe, magisches Auge); Kachel- und Tastenstile, farbige Symbole, hell und dunkel |
 | **Hinweise** | Ein Zahnrad in der Reiterzeile: Es nimmt die Farbe des schwersten Hinweises an (Hub nicht erreichbar, Player weicht von der Aktivität ab …), pulsiert, bis man hingesehen hat, und zeigt die Anzahl; sein Fenster listet die Hinweise mit ihrer Aktion über den Einstellungen; der Eintrag Info öffnet einen Info-Bereich mit den Hubs, den verknüpften Netzwerkgeräten (Plattform, Adresse, Zustand, Fähigkeiten) als Tabelle und welche Tasten der laufenden Aktivität direkt oder über Harmony gehen; Zahnrad, Hilfe und Profil teilen sich ein Fenster |
 | **Profile** | Unterschiedliche Einstellungen für Personen oder Tablets |
 | **Entitäten** | Aktivitäten, Geräte und Aktionen pro Hub als Liste, eine Taste pro Aktion, ein Gerät pro verbundenem Netzwerkgerät, Abweichungen pro Hub, Sperr-Entitäten, Reparaturhinweise und Diagnose |
@@ -120,7 +120,10 @@ Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm 
 <p align="center">
   <img src="docs/images/skin-glass.png" width="32%" alt="Look Glas">
   <img src="docs/images/skin-clay.png" width="32%" alt="Look Knetmasse">
+  <img src="docs/images/skin-pebble.png" width="32%" alt="Look Kiesel">
 </p>
+
+**Kiesel** (graue Flusssteine mit unregelmäßigen Formen auf dunklem Wasser-Blaugrün: Drücken lässt den Stein einsinken, die laufende Aktivität trägt klare Tropfen, Nicht-Verfügbares ist in den Stein gehöhlt, die Lautstärke ist Wasser in einer Rille mit einem Kiesel als Fühler, Symbole sind in Funktionsfarben bemalt; die Einstellung *Bemalt* malt Namen und Überschriften einfarbig, als Regenbogen oder mit großen bemalten Bildern, die Einstellung *Hintergrund* wählt dunkles Blaugrün, Schiefer, warmes Anthrazit oder Flussbett).
 
 ## Aktionen und Netzwerksteuerung
 

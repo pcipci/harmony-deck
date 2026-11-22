@@ -1,6 +1,7 @@
 // Style sheet of the cards.
 import { SKIN_CSS } from "../shared/skin-css.js";
 import { SKIN_CSS_020 } from "../shared/skin-css-020.js";
+import { SKIN_CSS_023 } from "../shared/skin-css-023.js";
 import { SKIN_CSS_NEW } from "../shared/skin-css-new.js";
 
 export const styleMixin = {
@@ -60,11 +61,11 @@ export const styleMixin = {
       .locked { opacity: 0.35; filter: grayscale(1); pointer-events: none; }
       .tile.locked { pointer-events: auto; cursor: not-allowed; opacity: 0.7; filter: none; position: relative; overflow: hidden; background: linear-gradient(rgba(108,140,255,.16), rgba(108,140,255,.16)), var(--hr-tile-bg); }
       .tile .lockic { position: absolute; top: 6px; right: 6px; --mdc-icon-size: 16px !important; color: #8fa6ff !important; }
-      .tile.locked::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); transform: scaleY(0); transform-origin: bottom; pointer-events: none; }
-      .tile.locked.holding::after { transform: scaleY(1); transition: transform .7s linear; }
+      .tile.locked::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
+      .tile.locked.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.holdsw { position: relative; overflow: hidden; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
-      .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); transform: scaleY(0); transform-origin: bottom; pointer-events: none; }
-      .tile.holdsw.holding::after { transform: scaleY(1); transition: transform .7s linear; }
+      .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
+      .tile.holdsw.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.seclocked { cursor: not-allowed; }
       .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
       .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
@@ -89,7 +90,7 @@ export const styleMixin = {
       .kk.space { flex: 4 1 0; } .kk.enter { flex: 1.5 1 0; } .kbrow.m .kk { font-size: 0.72em; }
       .infohead { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid color-mix(in srgb, var(--hr-muted) 25%, transparent); }
       .infohead .sdot.ok { background: #43a047; opacity: 1; box-shadow: 0 0 8px #43a047; } .infohead .sdot.bad { background: var(--hr-danger); opacity: 1; }
-      .infohead b { flex: 1; font-weight: 500; } .infohead span { color: var(--hr-muted); font-size: 0.9em; }
+      .infohead > ha-icon { --mdc-icon-size: 18px; flex: none; color: var(--hr-muted); } .infohead b { flex: 1; font-weight: 500; } .infohead span { color: var(--hr-muted); font-size: 0.9em; }
       .directbox { display: flex; flex-direction: column; gap: 8px; } .block.direct summary { cursor: pointer; }
       .dnow { display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: var(--hr-accent); } .dnow ha-icon { --mdc-icon-size: 18px; }
       .key.svc { background: var(--c); color: var(--fg); }
@@ -325,7 +326,7 @@ export const styleMixin = {
       .actbtn.running { outline: 2px solid var(--hr-accent); outline-offset: -2px; } .actbtn.running ha-icon { animation: pulse 1.4s ease-in-out infinite; }
       .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
       .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
-      .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); transform-origin: bottom; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); opacity: 0; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { opacity: 0; } to { opacity: 1; } }
       .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
       .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
       .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
@@ -479,8 +480,8 @@ export const styleMixin = {
       .hring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; opacity: 0; }
       .hring circle { fill: none; stroke: var(--hr-danger, #e53935); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 125.7; stroke-dashoffset: calc(125.7 - 1.257 * var(--p, 0)); }
       .hring.big { inset: 0; margin: auto; width: 60px; height: 60px; } .hring.big circle { stroke-dasharray: 169.6; stroke-dashoffset: calc(169.6 - 1.696 * var(--p, 0)); }
-      .holding .hring { opacity: 1; }
-      .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 0.3%), var(--hr-tile-bg)); }
+      .holding .hring { opacity: 0; }
+      .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 1%), var(--hr-tile-bg)); } .holdoff.holding ha-icon { color: color-mix(in srgb, #fff calc(var(--p, 0) * 1%), var(--hr-danger, #e53935)); }
       .ib.holdoff.fired, .tile.holdoff.fired { background: var(--hr-danger, #e53935); color: #fff; } .holdoff.fired ha-icon { color: #fff !important; }
       .holdoff ha-icon { position: relative; }
       .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: #222; color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; pointer-events: none; }
@@ -570,6 +571,7 @@ export const styleMixin = {
       ${SKIN_CSS}
       ${SKIN_CSS_NEW}
       ${SKIN_CSS_020}
+      ${SKIN_CSS_023}
     </style>`;
   },
 };

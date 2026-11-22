@@ -282,3 +282,5 @@ export const SKIN_CSS_020 = `
       ${C} .tile.dev.sel ha-icon, ${C} .tile.dev.sel span, ${C} .tile.dev.sel small { color: #fff !important; }
 `;
 
+
+export const SKIN_KIT = { on, PRESSED, ACTIVE, SEL, PRIMARY, SURF, FIELD, BTN, SPOT, SHEEN };

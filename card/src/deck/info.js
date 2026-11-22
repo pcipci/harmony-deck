@@ -134,12 +134,19 @@ export const infoMixin = {
         const live = this._hass.states?.[item.entity];
         const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
         const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
-        const cell = (label, v, cls = "") => `<td data-l="${esc(label)}" class="${cls}">${v}</td>`;
-        rows.push(`<tr>${cell(t.netColDevice, `<ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b>${this._hubs().length > 1 ? `<small>${esc(h.name)}</small>` : ""}`, "ndev")}${cell(t.netColPlatform, esc(item.platform ? PLATFORMS[item.platform] || item.platform : "–"))}${cell(t.netColAddress, esc(item.host || "–"))}${cell(t.netColState, esc(stName(on)), `nstate ${on === true ? "on" : on === false ? "off" : ""}`)}${cell(t.netColCaps, caps.length ? esc(caps.join(", ")) : esc(t.ddCanNot))}</tr>`);
+        // Like a hub: one folded line (state dot, symbol, name, platform); unfolded it lists the properties.
+        const lines = [
+          [t.netColPlatform, item.platform ? PLATFORMS[item.platform] || item.platform : "–"],
+          [t.netColAddress, item.host || "–"],
+          [t.netColState, stName(on)],
+          [t.netColCaps, caps.length ? caps.join(", ") : t.ddCanNot],
+          ...(this._hubs().length > 1 ? [[t.hubsTitle, h.name]] : []),
+        ];
+        const head = `<summary class="infohead"><i class="sdot ${on === true ? "ok" : ""}"></i><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span>${esc(item.platform ? PLATFORMS[item.platform] || item.platform : "")}</span></summary>`;
+        rows.push(`<details class="infopanel hubinfo netdev">${head}${lines.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</details>`);
       }
     }
-    const head = [t.netColDevice, t.netColPlatform, t.netColAddress, t.netColState, t.netColCaps].map((x) => `<th>${esc(x)}</th>`).join("");
-    return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.length ? `<table class="nettab"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="ehint">${t.netNone}</div>`}</div>`;
+    return `<div class="esec infobox"><div class="etitle">${t.netTitle}</div>${rows.length ? rows.join("") : `<div class="ehint">${t.netNone}</div>`}</div>`;
   },
 
   // Which keys of the running activity go straight to the device and which over Harmony (same decision as _sendCmd).

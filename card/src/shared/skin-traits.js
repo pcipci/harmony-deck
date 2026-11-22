@@ -8,6 +8,7 @@ export const SKIN_TRAITS = {
   nixie: { premium: true, toggles: true, powerKnob: true },
   nostromo: { premium: true, noColorIcons: true },
   glass: { premium: true, noColorIcons: true, glassLook: true, powerKnob: true },
+  pebble: { premium: true, noColorIcons: true, pebbleLook: true, powerKnob: true },
   clay: { premium: true, noColorIcons: true, powerKnob: true },
 };
 

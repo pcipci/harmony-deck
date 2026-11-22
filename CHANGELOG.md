@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.23.0
+
+### Added
+- **Pebble is a skin of its own now.** Grey river stones with irregular, slightly different shapes and small flaws on a dark water-teal ground. Pressing sinks the stone and leaves it wet for a second; the running activity and selected things are wet stones with clear droplets; things that belong to the running activity have a teal foot; unavailable things are carved into the stone. The d-pad lies as five pebbles in a round hollow, the status line, panels and fields are carved hollows. Volume is calm water in a groove with a grey pebble as the feeler, the Yes/No switch is a groove with a pebble (Yes = water in the groove, the stone stays dry). Symbols are painted in function colours (cream for most keys, green play, yellow pause, red stop/power/mute, blue info), small lettering is engraved. The Fire TV app keys are whole painted stones in the app colour, a droplet marks the running app.
+- **Setting *Painted* (Pebble):** Off, A one colour (default), B rainbow, C painted pictures: activity names and headings are painted, with C the pictogram of the activity is large and painted and the name is engraved below it.
+- **Setting *Background* (Pebble):** dark teal (default), slate, warm anthracite, river bed.
+- **Info area:** network devices are folded lines like the hubs (state dot, symbol, name, platform); unfolded they list platform, address, state, capabilities and hub. The Info area has only one button (Close), no Done/Cancel any more.
+
+### Changed
+- **Hold to switch off:** no ring round the symbol any more. The whole key turns red step by step until it fires (standard looks, Glass: the backlight grows red, Clay: the whole bubble turns coral). Glass fires with a full red glow.
+- **Hold to start or stop an activity:** no rising bar any more. The whole tile tints softly (Glass: the backlight grows, Clay: the bubble turns coral) until it is fully on.
+
 ## 0.22.0
 
 ### Added

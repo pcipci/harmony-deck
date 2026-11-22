@@ -123,7 +123,7 @@ Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm 
   <img src="docs/images/skin-pebble.png" width="32%" alt="Look Kiesel">
 </p>
 
-**Kiesel** (graue Flusssteine mit unregelmäßigen Formen auf dunklem Wasser-Blaugrün: Drücken lässt den Stein einsinken, die laufende Aktivität trägt klare Tropfen, Nicht-Verfügbares ist in den Stein gehöhlt, die Lautstärke ist Wasser in einer Rille mit einem Kiesel als Fühler, Symbole sind in Funktionsfarben bemalt; die Einstellung *Bemalt* malt Namen und Überschriften einfarbig, als Regenbogen oder mit großen bemalten Bildern, die Einstellung *Hintergrund* wählt dunkles Blaugrün, Schiefer, warmes Anthrazit oder Flussbett).
+**Kiesel** (graue Flusssteine mit unregelmäßigen Formen auf karibischem Grund: Drücken lässt den Stein einsinken, die laufende Aktivität trägt klare Tropfen, Nicht-Verfügbares ist ein sandfarbener Abdruck, die Lautstärke ist Wasser in einer Sandrille mit einem Kiesel als Fühler, Symbole sind in Funktionsfarben bemalt; die Einstellung *Bemalt* malt Namen und Überschriften einfarbig, als Regenbogen oder mit großen bemalten Bildern, die Einstellung *Bemalungsfehler* bestimmt, wie viel grauer Stein durch die Farbe scheint, die Einstellung *Hintergrund* wählt Karibik, Aquamarin, Lagune oder dunkles Blaugrün).
 
 ## Aktionen und Netzwerksteuerung
 

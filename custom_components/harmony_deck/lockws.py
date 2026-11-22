@@ -116,6 +116,7 @@ def _result(hass: HomeAssistant, connection: websocket_api.ActiveConnection) -> 
         "glassBg": settings.get("glassBg"),
         "pebblePaint": settings.get("pebblePaint"),
         "pebbleBg": settings.get("pebbleBg"),
+        "pebbleFlaw": settings.get("pebbleFlaw"),
         "glassActColors": settings.get("glassActColors"),
         "admin": bool(connection.user and connection.user.is_admin),
         "available": _manager(hass) is not None,

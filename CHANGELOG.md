@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.23.1
+
+### Changed
+- **Pebble: Caribbean look.** The new default background is bright turquoise with a sandy beach at the bottom (Caribbean); Aquamarine, Lagoon and Dark teal remain selectable (the old slate / anthracite / river bed backgrounds are gone, stored values map to the new ones). Text on the ground is white.
+- **Pebble: sand hollows.** Everything carved in (unavailable stones, d-pad hollow, status line, panels, fields, pop-up) is now a sand-coloured imprint with brown engraved text instead of dark grey.
+- **Pebble: volume and switches.** The groove is sand, the water is Caribbean turquoise and runs exactly up to the pebble (no straight edge). Switches and the power knob work the same; the pebbles are uneven, not round.
+- **Pebble: direct TV stones** are painted with brush strokes with small gaps where the grey stone shows through; the 3D shape of the stone is kept.
+- **Pebble: long stones** are less symmetric (a fatter and a slimmer end).
+- **Pebble device page:** On/Off (I, O, Toggle) is one full-width row of three stones; the Activities / Devices switch is two stones (the active one wet with droplets); devices are painted like activities; no frame round the status area and no clipped shadows at the page edge.
+- **Selectable chips in the security card** (allowed activities, apps, devices, days) no longer have a pill of their own: the chip itself changes between *selected* and *not selected* in the style of the device tiles of each skin, without a check mark.
+
+### Added
+- **Setting *Paint flaws* (Pebble):** Clean, Light (default) or Strong: how much of the grey stone shows through painted symbols, names and brush strokes. Default is lighter than 0.23.0.
+
 ## 0.23.0
 
 ### Added

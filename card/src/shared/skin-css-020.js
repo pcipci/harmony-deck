@@ -13,7 +13,7 @@ const T2 = 'ha-card[data-skin="terminal"]';
 // Things that are pressed (glass: lit strongly, fades out after release) / belong to the running activity (weakly lit) / selected (brightly lit)
 const PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
 const ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
+const SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".fchip:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
 const PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
 const on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
 const onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");

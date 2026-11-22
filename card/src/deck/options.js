@@ -30,6 +30,7 @@ export const optionsMixin = {
   _glassBg() { const g = this._config.glass_bg ?? this._settings().glassBg; return ["dark", "carbon", "alu", "board"].includes(g) ? g : "dark"; },
   // Pebble skin (0.23): painted lettering off / a one colour / b rainbow / c painted pictograms; background a slate, b warm anthracite, c dark teal (default), d river bed.
   _pebblePaint() { const g = this._config.pebble_paint ?? this._settings().pebblePaint; return ["off", "a", "b", "c"].includes(g) ? g : "a"; },
+  _pebbleFlaw() { const g = this._config.pebble_flaw ?? this._settings().pebbleFlaw; return ["clean", "light", "strong"].includes(g) ? g : "light"; },
   _pebbleBg() { const g = this._config.pebble_bg ?? this._settings().pebbleBg; return ["a", "b", "c", "d"].includes(g) ? g : "c"; },
   _glassLook() { const g = this._config.glass_look ?? this._settings().glassLook; return ["a", "b", "c"].includes(g) ? g : "c"; },
 

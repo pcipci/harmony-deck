@@ -124,7 +124,7 @@ Two effect skins go further than colours: **Terminal** (green phosphor screen, s
   <img src="docs/images/skin-pebble.png" width="32%" alt="Skin Pebble">
 </p>
 
-**Pebble** (grey river stones with irregular shapes on a dark water-teal ground: pressing sinks the stone, the running activity wears clear droplets, unavailable things are carved in, volume is water in a groove with a pebble as the feeler, symbols are painted in function colours; the setting *Painted* paints names and headings in one colour, as a rainbow or with large painted pictures, the setting *Background* chooses dark teal, slate, warm anthracite or river bed).
+**Pebble** (grey river stones with irregular shapes on a Caribbean ground: pressing sinks the stone, the running activity wears clear droplets, unavailable things are sand-coloured imprints, volume is water in a sand groove with a pebble as the feeler, symbols are painted in function colours; the setting *Painted* paints names and headings in one colour, as a rainbow or with large painted pictures, the setting *Paint flaws* sets how much grey stone shows through the paint, the setting *Background* chooses Caribbean, aquamarine, lagoon or dark teal).
 
 All own skins share one selection logic: in the profile window only one profile can be chosen and its whole row lights in the skin's selection style.
 

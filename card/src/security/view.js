@@ -34,6 +34,7 @@ export const securityViewMixin = {
     const glassBg = ["dark", "carbon", "alu", "board"].includes(this._config.glass_bg) ? this._config.glass_bg : ["dark", "carbon", "alu", "board"].includes(d?.glassBg) ? d.glassBg : "dark";
     const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
     const pebblePaint = ["off", "a", "b", "c"].includes(this._config.pebble_paint) ? this._config.pebble_paint : ["off", "a", "b", "c"].includes(d?.pebblePaint) ? d.pebblePaint : "a";
+    const pebbleFlaw = ["clean", "light", "strong"].includes(this._config.pebble_flaw) ? this._config.pebble_flaw : ["clean", "light", "strong"].includes(d?.pebbleFlaw) ? d.pebbleFlaw : "light";
     const pebbleBg = ["a", "b", "c", "d"].includes(this._config.pebble_bg) ? this._config.pebble_bg : ["a", "b", "c", "d"].includes(d?.pebbleBg) ? d.pebbleBg : "c";
     const vars = Object.entries({ ...SKINS[skin], ...(this._config.skin_vars || {}) }).map(([k, v]) => `${k}:${v}`).join(";");
     const sel = hubs.find((h) => h.id === this._hubSel);
@@ -44,7 +45,7 @@ export const securityViewMixin = {
       : this._hubHtml(sel, t);
     const keep = this._scrollKeep();
     this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} pp-${pebblePaint} pb-${pebbleBg} sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} pp-${pebblePaint} pb-${pebbleBg} pf-${pebbleFlaw} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;

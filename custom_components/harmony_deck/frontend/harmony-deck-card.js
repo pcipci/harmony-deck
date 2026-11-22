@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.23.0";
+  var VERSION = "0.23.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -3869,9 +3869,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       "--hr-panel-bg": "transparent",
       "--hr-accent": "#4fd1c5",
       "--hr-on-accent": "#0d2022",
-      "--hr-text": "#dfe9e9",
-      "--hr-muted": "#93a8a8",
-      "--hr-card-bg": "#0d2022",
+      "--hr-text": "#ffffff",
+      "--hr-muted": "#e2f3f1",
+      "--hr-card-bg": "#1b9498",
       "--hr-select-bg": "#1c2426",
       "--hr-dpad-radius": "50%",
       "--hr-ok-radius": "50%",
@@ -4081,6 +4081,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _pebblePaint() {
       const g = this._config.pebble_paint ?? this._settings().pebblePaint;
       return ["off", "a", "b", "c"].includes(g) ? g : "a";
+    },
+    _pebbleFlaw() {
+      const g = this._config.pebble_flaw ?? this._settings().pebbleFlaw;
+      return ["clean", "light", "strong"].includes(g) ? g : "light";
     },
     _pebbleBg() {
       const g = this._config.pebble_bg ?? this._settings().pebbleBg;
@@ -4644,7 +4648,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const held = this.offsetHeight;
       if (held) this.style.minHeight = `${held}px`;
       this.shadowRoot.innerHTML = `${this._style()}
-      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} gb-${this._glassBg()} pp-${this._pebblePaint()} pb-${this._pebbleBg()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
+      <ha-card style="${esc(varCss)}" data-skin="${esc(skin)}" class="gl-${this._glassLook()} gb-${this._glassBg()} pp-${this._pebblePaint()} pb-${this._pebbleBg()} pf-${this._pebbleFlaw()} ${this._fadeIn ? "fadein" : ""} ${this._colorful() ? "colorful" : ""} g-${this._glow()} ks-${this._keyStyle()} lay-${this._layout()} as-${this._activeStyle()} hl-${this._labels()} ${this._edit ? `ed et-${this._etabNow()}` : ""}">
         ${this._edit ? `<div class="edittool"><div class="edmode">${this._edModeHtml(t)}</div>
           ${this._cancelAsk ? `<div class="askq">${t.cancelAsk}</div><div class="editrow"><button class="editcancel" data-edit="cancelno"><span>${t.cancelBack}</span></button><button class="editdone warn" data-edit="cancelyes"><ha-icon icon="mdi:delete-outline"></ha-icon><span>${t.cancelDo}</span></button></div>` : `<div class="editrow">${this._editMode === "profiles" || this._editMode === "info" ? "" : `<button class="editcancel" data-edit="cancel" title="${esc(t.cancelTip)}"><ha-icon icon="mdi:close"></ha-icon><span>${t.cancel}</span></button>`}<button class="editdone" data-edit="off"><ha-icon icon="${this._editMode === "info" ? "mdi:close" : "mdi:check"}"></ha-icon><span>${this._editMode === "info" ? t.winClose : t.done}</span></button></div>`}</div>` : ""}
         ${this._skinHead(skin, sel)}${blocks || `<p class="empty">${t.empty}</p>`}${this._skinTail(skin)}
@@ -5075,6 +5079,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
           ${this._trait("pebbleLook") ? this._selRow(t.pebblePaint, "data-pebblepaint", t.pebblePaints, this._pebblePaint()) : ""}
+          ${this._trait("pebbleLook") ? this._selRow(t.pebbleFlaw, "data-pebbleflaw", t.pebbleFlaws, this._pebbleFlaw()) : ""}
           ${this._trait("pebbleLook") ? this._selRow(t.pebbleBg, "data-pebblebg", t.pebbleBgs, this._pebbleBg()) : ""}
           ${this._trait("glassLook") ? this._selRow(t.glassLook, "data-glasslook", t.glassLooks, this._glassLook()) : ""}
           ${this._trait("glassLook") ? this._selRow(t.glassBg, "data-glassbg", t.glassBgs, this._glassBg()) : ""}
@@ -5258,6 +5263,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-glassbg]": "glassBg",
         "[data-pebblepaint]": "pebblePaint",
         "[data-pebblebg]": "pebbleBg",
+        "[data-pebbleflaw]": "pebbleFlaw",
         "[data-glassac]": "glassActColors",
         '[data-setting="jumpRunning"]': "jumpRunning",
         "[data-offrel]": "offRelated",
@@ -5383,6 +5389,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       root.querySelector("select[data-glasslook]")?.addEventListener("change", (e) => this._saveSettings({ glassLook: e.target.value }));
       root.querySelector("select[data-glassac]")?.addEventListener("change", (e) => this._saveSettings({ glassActColors: e.target.value }));
       root.querySelector("select[data-pebblepaint]")?.addEventListener("change", (e) => this._saveSettings({ pebblePaint: e.target.value }));
+      root.querySelector("select[data-pebbleflaw]")?.addEventListener("change", (e) => this._saveSettings({ pebbleFlaw: e.target.value }));
       root.querySelector("select[data-pebblebg]")?.addEventListener("change", (e) => this._saveSettings({ pebbleBg: e.target.value }));
       root.querySelector("select[data-glassbg]")?.addEventListener("change", (e) => this._saveSettings({ glassBg: e.target.value }));
       root.querySelector("select[data-glow]")?.addEventListener("change", (e) => this._saveSettings({ glow: e.target.value }));
@@ -5417,7 +5424,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var T2 = 'ha-card[data-skin="terminal"]';
   var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
   var ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
-  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
+  var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".fchip:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
   var PRIMARY = [".pbtn.pri", ".editdone:not(.warn)", ".profdlg .editrow button:last-child", ".helpall", ".addact"];
   var on = (base, list) => list.map((s) => `${base} ${s}`).join(", ");
   var onNot = (base, list, not) => list.map((s) => `${base} ${s}:where(${not})`).join(", ");
@@ -5688,6 +5695,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   <filter id="kiPaint" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="3" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="1.6" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="8" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 -.8" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
   <filter id="kiPaintS" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="2" seed="5" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="1" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="2" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 -.2" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
   <filter id="kiPaintL" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="2" seed="3" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="2.4" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".45" numOctaves="3" seed="8" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 -.9" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+  <filter id="kiPaintX" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="3" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="1.1" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="8" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 -.35" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+  <filter id="kiPaintXS" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="2" seed="5" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale=".6" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="2" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 .15" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+  <filter id="kiPaintXL" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".07" numOctaves="2" seed="3" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="1.5" result="d"/><feTurbulence type="fractalNoise" baseFrequency=".45" numOctaves="3" seed="8" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 -.45" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+  <filter id="kiPaintN"><feOffset dx="0" dy="0"/></filter>
 </defs></svg>`;
   var NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .30 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`;
   var NONE = "linear-gradient(transparent, transparent)";
@@ -5696,12 +5707,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var PBTN = [...BTN2.filter((s) => s !== ".nettab"), ".sbtn"];
   var GHOST = [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".pill.ghost"];
   var SHAPES = [
-    ["63% 37% 48% 52% / 58% 42% 62% 38%", "#cdd1d2", "#9ea5a7", "radial-gradient(circle at 88% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px), radial-gradient(circle at 12% 30%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
-    ["41% 59% 57% 43% / 46% 61% 39% 54%", "#c8cdcf", "#98a0a4", "radial-gradient(circle at 70% 30%, rgba(0,0,0,.24) 0 1px, transparent 2px), radial-gradient(ellipse at 25% 72%, rgba(255,255,255,.2), transparent 40%)"],
+    ["70% 30% 46% 54% / 56% 44% 62% 38%", "#cdd1d2", "#9ea5a7", "radial-gradient(circle at 88% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px), radial-gradient(circle at 12% 30%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
+    ["34% 66% 58% 42% / 46% 61% 39% 54%", "#c8cdcf", "#98a0a4", "radial-gradient(circle at 70% 30%, rgba(0,0,0,.24) 0 1px, transparent 2px), radial-gradient(ellipse at 25% 72%, rgba(255,255,255,.2), transparent 40%)"],
     ["55% 45% 36% 64% / 66% 40% 60% 34%", "#d0cfca", "#a1a19b", "radial-gradient(circle at 82% 28%, rgba(150,95,50,.14) 0 8px, transparent 15px), radial-gradient(circle at 20% 70%, rgba(0,0,0,.3) 0 1.5px, transparent 2.5px)"],
     ["47% 53% 62% 38% / 38% 57% 43% 62%", "#c6cdcf", "#97a2a6", "radial-gradient(ellipse at 96% 46%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
-    ["60% 40% 52% 48% / 50% 64% 36% 50%", "#cdcdcc", "#a0a2a1", "radial-gradient(ellipse at 70% 60%, rgba(60,60,55,.22), transparent 40%), radial-gradient(circle at 30% 24%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
-    ["38% 62% 44% 56% / 60% 36% 64% 40%", "#caced0", "#9aa2a5", "radial-gradient(ellipse at 3% 55%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
+    ["66% 34% 52% 48% / 50% 64% 36% 50%", "#cdcdcc", "#a0a2a1", "radial-gradient(ellipse at 70% 60%, rgba(60,60,55,.22), transparent 40%), radial-gradient(circle at 30% 24%, rgba(0,0,0,.26) 0 1px, transparent 2px)"],
+    ["30% 70% 44% 56% / 60% 36% 64% 40%", "#caced0", "#9aa2a5", "radial-gradient(ellipse at 3% 55%, rgba(255,255,255,.35) 0 5px, rgba(255,255,255,.1) 10px, transparent 14px)"],
     ["52% 48% 66% 34% / 44% 52% 48% 56%", "#cfd2d1", "#a3a8a8", NONE],
     ["44% 56% 40% 60% / 64% 46% 54% 36%", "#c9cdce", "#9ba3a5", "radial-gradient(circle at 24% 76%, rgba(0,0,0,.28) 0 1px, transparent 2px), radial-gradient(circle at 15% 78%, rgba(0,0,0,.24) 0 1px, transparent 2px)"]
   ];
@@ -5716,11 +5727,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var ACTCOL = ["#ff7a6b", "#ffd84a", "#4fd1c5", "#ffa94d", "#6ec6ff", "#c9a3ff"];
   var SKIN_CSS_023 = `
       /* ---------- Kiesel: grey river stones, carved hollows, water in the grooves ---------- */
-      ${P} { --pb-a: #183a3c; --pb-b: #0d2022; --hr-fire: #19b6c9; --kv: #1d8a86; color: var(--hr-text); font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
-        background-color: #0d2022; background-image: ${NOISE}, radial-gradient(ellipse at 20% 0, rgba(60,160,150,.28), transparent 55%), linear-gradient(170deg, #183a3c, #0d2022); }
-      ${P}.pb-a { background-image: ${NOISE}, radial-gradient(ellipse at 20% 0, rgba(130,150,150,.25), transparent 55%), linear-gradient(170deg, #3a4043, #252a2c); }
-      ${P}.pb-b { background-image: ${NOISE}, radial-gradient(ellipse at 80% 0, rgba(170,140,100,.22), transparent 55%), linear-gradient(170deg, #3b3733, #221f1d); }
-      ${P}.pb-d { background-image: ${NOISE}, radial-gradient(ellipse at 30% 10%, rgba(190,170,130,.28), transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(60,120,120,.3), transparent 55%), linear-gradient(170deg, #5a5750, #34332f); }
+      ${P} { --hr-fire: #19b6c9; --kv: #1d8a86; --kf: url(#kiPaintX); --kfs: url(#kiPaintXS); --kfl: url(#kiPaintXL); --fk: .5; --sand1: #cdb88a; --sand2: #e6d5a8; --sandtx: #5e4620; color: var(--hr-text); font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+        background-color: #1b9498; background-image: radial-gradient(ellipse at 20% 0%, rgba(210,255,245,.4), transparent 55%), radial-gradient(ellipse at 50% 112%, rgba(240,222,170,.75), transparent 55%), linear-gradient(175deg, #38c6bb, #1b9498 62%, #2a8f8a); }
+      ${P}.pf-strong { --kf: url(#kiPaint); --kfs: url(#kiPaintS); --kfl: url(#kiPaintL); --fk: .85; }
+      ${P}.pf-clean { --kf: url(#kiPaintN); --kfs: url(#kiPaintN); --kfl: url(#kiPaintN); --fk: 0; }
+      ${P}.pb-a { background-color: #12787d; background-image: radial-gradient(ellipse at 20% 0%, rgba(210,255,245,.35), transparent 55%), linear-gradient(170deg, #2bb5ad, #12787d); }
+      ${P}.pb-b { background-color: #0a5a78; background-image: radial-gradient(ellipse at 20% 0%, rgba(200,250,255,.3), transparent 55%), linear-gradient(170deg, #12a9bd, #0a5a78); }
+      ${P}.pb-d { background-color: #0d2022; background-image: ${NOISE}, radial-gradient(ellipse at 20% 0, rgba(60,160,150,.28), transparent 55%), linear-gradient(170deg, #183a3c, #0d2022); }
       ${P} * { backdrop-filter: none; }
 
       /* the stone itself */
@@ -5747,12 +5760,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${P} .tile.dev::after, ${P} .tile.dev.inuse::after, ${P} .tile.dev.sel::after { display: none; }
 
       /* not available: carved into the stone */
-      ${on2(P, GHOST)} { border: none !important; border-radius: 40% 60% 46% 54% / 56% 44% 56% 44% !important; opacity: 1; filter: none; color: #5d686b !important; text-shadow: 0 1px 0 rgba(255,255,255,.12);
-        background: ${NOISE}, linear-gradient(180deg, #1f2426, #2b3133) !important; box-shadow: inset 0 5px 9px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14) !important; }
-      ${on2(P, GHOST.map((s) => `${s} :is(*, ha-icon)`))} { color: #5d686b !important; filter: none; }
+      ${on2(P, GHOST)} { border: none !important; border-radius: 40% 60% 46% 54% / 56% 44% 56% 44% !important; opacity: 1; filter: none; color: var(--sandtx) !important; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+        background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
+      ${on2(P, GHOST.map((s) => `${s} :is(*, ha-icon)`))} { color: var(--sandtx) !important; filter: none; opacity: .8; }
 
       /* the d-pad: five different pebbles lie in a round hollow */
-      ${P} .dpad { border-radius: 50% !important; background: ${NOISE}, linear-gradient(180deg, #1b2022, #2d3436) !important; box-shadow: inset 0 8px 14px rgba(0,0,0,.7), inset 0 -1px 2px rgba(255,255,255,.12) !important; }
+      ${P} .dpad { border-radius: 50% !important; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 8px 14px rgba(120,90,40,.55), inset 0 -1px 2px rgba(255,255,255,.45) !important; }
       ${P} .dpad::before, ${P} .dpad::after { display: none; }
       ${P} .dpad .d { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,0,0,.5) !important; }
       ${P} .dpad .d.ok { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,0,0,.5) !important; }
@@ -5760,20 +5773,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${P} .dpad .d.right { --pr: 44% 56% 52% 48% / 52% 48% 54% 46% !important; } ${P} .dpad .d.down { --pr: 48% 52% 56% 44% / 44% 44% 56% 56% !important; } ${P} .dpad .d.ok { --pr: 58% 42% 50% 50% / 48% 56% 44% 52% !important; }
 
       /* status line, panels, tables, hints: hollows carved into the stone; fields too */
-      ${P} .status.chip { border: none !important; border-radius: 40px 44px 38px 42px / 42px 38px 44px 40px !important; color: #9aabac; text-shadow: none;
-        background: ${NOISE}, linear-gradient(180deg, #1f2426, #2b3133) !important; box-shadow: inset 0 5px 9px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14) !important; }
-      ${on2(P, HOLLOW)} { border: none !important; border-radius: 36px 40px 34px 38px / 38px 34px 40px 36px !important; color: #9aabac; text-shadow: none;
-        background: ${NOISE}, linear-gradient(180deg, #1f2426, #2b3133) !important; box-shadow: inset 0 5px 9px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14) !important; }
-      ${P} .secstate b { color: var(--hr-text); } ${P} .secstate.s-on ha-icon { color: var(--hr-danger); } ${P} .secstate.s-free ha-icon, ${P} .secstate.s-idle ha-icon { color: var(--hr-accent); }
-      ${P} .slimbar > ha-icon, ${P} .slimbar .sw { color: #7ee0d6 !important; }
+      ${P} .status.chip { border: none !important; border-radius: 40px 44px 38px 42px / 42px 38px 44px 40px !important; color: var(--sandtx); text-shadow: 0 1px 0 rgba(255,255,255,.5);
+        background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
+      ${on2(P, HOLLOW)} { border: none !important; border-radius: 36px 40px 34px 38px / 38px 34px 40px 36px !important; color: var(--sandtx); text-shadow: 0 1px 0 rgba(255,255,255,.5);
+        background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
+      ${P} .secstate b { color: var(--sandtx); } ${P} .secstate.s-on ha-icon { color: #b8362b; } ${P} .secstate.s-free ha-icon, ${P} .secstate.s-idle ha-icon { color: #17706d; }
+      ${P} .slimbar > ha-icon, ${P} .slimbar .sw { color: #17706d !important; }
       ${P} .key.color { min-height: 16px; --cc: #888; background: var(--fl, ${NONE}), ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.5), transparent 50%), linear-gradient(150deg, color-mix(in srgb, var(--cc) 75%, #fff), var(--cc)) !important; }
       ${P} .key.color.red { --cc: #d9534f; } ${P} .key.color.green { --cc: #3fae68; } ${P} .key.color.yellow { --cc: #e6b830; } ${P} .key.color.blue { --cc: #3f84d9; }
-      ${on2(P, [...SURF2, ".block"])} { border: none !important; border-radius: 30px 34px 28px 32px / 32px 28px 34px 30px !important; color: var(--hr-text);
-        background: ${NOISE}, linear-gradient(180deg, #232a2c, #1c2224) !important; box-shadow: inset 0 4px 10px rgba(0,0,0,.6), inset 0 -1px 1px rgba(255,255,255,.1) !important; }
+      ${on2(P, [...SURF2, ".block"])} { border: none !important; border-radius: 30px 34px 28px 32px / 32px 28px 34px 30px !important; color: var(--sandtx);
+        background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 4px 9px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
       ${on2(P, [".win", ".helpbox", ".infopanel", ".hmenu", ".profdlg"])} { background: ${NOISE}, linear-gradient(180deg, #2a3234, #222a2c) !important; }
-      ${P} .textopen, ${P} .dfield, ${P} .kbsw { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--hr-text) !important; background: ${NOISE}, linear-gradient(180deg, #1b2022, #2d3436) !important; box-shadow: inset 0 4px 7px rgba(0,0,0,.7), inset 0 -1px 1px rgba(255,255,255,.12) !important; }
-      ${P} .textopen :is(span, ha-icon), ${P} .dfield :is(ha-icon, input) { color: var(--hr-text) !important; }
-      ${P} .kbsw button { color: #9aabac; } ${P} .kbsw button.sel { color: #e4fbf8; background: rgba(79,209,197,.22); }
+      ${P} .textopen, ${P} .dfield, ${P} .kbsw { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--sandtx) !important; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)) !important; box-shadow: inset 0 4px 7px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45) !important; }
+      ${P} .textopen :is(span, ha-icon), ${P} .dfield :is(ha-icon, input) { color: var(--sandtx) !important; }
+      ${P} .kbsw button { color: var(--sandtx); } ${P} .kbsw button.sel { color: #0f5a57; background: rgba(40,170,160,.3); }
       ${on2(P, FIELD2)} { border: none !important; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px !important; color: var(--hr-text) !important;
         background: ${NOISE}, linear-gradient(180deg, #1b2022, #2d3436) !important; box-shadow: inset 0 4px 7px rgba(0,0,0,.7), inset 0 -1px 1px rgba(255,255,255,.12) !important; }
       ${on2(P, PBTN)} { border: none !important; border-radius: 52% 48% 54% 46% / 56% 50% 50% 44% !important; color: #2b3032; text-shadow: 0 1px 0 rgba(255,255,255,.45);
@@ -5791,47 +5804,51 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${P} .sdot.lit { box-shadow: 0 0 6px var(--hr-accent); }
 
       /* painted symbols: function colours; cream for everything without a function */
-      ${on2(P, [".key ha-icon", ".kk ha-icon", ".pill ha-icon", ".d ha-icon", ".chip ha-icon", ".actbtn ha-icon", ".linkbar button ha-icon", ".seg .th ha-icon"])} { color: ${CREAM} !important; filter: url(#kiPaint) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
+      ${on2(P, [".key ha-icon", ".kk ha-icon", ".pill ha-icon", ".d ha-icon", ".chip ha-icon", ".actbtn ha-icon", ".linkbar button ha-icon", ".seg .th ha-icon"])} { color: ${CREAM} !important; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
       ${P} .d.ok { font-weight: 800; }
       ${P} .d.ok, ${P} .d.ok span { color: ${CREAM} !important; text-shadow: 0 0 .6px rgba(0,0,0,.7), 0 1px 1px rgba(0,0,0,.35); }
       ${P} .key[data-cmd*="Power"] ha-icon, ${P} .key[data-cmd*="Stop"] ha-icon, ${P} .key[data-cmd*="Record"] ha-icon, ${P} .key[data-cmd*="Mute"] ha-icon, ${P} .key.pon ha-icon, ${P} .key.warn ha-icon, ${P} .tile.off ha-icon { color: ${RED} !important; }
       ${P} .key[data-cmd*="Play"] ha-icon { color: ${GREEN} !important; }
       ${P} .key[data-cmd*="Pause"] ha-icon { color: ${YELLOW} !important; }
       ${P} .key[data-cmd*="Info"] ha-icon, ${P} .key[data-cmd*="Guide"] ha-icon { color: ${BLUE} !important; }
-      ${P} .ib ha-icon { color: ${CREAM}; filter: url(#kiPaint) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
+      ${P} .ib ha-icon { color: ${CREAM}; filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
       ${P} .ib.gear[class*="sev-"] ha-icon, ${P} .ib.help ha-icon { color: ${BLUE}; }
-      ${P} .tile.dev ha-icon, ${P} .tile.off ha-icon { filter: url(#kiPaint) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
-      ${P} .tile.dev ha-icon { color: ${CREAM}; }
+      ${P} .tile.dev ha-icon, ${P} .tile.off ha-icon { filter: var(--kf) drop-shadow(0 0 .6px rgba(0,0,0,.55)); }
       ${P} .tile.dev.inuse:not(.sel) ha-icon { color: #bdf3ee !important; }
       ${P} .key .small, ${P} .key small { font-size: .78em; text-transform: none; }
 
       /* Fire TV app keys: whole stone painted in the brand colour with an organic edge, a droplet when the app runs */
-      ${P} :is(.key.svc, .appcell.svc) { border: 0 !important; border-radius: 56% 44% 52% 48% / 54% 50% 50% 46% !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.6);
-        background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), transparent 46%), radial-gradient(ellipse 94% 88% at 48% 52%, color-mix(in srgb, var(--c) 82%, #000) 0 86%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important;
-        box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,0,0,.5) !important; }
+      ${P} :is(.key.svc, .appcell.svc) { border: 0 !important; border-radius: var(--pr) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+        --gap: color-mix(in srgb, #bfc4c5 calc(var(--fk, .5) * 100%), transparent);
+        background: radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%),
+          linear-gradient(177deg, transparent 33%, var(--gap) 34% 36.5%, transparent 38%) 6% 0 / 58% 100% no-repeat, linear-gradient(183deg, transparent 58%, var(--gap) 59% 61%, transparent 63%) 100% 0 / 62% 100% no-repeat, linear-gradient(179deg, transparent 15%, var(--gap) 16% 17.5%, transparent 19%) 50% 0 / 40% 100% no-repeat,
+          repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px),
+          radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%),
+          ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.3), 0 6px 9px rgba(0,40,45,.5) !important; }
       ${P} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: #fff !important; filter: none; }
-      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), transparent 46%), radial-gradient(ellipse 94% 88% at 48% 52%, color-mix(in srgb, var(--c) 82%, #000) 0 86%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.5) !important; }
+      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%), repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px), radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.55) !important; }
 
-      /* volume: water in a groove, a grey pebble as the feeler (no waves, no bubbles) */
-      ${P} .volslider { -webkit-appearance: none; appearance: none; background: transparent; --wt: linear-gradient(0deg, rgba(0,50,70,.82), rgba(20,140,150,.55) 55%, rgba(120,225,225,.38)); }
-      ${P} .volslider.h::-webkit-slider-runnable-track { height: 34px; border-radius: 22px 26px 18px 28px / 24px 20px 28px 22px; background: linear-gradient(180deg, rgba(0,50,70,.82), rgba(20,140,150,.55) 55%, rgba(120,225,225,.38)) 0 0 / calc(var(--v, 0) * 1%) 100% no-repeat, ${NOISE}, linear-gradient(180deg, #171c1e, #2a3133); box-shadow: inset 0 5px 8px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14); }
-      ${P} .volslider.v::-webkit-slider-runnable-track { width: 36px; border-radius: 24px 30px 18px 28px / 22px 26px 30px 20px; background: linear-gradient(90deg, rgba(0,50,70,.82), rgba(20,140,150,.55) 55%, rgba(120,225,225,.38)) 0 100% / 100% calc(var(--v, 0) * 1%) no-repeat, ${NOISE}, linear-gradient(90deg, #171c1e, #2a3133); box-shadow: inset 6px 0 9px rgba(0,0,0,.75), inset -1px 0 1px rgba(255,255,255,.14); }
-      ${P} .volslider::-webkit-slider-thumb { -webkit-appearance: none; width: 42px; height: 34px; border: 0; border-radius: 62% 38% 48% 52% / 46% 60% 40% 54%; cursor: pointer;
-        background: ${NOISE}, radial-gradient(ellipse at 28% 20%, rgba(255,255,255,.5), transparent 45%), linear-gradient(150deg, #b4bab9, #8a9291); box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 4px 6px rgba(0,0,0,.6); }
-      ${P} .volslider.v::-webkit-slider-thumb { margin-left: -3px; }
-      ${P} .volslider.h::-moz-range-track { height: 34px; border-radius: 22px; background: linear-gradient(180deg, #171c1e, #2a3133); box-shadow: inset 0 5px 8px rgba(0,0,0,.75); }
-      ${P} .volslider::-moz-range-progress { background: rgba(20,140,150,.6); height: 34px; border-radius: 22px; }
-      ${P} .volslider::-moz-range-thumb { width: 42px; height: 34px; border: 0; border-radius: 55%; background: linear-gradient(150deg, #b4bab9, #8a9291); }
+      /* volume: sand groove with Caribbean water up to the pebble (the pebble hides where the water ends), no waves, no bubbles */
+      ${P} .volslider { -webkit-appearance: none; appearance: none; background: transparent; }
+      ${P} .volslider.h::-webkit-slider-runnable-track { height: 34px; border-radius: 22px 26px 18px 28px / 24px 20px 28px 22px; background: linear-gradient(180deg, #5fd9cc, #27a6a3) 0 0 / calc(var(--v, 0) * 1% - var(--v, 0) * .42px + 21px) 100% no-repeat, ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)); box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45); }
+      ${P} .volslider.v::-webkit-slider-runnable-track { width: 36px; border-radius: 24px 30px 18px 28px / 22px 26px 30px 20px; background: linear-gradient(90deg, #5fd9cc, #27a6a3) 0 100% / 100% calc(var(--v, 0) * 1% - var(--v, 0) * .34px + 17px) no-repeat, ${NOISE}, linear-gradient(90deg, var(--sand1), var(--sand2)); box-shadow: inset 6px 0 9px rgba(120,90,40,.5), inset -1px 0 1px rgba(255,255,255,.45); }
+      ${P} .volslider::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 34px; border: 0; border-radius: 68% 32% 44% 56% / 44% 62% 38% 56%; cursor: pointer;
+        background: ${NOISE}, radial-gradient(ellipse at 28% 20%, rgba(255,255,255,.55), transparent 45%), linear-gradient(150deg, #cdd1d1, #9aa2a4); box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 4px 6px rgba(0,40,45,.5); }
+      ${P} .volslider.v::-webkit-slider-thumb { margin-left: -4px; }
+      ${P} .volslider.h::-moz-range-track { height: 34px; border-radius: 22px; background: linear-gradient(180deg, var(--sand1), var(--sand2)); box-shadow: inset 0 5px 8px rgba(120,90,40,.5); }
+      ${P} .volslider::-moz-range-progress { background: linear-gradient(180deg, #5fd9cc, #27a6a3); height: 34px; border-radius: 22px; }
+      ${P} .volslider::-moz-range-thumb { width: 44px; height: 34px; border: 0; border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; background: linear-gradient(150deg, #cdd1d1, #9aa2a4); }
 
-      /* switch: a groove with a grey pebble; "yes" = water in the groove, the stone stays dry and grey */
-      ${P} .sw i { border-radius: 20px 24px 18px 22px / 22px 18px 24px 20px; background: ${NOISE}, linear-gradient(180deg, #171c1e, #2d3436); box-shadow: inset 0 5px 8px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14); }
-      ${P} .sw i::after { top: 4px; left: 4px; width: 22px; height: 20px; border-radius: 55% 45% 50% 50% / 50% 55% 45% 50%; background: ${NOISE}, radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.5), transparent 45%), linear-gradient(150deg, #cdd1d1, #9aa2a4); box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.6); transition: transform .25s ease-out; }
-      ${P} .sw input:checked + i { background: linear-gradient(180deg, rgba(0,50,70,.82), rgba(20,140,150,.55) 55%, rgba(120,225,225,.38)), ${NOISE}, linear-gradient(180deg, #171c1e, #2d3436); box-shadow: inset 0 5px 8px rgba(0,0,0,.6), inset 0 -1px 1px rgba(255,255,255,.14), 0 0 8px rgba(50,200,190,.3); }
-      ${P} .sw input:checked + i::after { transform: translateX(18px); }
-      ${P} .pwknob { flex: none; position: relative; width: 70px; height: 38px; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px; background: ${NOISE}, linear-gradient(180deg, #171c1e, #2d3436); box-shadow: inset 0 5px 8px rgba(0,0,0,.75), inset 0 -1px 1px rgba(255,255,255,.14); }
-      ${P} .pwknob.on { background: linear-gradient(180deg, rgba(0,50,70,.82), rgba(20,140,150,.55) 55%, rgba(120,225,225,.38)), ${NOISE}, linear-gradient(180deg, #171c1e, #2d3436); }
-      ${P} .pwknob .knob { position: absolute; left: 4px; top: 4px; width: 34px; height: 30px; padding: 0; min-height: 0; border: 0 !important; border-radius: 55% 45% 50% 50% / 50% 55% 45% 50% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .25s ease-out;
-        background: ${NOISE}, radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.5), transparent 45%), linear-gradient(150deg, #cdd1d1, #9aa2a4) !important; box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.6) !important; color: #3b4346 !important; }
+      /* switch: sand groove with an uneven pebble; "yes" = water fills the groove up to the pebble */
+      ${P} .sw i { border-radius: 20px 24px 18px 22px / 22px 18px 24px 20px; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)); box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45); }
+      ${P} .sw i::after { top: 4px; left: 4px; width: 27px; height: 20px; border-radius: 66% 34% 46% 54% / 46% 60% 40% 54%; background: ${NOISE}, radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 45%), linear-gradient(150deg, #cdd1d1, #9aa2a4); box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 3px 5px rgba(0,40,45,.5); transition: transform .25s ease-out; }
+      ${P} .sw input:checked + i { background: linear-gradient(180deg, #5fd9cc, #27a6a3), ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)); box-shadow: inset 0 5px 8px rgba(0,70,80,.4), inset 0 -1px 1px rgba(255,255,255,.4); }
+      ${P} .sw input:checked + i::after { transform: translateX(14px); }
+      ${P} .pwknob { flex: none; position: relative; width: 74px; height: 38px; border-radius: 22px 26px 20px 24px / 24px 20px 26px 22px; background: ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)); box-shadow: inset 0 5px 8px rgba(120,90,40,.5), inset 0 -1px 1px rgba(255,255,255,.45); }
+      ${P} .pwknob.on { background: linear-gradient(180deg, #5fd9cc, #27a6a3), ${NOISE}, linear-gradient(180deg, var(--sand1), var(--sand2)); }
+      ${P} .pwknob .knob { position: absolute; left: 4px; top: 4px; width: 38px; height: 30px; padding: 0; min-height: 0; border: 0 !important; border-radius: 66% 34% 46% 54% / 46% 60% 40% 54% !important; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .25s ease-out;
+        background: ${NOISE}, radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 45%), linear-gradient(150deg, #cdd1d1, #9aa2a4) !important; box-shadow: inset 0 -2px 4px rgba(0,0,0,.3), 0 3px 5px rgba(0,40,45,.5) !important; color: #3b4346 !important; }
       ${P} .pwknob.on .knob { transform: translateX(28px); } ${P} .pwknob .knob ha-icon { --mdc-icon-size: 16px; color: #3b4346 !important; filter: none; }
       ${P} .pwknob.pend .knob { animation: kipend .6s ease-in-out infinite alternate; } @keyframes kipend { from { filter: brightness(.9); } to { filter: brightness(1.15); } }
 
@@ -5847,23 +5864,51 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${P} .holdoff.fired { filter: brightness(.7); }
 
       /* painted names (setting): A one colour, B rainbow, C large painted picture with the name engraved below; off = engraved names */
-      ${P}.pp-a .tile:not(.off):not(.dev):not(.locked) span { color: var(--pc, #b5342a) !important; text-shadow: none; filter: url(#kiPaintS); font-weight: 700; }
-      ${P}.pp-b .tile:not(.off):not(.dev):not(.locked) span { background: linear-gradient(90deg, #c0392b, #d9822b 20%, #c9a21f 40%, #2f9e6f 60%, #2b78c9 80%, #8a4fc9); -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; text-shadow: none; filter: url(#kiPaintL); font-weight: 700; }
-      ${P}.pp-c .tile:not(.off):not(.dev):not(.locked) { flex-direction: column; gap: 2px; min-height: 76px; }
-      ${P}.pp-c .tile:not(.off):not(.dev):not(.locked) ha-icon { --mdc-icon-size: 38px; }
-      ${P}.pp-c .tile:not(.off):not(.dev):not(.locked) span { font-size: .82em; letter-spacing: .02em; }
-      ${P}.pp-off .tile:not(.off):not(.dev):not(.locked) ha-icon { color: #4d5759 !important; filter: none; }
-      ${P} .tile:not(.off):not(.dev):not(.locked) ha-icon { filter: url(#kiPaintL) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
-      ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+1), ${P}.pp-c .tile:not(.off):not(.dev):not(.locked):nth-child(6n+1) { --pc: ${ACTCOL[0]}; }
-      ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+1) ha-icon { color: ${ACTCOL[0]}; } ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+2) ha-icon { color: ${ACTCOL[1]}; }
-      ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+3) ha-icon { color: ${ACTCOL[2]}; } ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+4) ha-icon { color: ${ACTCOL[3]}; }
-      ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+5) ha-icon { color: ${ACTCOL[4]}; } ${P} .tile:not(.off):not(.dev):not(.locked):nth-child(6n+6) ha-icon { color: ${ACTCOL[5]}; }
-      ${P} .tile.on:not(.off) ha-icon, ${P} .tile.going:not(.off) ha-icon { filter: url(#kiPaintL) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
-      ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+2) span { --pc: #9a7a00; } ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+3) span { --pc: #0f7a72; }
-      ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+4) span { --pc: #b3601a; } ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+5) span { --pc: #1f5fa3; } ${P}.pp-a .tile:not(.off):not(.dev):not(.locked):nth-child(6n+6) span { --pc: #7a3fa3; }
-      ${P}.pp-a :is(.etitle, .esub), ${P}.pp-c :is(.etitle, .esub) { color: ${CREAM}; filter: url(#kiPaintS); }
-      ${P}.pp-b :is(.etitle, .esub) { background: linear-gradient(90deg, #ff8a7a, #ffc46b 25%, #f3e27a 45%, #7be0a8 65%, #78b8ff 85%, #c9a3ff); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: url(#kiPaintS); }
-      ${P}.pp-off :is(.etitle, .esub) { color: #9aabac; }
+      ${P}.pp-a .tile:not(.off):not(.locked) span { color: var(--pc, #b5342a) !important; text-shadow: none; filter: var(--kfs); font-weight: 700; }
+      ${P}.pp-b .tile:not(.off):not(.locked) span { background: linear-gradient(90deg, #c0392b, #d9822b 20%, #c9a21f 40%, #2f9e6f 60%, #2b78c9 80%, #8a4fc9); -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; text-shadow: none; filter: var(--kfl); font-weight: 700; }
+      ${P}.pp-c .tile:not(.off):not(.locked) { flex-direction: column; gap: 2px; min-height: 76px; }
+      ${P}.pp-c .tile:not(.off):not(.locked) ha-icon { --mdc-icon-size: 38px; }
+      ${P}.pp-c .tile:not(.off):not(.locked) span { font-size: .82em; letter-spacing: .02em; }
+      ${P}.pp-off .tile:not(.off):not(.locked) ha-icon { color: #4d5759 !important; filter: none; }
+      ${P} .tile:not(.off):not(.locked) ha-icon { filter: var(--kfl) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}.pp-c .tile:not(.off):not(.locked):nth-child(6n+1) { --pc: #b5342a; }
+      ${P} .tile:not(.off):not(.locked):nth-child(6n+1) ha-icon { color: ${ACTCOL[0]}; } ${P} .tile:not(.off):not(.locked):nth-child(6n+2) ha-icon { color: ${ACTCOL[1]}; }
+      ${P} .tile:not(.off):not(.locked):nth-child(6n+3) ha-icon { color: ${ACTCOL[2]}; } ${P} .tile:not(.off):not(.locked):nth-child(6n+4) ha-icon { color: ${ACTCOL[3]}; }
+      ${P} .tile:not(.off):not(.locked):nth-child(6n+5) ha-icon { color: ${ACTCOL[4]}; } ${P} .tile:not(.off):not(.locked):nth-child(6n+6) ha-icon { color: ${ACTCOL[5]}; }
+      ${P} .tile.on:not(.off) ha-icon, ${P} .tile.going:not(.off) ha-icon { filter: var(--kfl) drop-shadow(0 0 .6px rgba(0,0,0,.5)); }
+      ${P}.pp-a .tile:not(.off):not(.locked):nth-child(6n+2) span { --pc: #9a7a00; } ${P}.pp-a .tile:not(.off):not(.locked):nth-child(6n+3) span { --pc: #0f7a72; }
+      ${P}.pp-a .tile:not(.off):not(.locked):nth-child(6n+4) span { --pc: #b3601a; } ${P}.pp-a .tile:not(.off):not(.locked):nth-child(6n+5) span { --pc: #1f5fa3; } ${P}.pp-a .tile:not(.off):not(.locked):nth-child(6n+6) span { --pc: #7a3fa3; }
+      ${P}.pp-a :is(.etitle, .esub), ${P}.pp-c :is(.etitle, .esub) { color: ${CREAM}; filter: var(--kfs); }
+      ${P}.pp-b :is(.etitle, .esub) { background: linear-gradient(90deg, #ff8a7a, #ffc46b 25%, #f3e27a 45%, #7be0a8 65%, #78b8ff 85%, #c9a3ff); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: var(--kfs); }
+      ${P}.pp-off :is(.etitle, .esub) { color: #fff; text-shadow: 0 1px 2px rgba(0,60,70,.5); }
+
+
+      ${P} :is(.bar, .seg, .chips) { border: none !important; }
+      /* Aktivitäten / Geräte: two stones, the active one wet with droplets */
+      ${P} .seg { background: none !important; box-shadow: none !important; padding: 2px 2px 8px; gap: 12px; border-radius: 0; }
+      ${P} .seg .th { display: none; }
+      ${P} .seg .lab { border-radius: var(--pr) !important; min-height: 46px; color: #2b3032; text-shadow: 0 1px 0 rgba(255,255,255,.45);
+        background: ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.55), transparent 44%), radial-gradient(ellipse at 78% 96%, rgba(0,0,0,.28), transparent 60%), linear-gradient(150deg, #cbcfd0, #9ba2a4);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,40,45,.5); }
+      ${P} .seg .lab[data-lab="0"] { --pr: 66% 34% 48% 52% / 56% 44% 60% 40%; } ${P} .seg .lab[data-lab="1"] { --pr: 36% 64% 54% 46% / 46% 60% 40% 54%; }
+      ${P} .seg .lab ha-icon { color: #3b4346; }
+      ${P} .seg .lab.a { color: #17403e; background: ${DROPS}, ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.4), transparent 44%), linear-gradient(150deg, #a7c4c4, #7ea5a6); box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 5px 7px rgba(0,40,45,.5), 0 0 14px rgba(60,200,190,.4); }
+      ${P} .seg .lab.a ha-icon { color: #17403e; }
+
+      /* power row of a device: I / O / Toggle as one full-width row of three stones */
+      ${P} .rpow .pwrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 6px 0; }
+      ${P} .pwlab { grid-column: 1 / -1; color: var(--hr-text); font-weight: 600; text-shadow: 0 1px 2px rgba(0,60,70,.45); }
+      ${P} .pwio { display: contents; } ${P} .key.pwio, ${P} .key.pwtg { width: auto; min-height: 50px; flex-direction: column; gap: 1px; padding: 4px 8px; }
+      ${P} .pwrow > .pwknob { grid-column: span 2; justify-self: start; }
+      ${P} .key.pwio:nth-child(1) { --pr: 60% 40% 48% 52% / 56% 48% 52% 44%; } ${P} .key.pwio:nth-child(2) { --pr: 38% 62% 54% 46% / 48% 58% 42% 52%; } ${P} .key.pwtg { --pr: 52% 48% 40% 60% / 60% 44% 56% 40%; }
+
+      /* the pager clips at its edge: give shadows room, no frame */
+      ${P} .pager { border-radius: 0; margin: -8px -12px -20px; } ${P} .pager .pane { padding: 10px 14px 22px; }
+
+      /* selectable chips (security card): same look as the device tiles, no extra pill inside */
+      ${P} .fchip span { background: transparent !important; color: inherit !important; box-shadow: none !important; padding: 2px 4px; border-radius: 0; }
+      ${P} .fchip:has(input:checked) { --fl: ${DROPS}; color: #17403e !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.25), 0 5px 7px rgba(0,40,45,.5), 0 0 14px rgba(60,200,190,.4) !important;
+        background: var(--fl), ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.4), transparent 44%), linear-gradient(150deg, #a7c4c4, #7ea5a6) !important; }
 
       @media (prefers-reduced-motion: reduce) { ${P} *, ${P} *::after { animation: none !important; transition: none !important; } }
 
@@ -7579,6 +7624,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const glassBg = ["dark", "carbon", "alu", "board"].includes(this._config.glass_bg) ? this._config.glass_bg : ["dark", "carbon", "alu", "board"].includes(d?.glassBg) ? d.glassBg : "dark";
       const glassLook = ["a", "b", "c"].includes(this._config.glass_look) ? this._config.glass_look : ["a", "b", "c"].includes(d?.glassLook) ? d.glassLook : "c";
       const pebblePaint = ["off", "a", "b", "c"].includes(this._config.pebble_paint) ? this._config.pebble_paint : ["off", "a", "b", "c"].includes(d?.pebblePaint) ? d.pebblePaint : "a";
+      const pebbleFlaw = ["clean", "light", "strong"].includes(this._config.pebble_flaw) ? this._config.pebble_flaw : ["clean", "light", "strong"].includes(d?.pebbleFlaw) ? d.pebbleFlaw : "light";
       const pebbleBg = ["a", "b", "c", "d"].includes(this._config.pebble_bg) ? this._config.pebble_bg : ["a", "b", "c", "d"].includes(d?.pebbleBg) ? d.pebbleBg : "c";
       const vars = Object.entries({ ...SKINS[skin], ...this._config.skin_vars || {} }).map(([k, v]) => `${k}:${v}`).join(";");
       const sel = hubs.find((h) => h.id === this._hubSel);
@@ -7586,7 +7632,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const body = !d ? `<p class="empty">…</p>` : d.available === false ? `<p class="empty">${esc(t.sec.notAvailable)}</p>` : !sel ? `<p class="empty">${esc(t.sec.noHubs)}</p>` : this._hubHtml(sel, t);
       const keep = this._scrollKeep();
       this.shadowRoot.innerHTML = `${styleMixin._style.call({ _config: {} })}${securityStyle}
-      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} pp-${pebblePaint} pb-${pebbleBg} sec g-see ks-skin lay-narrow as-ring hl-auto">
+      <ha-card style="${esc(vars)}" data-skin="${esc(skin)}" class="gl-${glassLook} gb-${glassBg} pp-${pebblePaint} pb-${pebbleBg} pf-${pebbleFlaw} sec g-see ks-skin lay-narrow as-ring hl-auto">
         <div class="sechead"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>${esc(this._config.title || t.sec.title)}</b>${sel && hubs.length < 2 ? `<span>${esc(sel.name)}</span>` : ""}</div>
         ${tabs}${body}
       </ha-card>`;

@@ -134,14 +134,18 @@ export const infoMixin = {
         const live = this._hass.states?.[item.entity];
         const on = live && !["unavailable", "unknown"].includes(live.state) ? live.state !== "off" && live.state !== "standby" : null;
         const caps = (item.caps || []).map((c) => t.ddCapName?.[c] || c);
+        const when = live?.last_changed ? new Date(live.last_changed) : null;
+        const last = when && !isNaN(when) ? (new Date().toDateString() === when.toDateString() ? when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : `${when.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit" })} ${when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`) : null;
         // Like a hub: one folded line (state dot, symbol, name, platform); unfolded it lists the properties.
         const lines = [
           [t.netColPlatform, item.platform ? PLATFORMS[item.platform] || item.platform : "–"],
           [t.netColAddress, item.host || "–"],
           [t.netColState, stName(on)],
           [t.netColCaps, caps.length ? caps.join(", ") : t.ddCanNot],
+          [t.infoLast, last],
+          [t.infoEntity, item.entity],
           ...(this._hubs().length > 1 ? [[t.hubsTitle, h.name]] : []),
-        ];
+        ].filter(([, v]) => v);
         const head = `<summary class="infohead"><i class="sdot ${on === true ? "ok" : ""}"></i><ha-icon icon="${this._deviceIcon(dev, h.id)}"></ha-icon><b>${esc(dev)}</b><span>${esc(item.platform ? PLATFORMS[item.platform] || item.platform : "")}</span></summary>`;
         rows.push(`<details class="infopanel hubinfo netdev">${head}${lines.map(([k, v]) => `<div class="irow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</details>`);
       }

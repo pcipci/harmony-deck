@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.3
+
+### Changed
+- **Pebble: room bar** has room for the shadows, they are no longer cut off; the selected room is a wet stone with droplets.
+- **Pebble: Activities / Devices switch:** the symbols are coloured like the other painted symbols (grey only with *Painted: Off*).
+- **Pebble: pop-up menus and the profile window:** the stones differ in shape, tilt and size; small buttons such as the gear of the network control are stones too (not flat grey).
+- **Info area:** network devices show the entity name and the last activity, like the hubs.
+- **Setting *Background fills the view*** moved from Behaviour to Look.
+
 ## 0.23.2
 
 ### Changed

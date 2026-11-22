@@ -27,7 +27,7 @@ const NONE = "linear-gradient(transparent, transparent)";
 // What counts as a stone: everything you can press. The status line, panels and fields are carved hollows instead.
 const STONE = [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill:where(:not(.ghost))", ".chip:where(:not(.status))", ".d:where(:not(.ghost))", ".actbtn:where(:not(.miss))", ".tile:where(:not(.locked))", ".linkbar button", ".pbtn", ".ib", ".hubtabs button", ".seg .th", ".hint-row button"];
 const HOLLOW = [".slimbar", ".rocker:not(.none)", ".secstate"];
-const PBTN = [...BTN.filter((s) => s !== ".nettab"), ".sbtn"];
+const PBTN = [...BTN.filter((s) => s !== ".nettab"), ".sbtn", ".mini"];
 const GHOST = [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".pill.ghost"];
 
 // Eight different shapes and flaws, handed out by position so neighbours differ.
@@ -41,7 +41,7 @@ const SHAPES = [
   ["80% 20% 44% 56% / 52% 48% 52% 48%", "#cfd2d1", "#a3a8a8", NONE],
   ["38% 62% 70% 30% / 70% 70% 30% 40%", "#c9cdce", "#9ba3a5", "radial-gradient(circle at 24% 76%, rgba(0,0,0,.28) 0 1px, transparent 2px), radial-gradient(circle at 15% 78%, rgba(0,0,0,.24) 0 1px, transparent 2px)"],
 ];
-const SHP_LIST = [".etabs button", ".favkind button", ".profchip", ".pbtn", ".sbtn", ".golink", ".infobtn", ".helpall", ".addact", ".editdone", ".editcancel", ".iconbtn", ".kbchip", ".fchip", ".hlink", ".key.svc", ".appcell.svc"];
+const SHP_LIST = [".mentry", ".mini", ".pitem", ".profrow", ".profnew button", ".pbtns .pbtn", ".etabs button", ".favkind button", ".profchip", ".pbtn", ".sbtn", ".golink", ".infobtn", ".helpall", ".addact", ".editdone", ".editcancel", ".iconbtn", ".kbchip", ".fchip", ".hlink", ".key.svc", ".appcell.svc"];
 const shapes2 = SHAPES.map(([r], i) => `${SHP_LIST.map((x) => `${P} ${x}:nth-child(8n+${i + 1})`).join(", ")} { --pr: ${r}; }`).join("\n      ");
 const shapes = SHAPES.map(([r, a, b, f], i) => `${STONE.map((s) => `${P} ${s}:nth-child(8n+${i + 1})`).join(", ")} { --pr: ${r}; --s1: ${a}; --s2: ${b}; --fl: ${f}; }`).join("\n      ");
 
@@ -79,7 +79,7 @@ export const SKIN_CSS_023 = `
         box-shadow: inset 0 3px 8px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.5) !important; }
 
       /* running / selected: wet stone with a teal glow, clear droplets on it */
-      ${on(P, [...ACTIVE, ...SEL, ".tile.going"])} { --fl: ${DROPS}; color: #17403e !important; text-shadow: 0 0 6px rgba(70,220,205,.35);
+      ${on(P, [...ACTIVE, ...SEL, ".tile.going", ".hubtabs button.sel"])} { --fl: ${DROPS}; color: #17403e !important; text-shadow: 0 0 6px rgba(70,220,205,.35);
         box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.25), 0 5px 7px rgba(0,0,0,.5), 0 0 14px rgba(60,200,190,.4) !important; }
       ${on(P, [...ACTIVE, ...SEL].map((s) => `${s}:not(.tile) :is(span, small, b, i, ha-icon)`))} { color: #17403e !important; }
       ${on(P, [".tile.dev.inuse:not(.sel)"])} { --fl: ${NONE}; box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), inset 0 -14px 16px -10px rgba(60,190,180,.6), 0 6px 9px rgba(0,0,0,.5) !important; color: #2b3032 !important; }
@@ -264,6 +264,15 @@ export const SKIN_CSS_023 = `
       ${P}.pp-b :is(.hubtabs button, .etabs button, .favkind button) span { background: linear-gradient(90deg, #c0392b, #d9822b 20%, #c9a21f 40%, #2f9e6f 60%, #2b78c9 80%, #8a4fc9); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: var(--kfl); }
       ${P}.pp-off :is(.hubtabs button, .etabs button, .favkind button) span { color: #4d5759; }
 
+      /* room bar: room for the shadows (the bar scrolls sideways and clips otherwise) */
+      ${P} .hubtabs { padding: 6px 8px 18px; margin: -6px -8px -14px !important; }
+      /* the pop-up menu: stones differ a little in tilt and size */
+      ${P} .mentry:nth-child(4n+1) { transform: rotate(-.7deg); } ${P} .mentry:nth-child(4n+2) { transform: rotate(.6deg) scale(.985); } ${P} .mentry:nth-child(4n+3) { transform: rotate(.4deg); } ${P} .mentry:nth-child(4n+4) { transform: rotate(-.5deg) scale(.99); }
+      ${P} .mentry { min-height: 52px; }
+      /* pop-ups scroll or clip at their edge: room for the stone shadows */
+      ${P} :is(.hmenu, .win) { padding: 12px 14px 26px !important; }
+      ${P} :is(.pitem, .profrow):nth-child(4n+1) { transform: rotate(-.5deg); } ${P} :is(.pitem, .profrow):nth-child(4n+2) { transform: rotate(.5deg) scale(.99); } ${P} :is(.pitem, .profrow):nth-child(4n+3) { transform: rotate(.3deg); } ${P} :is(.pitem, .profrow):nth-child(4n+4) { transform: rotate(-.4deg) scale(.99); }
+
       /* Aktivitäten / Geräte: two stones, the active one wet with droplets */
       ${P} .seg { background: none !important; box-shadow: none !important; padding: 2px 2px 8px; gap: 12px; border-radius: 0; }
       ${P} .seg .th { display: none; }
@@ -271,9 +280,8 @@ export const SKIN_CSS_023 = `
         background: ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.55), transparent 44%), radial-gradient(ellipse at 78% 96%, rgba(0,0,0,.28), transparent 60%), linear-gradient(150deg, #cbcfd0, #9ba2a4);
         box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.28), 0 6px 9px rgba(0,40,45,.5); }
       ${P} .seg .lab[data-lab="0"] { --pr: 66% 34% 48% 52% / 56% 44% 60% 40%; } ${P} .seg .lab[data-lab="1"] { --pr: 36% 64% 54% 46% / 46% 60% 40% 54%; }
-      ${P} .seg .lab ha-icon { color: #3b4346; }
+      ${P} .seg .lab ha-icon { filter: var(--kfl) drop-shadow(0 0 .6px rgba(0,0,0,.5)); } ${P} .seg .lab[data-lab="0"] ha-icon { color: #ff9a2e; } ${P} .seg .lab[data-lab="1"] ha-icon { color: #2aa8a0; } ${P}.pp-off .seg .lab ha-icon { color: #4d5759; filter: none; }
       ${P} .seg .lab.a { color: #17403e; background: ${DROPS}, ${NOISE}, radial-gradient(ellipse at 26% 18%, rgba(255,255,255,.4), transparent 44%), linear-gradient(150deg, #a7c4c4, #7ea5a6); box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 5px 7px rgba(0,40,45,.5), 0 0 14px rgba(60,200,190,.4); }
-      ${P} .seg .lab.a ha-icon { color: #17403e; }
 
       /* power row of a device: I / O / Toggle as one full-width row of three stones */
       ${P} .rpow .pwrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 6px 0; }

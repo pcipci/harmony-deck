@@ -55,6 +55,7 @@ export const settingsEditorMixin = {
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
           ${this._hubs().length > 1 ? this._swRow(t.roomOnly, `data-roomonly data-hub="${esc(h.id)}"`, roomOnly) : ""}
+          ${this._swRow(t.fillView, 'data-setting="fillView"', this._fillView())}
           ${this._trait("pebbleLook") ? this._selRow(t.pebblePaint, "data-pebblepaint", t.pebblePaints, this._pebblePaint()) : ""}
           ${this._trait("pebbleLook") ? this._selRow(t.pebbleFlaw, "data-pebbleflaw", t.pebbleFlaws, this._pebbleFlaw()) : ""}
           ${this._trait("pebbleLook") ? this._selRow(t.pebbleBg, "data-pebblebg", t.pebbleBgs, this._pebbleBg()) : ""}
@@ -74,8 +75,7 @@ export const settingsEditorMixin = {
           ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
-          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}
-          ${this._swRow(t.fillView, 'data-setting="fillView"', this._fillView())}`)}
+          ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
         ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>

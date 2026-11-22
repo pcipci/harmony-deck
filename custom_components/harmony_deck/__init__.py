@@ -68,6 +68,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     domain_data["version"] = version
 
     domain_data["entry_id"] = entry.entry_id
+    from . import traffic
+
+    traffic.setup(hass)
     async_register_websocket(hass)
     async_register_action_api(hass)
     async_register_direct_websocket(hass)
@@ -93,11 +96,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = DeckCoordinator(hass, entry)
         await coordinator.async_refresh()
         entry.runtime_data = coordinator
+        _ensure_devices(hass, entry, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except Exception:  # noqa: BLE001
         _LOGGER.exception("Harmony Deck status entities could not be set up; the card keeps working")
         entry.runtime_data = None
     return True
+
+
+def _ensure_devices(hass: HomeAssistant, entry: ConfigEntry, coordinator: DeckCoordinator) -> None:
+    """Create the parent devices first (Harmony Deck, then the hubs), so the ones below can point to them by id."""
+    from .devinfo import ensure_parent
+    from .entity import deck_device, hub_device
+    from .lock import lock_hubs
+
+    version = hass.data.get(DOMAIN, {}).get("version")
+    ensure_parent(hass, entry.entry_id, deck_device(entry, version))
+    hubs = {h: i["title"] for h, i in lock_hubs(hass).items()}
+    for hub_id, hub in ((coordinator.data or {}).get("hubs") or {}).items():
+        hubs.setdefault(hub_id, hub.get("title") or "Harmony hub")
+    for hub_id, title in hubs.items():
+        ensure_parent(hass, entry.entry_id, hub_device(hass, entry, hub_id, title))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -110,6 +129,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         lock.async_stop()
     if watch := domain_data.pop("direct_watch", None):
         watch.stop()
+    if log := domain_data.pop("traffic", None):
+        log.stop()
     if getattr(entry, "runtime_data", None):
         unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
         entry.runtime_data.clear_issues()

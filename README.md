@@ -125,6 +125,8 @@ Two effect skins go further than colours: **Terminal** (green phosphor screen, s
 
 All own skins share one selection logic: in the profile window only one profile can be chosen and its whole row lights in the skin's selection style.
 
+To find out why a hub drops off the network there is an optional **request log** (Settings > Hub, off by default): every command sent to a hub or linked network device and every state change of those devices goes with the time into the normal Home Assistant log.
+
 ## Actions and network control
 
 **Actions** are your own buttons: one step ("toggle the candles") or a sequence of Harmony keys, pauses, Home Assistant actions, "wait until" and "if". They run in the integration, so they finish when the page is closed. Every action is also a **button entity** on the hub's device (press = start; refused while another action runs), and the sensor **Actions** lists them.

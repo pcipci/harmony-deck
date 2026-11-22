@@ -21,6 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_change
 
 from .const import DOMAIN
+from .entity import hub_device
 from .lock import LockManager, lock_hubs
 from .lockrules import MAX_RELEASE, MIN_RELEASE, MODES
 
@@ -74,14 +75,7 @@ class LockEntity(Entity):
         self._hub_id = hub_id
         self._attr_unique_id = lock_unique_id(entry.entry_id, hub_id, key)
         self._attr_translation_key = key
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}_{hub_id}")},
-            name=f"{info['title']} (Harmony Deck)",
-            manufacturer="Harmony Deck",
-            model="Harmony hub",
-            via_device=(DOMAIN, entry.entry_id),
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = hub_device(manager.hass, entry, hub_id, info["title"])
 
     async def async_added_to_hass(self) -> None:
         # The manager tells about every change, also when a release or a time window ends.

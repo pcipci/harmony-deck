@@ -199,3 +199,6 @@ Glas: Leuchtart B lässt die Schrift in der Funktionsfarbe leuchten, größerer 
 
 ### 0.21.0
 Profilfenster: nur ein Profil gleichzeitig, die ganze Zeile des gewählten Profils leuchtet im Auswahlstil des Skins (keine Häkchen mehr). Clay und Glas haben jetzt richtige Hauptbuttons und undurchsichtige Hilfefenster, Thermal eine dunkle Bearbeiten-Kopfzeile. Die Sicherheitskarte wurde in allen eigenen Skins geprüft.
+
+### 0.22.0
+Neue Einstellung *Anfragen an Hubs und Netzwerkgeräte im Log mitschreiben* (Einstellungen > Hub, standardmäßig aus): schreibt Befehle und Zustandswechsel von Hubs und verknüpften Geräten ins Home-Assistant-Log (Logger custom_components.harmony_deck.traffic). Das Fire-TV-Abzeichen ist in allen eigenen Skins nur noch ein leuchtendes Symbol. Clay und Glas haben richtige Fire-TV-App-Tasten, Clay eine Lautstärke-Blase. Die Home-Assistant-Warnungen zu veralteten Aufrufen sind behoben.

@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.21.0";
+  var VERSION = "0.22.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -5050,7 +5050,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         <label class="erow"><span>${t.hubName}</span><input type="text" data-hubname data-hub="${esc(h.id)}" value="${esc(h.name)}"></label>
         ${this._swRow(t.hubShown, `data-hubvis data-hub="${esc(h.id)}"`, shown)}
         ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
-        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
+        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}
+        ${this._swRow(t.trafficLog, 'data-setting="trafficLog"', !!this._settings().trafficLog)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
@@ -5239,6 +5240,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         '[data-setting="jumpRunning"]': "jumpRunning",
         "[data-offrel]": "offRelated",
         '[data-setting="helpManual"]': "helpManual",
+        '[data-setting="trafficLog"]': "trafficLog",
         '[data-link="entity"]': "linkEntity",
         '[data-link="activity"]': "linkActivity",
         "[data-actname]": "actName",
@@ -5773,6 +5775,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var C = 'ha-card[data-skin="clay"]';
   var X = 'ha-card[data-skin="nixie"]';
   var W = 'ha-card[data-skin="thermal"]';
+  var N2 = 'ha-card[data-skin="nostromo"]';
+  var R2 = 'ha-card[data-skin="radio"]';
+  var T2 = 'ha-card[data-skin="terminal"]';
   var PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
   var ACTIVE = [".tile.on", ".actbtn.acton", ".tile.going", ".tile.dev.inuse"];
   var SEL = [".key.sel", ".mini.sel", ".tile.dev.sel", ".etabs button.sel", ".favkind button.sel", ".hubtabs button.sel .ico", ".seg .lab.a", ".chk:has(input:checked)", ".mini.txt.sel", ".pitem.on", ".profrow.act"];
@@ -5987,14 +5992,61 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
 
       /* ---------- Thermal: the edit header sits on a dark plate so the lettering is readable on the heat gradient ---------- */
       ${W} .edittool { background: #0a0614; border-radius: 3px; padding: 8px; }
+
+      /* ---------- Fire TV badge (0.22): no plate, no frame, just the symbol in the skin's colour with a glow, laid over the original ---------- */
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) .fdot { background: transparent !important; box-shadow: none !important; outline: none !important; border: 0 !important; clip-path: none !important; border-radius: 50% !important; width: 16px; height: 16px; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) .fdot ha-icon { --mdc-icon-size: 14px; width: 14px; height: 14px; filter: drop-shadow(0 0 1.5px rgba(0,0,0,.95)) drop-shadow(0 0 3px var(--fdc)); }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) .fdot.f-unknown { opacity: .8; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) .fdot.f-unknown ha-icon { filter: drop-shadow(0 0 1.5px rgba(0,0,0,.9)); }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) :is(.infoitem, .sbtn) .sample .fdot { background: #14110d !important; width: 20px; height: 20px; }
+      ${T2} .fdot { --fdc: #3dff6b; color: #3dff6b !important; } ${N2} .fdot { --fdc: #ffb000; color: #ffb000 !important; } ${W} .fdot { --fdc: #ff7a1c; color: #ffe85a !important; }
+      ${R2} .fdot, ${X} .fdot { --fdc: #ff9a3a; color: #ffd27a !important; } ${G2} .fdot { --fdc: #8ff0ff; color: #bff6ff !important; } ${C} .fdot { --fdc: #ff8a7a; color: #e04a3a !important; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G2}, ${C}) .fdot ha-icon { color: inherit !important; }
+      ${T2} .hubtabs button.sel .fdot { color: #03200a !important; --fdc: #b8ffc8; } :is(${R2}, ${X}) .hubtabs button.sel .fdot { color: #2a170a !important; --fdc: #ffe29a; }
+
+      /* ---------- Header symbols (0.22): round, no plate and no frame around profile, help, gear and room tools; transport keys without outline ---------- */
+      :is(${T2}, ${N2}, ${W}, ${X}) :is(.ib, .profchip) { border: 0 !important; background: transparent !important; box-shadow: none !important; clip-path: none !important; border-radius: 50% !important; }
+      :is(${T2}, ${N2}, ${W}, ${X}) .ib.sel, :is(${T2}, ${N2}, ${W}, ${X}) .ib.hl { background: color-mix(in srgb, var(--hr-accent) 26%, transparent) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--hr-accent) 60%, transparent) !important; }
+      :is(${W}, ${N2}) .transport .key { border-color: transparent !important; box-shadow: none !important; }
+
+      /* ---------- Fire TV app keys (0.22): Glass = glass plate lit from behind in the brand colour, Clay = glossy bubble in the brand colour ---------- */
+      ${G2} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 52%, transparent), color-mix(in srgb, var(--c) 12%, #0b0e14) 72%), #0b0e14 !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent), 0 0 10px color-mix(in srgb, var(--c) 30%, transparent) !important; color: color-mix(in srgb, var(--c) 58%, #fff) !important; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
+      ${G2} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: inherit !important; }
+      ${G2} .appcell.svc.on { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G2} .appcell.svc.on::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); transform: translateX(-100%); animation: glsheen 3.6s ease-in-out infinite; pointer-events: none; }
+      @keyframes glsheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+      ${C} :is(.key.svc, .appcell.svc) { background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 46%), var(--c) !important; border: 0 !important; border-radius: 999px !important; box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.35), 0 6px 10px rgba(60,80,50,.35) !important; }
+      ${C} .appcell.svc.on { box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.4), 0 0 0 3px color-mix(in srgb, var(--c) 40%, transparent), 0 0 16px 2px color-mix(in srgb, var(--c) 60%, transparent) !important; animation: claywob .5s ease-out 1; }
+      ${C} .appcell.svc:active { transform: scale(1.05, .92) translateY(2px); box-shadow: inset 2px 4px 10px rgba(0,0,0,.3), 0 2px 4px rgba(60,80,50,.3) !important; }
+
+      /* ---------- Clay (0.22): volume as a bubble that fills (lighter to redder with the level), imprinted lettering in dents, selected device = selected activity ---------- */
+      ${C} .volslider { --cf: color-mix(in srgb, #e4573d calc(var(--v, 0) * 1%), #f7b7a5); }
+      ${C} .volslider.h::-webkit-slider-runnable-track { background:
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%, rgba(80,10,0,.22)) 0 0 / max(0px, calc(var(--v, 0) * 1% - 15px)) 100% no-repeat,
+        radial-gradient(circle 15px at calc(var(--v, 0) * 1% - 15px) 50%, var(--cf) 14.5px, transparent 15px),
+        linear-gradient(90deg, #f7b7a5, var(--cf)) 0 0 / max(0px, calc(var(--v, 0) * 1% - 15px)) 100% no-repeat,
+        var(--cl-dent); box-shadow: inset 0 4px 7px rgba(40,70,35,.5); }
+      ${C} .volslider.v::-webkit-slider-runnable-track { background:
+        linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%, rgba(80,10,0,.22)) 0 100% / 100% max(0px, calc(var(--v, 0) * 1% - 15px)) no-repeat,
+        radial-gradient(circle 15px at 50% calc(100% - var(--v, 0) * 1% + 15px), var(--cf) 14.5px, transparent 15px),
+        linear-gradient(0deg, #f7b7a5, var(--cf)) 0 100% / 100% max(0px, calc(var(--v, 0) * 1% - 15px)) no-repeat,
+        var(--cl-dent); box-shadow: inset 4px 0 7px rgba(40,70,35,.5); }
+      ${C} .volslider::-moz-range-progress { background: var(--cf); }
+      ${on(C, [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".pill.ghost"])}, ${on(C, [".key.ghost *", ".tile.locked *", ".key:disabled *", ".actbtn.miss *", ".pill.ghost *"])} { color: rgba(45,75,40,.6) !important; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+      ${on(C, [".key.ghost ha-icon", ".tile.locked ha-icon", ".key:disabled ha-icon", ".actbtn.miss ha-icon", ".pill.ghost ha-icon"])} { filter: drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
+      ${C} .tile.dev.inuse:not(.sel) ha-icon { color: #e0788f !important; }
+      ${C} .tile.dev.inuse:not(.sel) { color: var(--hr-text) !important; } ${C} .tile.dev.inuse:not(.sel) :is(span, small) { color: var(--hr-text) !important; }
+      ${C} .tile.dev.sel, ${C} .tile.dev.inuse.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 120%, rgba(120,20,5,.4), transparent 60%), var(--cl-coral) !important;
+        box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 2px 3px rgba(50,80,40,.35), 0 6px 18px rgba(228,87,61,.45) !important; transform: scale(.98, .95) translateY(2px); }
+      ${C} .tile.dev.sel ha-icon, ${C} .tile.dev.sel span, ${C} .tile.dev.sel small { color: #fff !important; }
 `;
 
   // src/shared/skin-css-new.js
   var W2 = 'ha-card[data-skin="thermal"]';
   var X2 = 'ha-card[data-skin="nixie"]';
   var N = 'ha-card[data-skin="nostromo"]';
-  var R2 = 'ha-card[data-skin="radio"]';
-  var T2 = 'ha-card[data-skin="terminal"]';
+  var R3 = 'ha-card[data-skin="radio"]';
+  var T3 = 'ha-card[data-skin="terminal"]';
   var tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
   var SKIN_CSS_NEW = `
       /* ---------- Wärmebild: violet-blue night, heat colours, segment letters ---------- */
@@ -6054,7 +6106,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W2} input[type="text"], ${W2} input[type="search"], ${W2} input[type="number"], ${W2} textarea { background: #0a0724; color: #6fd0c0; border: 1px solid #5b3fd0; border-radius: 0; } ${W2} select option { background: #0a0724; color: #6fd0c0; }
       ${X2} input[type="text"], ${X2} input[type="search"], ${X2} input[type="number"], ${X2} textarea { background: #120a08; color: #f0d9a8; border: 1px solid #8a6a2a; border-radius: 10px; } ${X2} select option { background: #120a08; color: #f0d9a8; }
       ${N} input[type="text"], ${N} input[type="search"], ${N} input[type="number"], ${N} textarea { background: #0d0700; color: #ffb000; border: 1px solid #7a5200; border-radius: 0; font-family: inherit; } ${N} select option { background: #120a00; color: #ffb000; }
-      ${R2} input[type="text"], ${R2} input[type="search"], ${R2} input[type="number"], ${R2} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R2} select option { background: #2a1a10; color: #f1e3c1; }
+      ${R3} input[type="text"], ${R3} input[type="search"], ${R3} input[type="number"], ${R3} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R3} select option { background: #2a1a10; color: #f1e3c1; }
       ${W2} .editbox, ${W2} .egrp, ${W2} .erow { color: #6fd0c0; } ${X2} .editbox, ${X2} .egrp, ${X2} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
       ${W2} .etabs button.sel, ${W2} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X2} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
@@ -6064,18 +6116,18 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W2} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
       ${W2} .ib.gear .gbadge { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: linear-gradient(90deg, #ffe85a, #ff4a12); color: #2a0600; box-shadow: 0 0 8px 1px rgba(255,122,28,.8); }
       ${N} .fdot { border-radius: 0; background: #120a00; color: #ffb000; box-shadow: 0 0 0 1px #ffb000; } ${N} .ib.gear .gbadge { border-radius: 0; background: #ffb000; color: #1a0f00; }
-      ${T2} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T2} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
-      ${R2} .fdot, ${X2} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R2} .fdot ha-icon, ${X2} .fdot ha-icon { filter: none; }
+      ${T3} .fdot { border-radius: 0; background: #021a05; color: #3dff6b; box-shadow: 0 0 0 1px #3dff6b; } ${T3} .ib.gear .gbadge { border-radius: 0; background: #3dff6b; color: #021a05; text-shadow: none; }
+      ${R3} .fdot, ${X2} .fdot { background: radial-gradient(circle at 38% 32%, #fff3c4, #c9a23c 60%, #5c4210); color: #2a170a; box-shadow: 0 0 0 1px #2a170a, 0 0 6px rgba(255,150,30,.6); } ${R3} .fdot ha-icon, ${X2} .fdot ha-icon { filter: none; }
       /* Fire TV not reachable: a clearly readable dashed badge instead of a dim black square */
-      ${W2} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T2} .fdot.f-unknown, ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
-      ${W2} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T2} .fdot.f-unknown { color: #3dff6b; } ${R2} .fdot.f-unknown, ${X2} .fdot.f-unknown { color: #2a170a; }
-      ${W2} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T2} .fdot.f-unknown ha-icon, ${R2} .fdot.f-unknown ha-icon, ${X2} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
-      ${T2} .editdone.warn, ${T2} .key.warn { color: #021a05; }
+      ${W2} .fdot.f-unknown, ${N} .fdot.f-unknown, ${T3} .fdot.f-unknown, ${R3} .fdot.f-unknown, ${X2} .fdot.f-unknown { opacity: 1; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
+      ${W2} .fdot.f-unknown { color: #b9a8ff; } ${N} .fdot.f-unknown { color: #e0a800; } ${T3} .fdot.f-unknown { color: #3dff6b; } ${R3} .fdot.f-unknown, ${X2} .fdot.f-unknown { color: #2a170a; }
+      ${W2} .fdot.f-unknown ha-icon, ${N} .fdot.f-unknown ha-icon, ${T3} .fdot.f-unknown ha-icon, ${R3} .fdot.f-unknown ha-icon, ${X2} .fdot.f-unknown ha-icon { color: currentColor !important; filter: none; }
+      ${T3} .editdone.warn, ${T3} .key.warn { color: #021a05; }
       ${W2} .lockmark.on { color: #ff5a1c; filter: drop-shadow(0 0 4px #ff5a1c); } ${W2} .lockmark.free { color: #ffe85a; }
       ${N} .lockmark.on { color: #ffb000; filter: drop-shadow(0 0 3px #ff8a00); } ${N} .lockmark.free { color: #c9a23c; }
-      ${T2} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T2} .lockmark.free { color: #1fa83c; }
-      ${R2} .lockmark.on, ${X2} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R2} .lockmark.free, ${X2} .lockmark.free { color: #9c8450; }
-      ${R2} .ib.gear .gbadge, ${X2} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
+      ${T3} .lockmark.on { color: #3dff6b; filter: drop-shadow(0 0 3px #3dff6b); } ${T3} .lockmark.free { color: #1fa83c; }
+      ${R3} .lockmark.on, ${X2} .lockmark.on { color: #e8b84a; filter: drop-shadow(0 0 3px rgba(255,150,30,.8)); } ${R3} .lockmark.free, ${X2} .lockmark.free { color: #9c8450; }
+      ${R3} .ib.gear .gbadge, ${X2} .ib.gear .gbadge { background: radial-gradient(circle at 38% 32%, #fff3c4, #ffb84a 60%, #a8480a); color: #2a170a; box-shadow: 0 0 0 1px #2a170a; }
       /* ---------- Nixie: number tubes and brass toggle switches ---------- */
       ${X2} { counter-reset: nx; border: 6px solid #5a3a1c; border-radius: 22px; box-shadow: inset 0 0 40px rgba(0,0,0,.55); background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px); font-family: Georgia, "Times New Roman", serif; }
       ${X2} .grid { counter-reset: nx; }
@@ -6166,11 +6218,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes nxrefresh { from { top: -20%; } to { top: 120%; } }
 
       /* the pager clips its content with the tile radius: with big radii it cut the bottom corners of the last tile row */
-      ${X2} .pager, ${R2} .pager { border-radius: 0; } ${X2} .pager .pane, ${R2} .pager .pane { padding: 2px 2px 10px; }
-      ${R2} .key.kk, ${X2} .key.kk { overflow: hidden; padding-left: 3px; padding-right: 3px; letter-spacing: 0; }
+      ${X2} .pager, ${R3} .pager { border-radius: 0; } ${X2} .pager .pane, ${R3} .pager .pane { padding: 2px 2px 10px; }
+      ${R3} .key.kk, ${X2} .key.kk { overflow: hidden; padding-left: 3px; padding-right: 3px; letter-spacing: 0; }
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
-      ${R2} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
-      ${R2} .key.ic-row.on:not(.mute) *, ${R2} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
+      ${R3} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
+      ${R3} .key.ic-row.on:not(.mute) *, ${R3} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
       @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W2} *, ${W2} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
 `;
 

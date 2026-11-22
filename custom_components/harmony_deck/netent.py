@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import directdev
 from .const import DOMAIN
+from .devinfo import find_device, via
 from .direct_watch import watcher
 from .lock import lock_hubs
 
@@ -44,9 +45,9 @@ def link_id(entry_id: str, hub: str, device: str) -> str:
     return f"{entry_id}_net_{hub}_{device}"
 
 
-def network_device_info(entry_id: str, hub: str, device: str, hub_id: str | None) -> DeviceInfo:
+def network_device_info(entry_id: str, hub: str, device: str, hub_id: str | None, hass: HomeAssistant | None = None) -> DeviceInfo:
     """The Home Assistant device of one linked network device (also home of a linked Fire TV's ADB entities)."""
-    via = (DOMAIN, f"{entry_id}_{hub_id}") if hub_id else (DOMAIN, entry_id)
+    parent = (DOMAIN, f"{entry_id}_{hub_id}") if hub_id else (DOMAIN, entry_id)
     return DeviceInfo(
         identifiers={(DOMAIN, link_id(entry_id, hub, device))},
         translation_key="network_device",
@@ -54,8 +55,8 @@ def network_device_info(entry_id: str, hub: str, device: str, hub_id: str | None
         name=f"{device} (Network)",
         manufacturer="Harmony Deck",
         model="Network device",
-        via_device=via,
         entry_type=DeviceEntryType.SERVICE,
+        **via(hass, entry_id, parent),
     )
 
 
@@ -82,12 +83,12 @@ class NetEntity(SensorEntity):
     _attr_should_poll = False
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, entry: ConfigEntry, hub: str, device: str, hub_id: str | None, key: str) -> None:
+    def __init__(self, entry: ConfigEntry, hub: str, device: str, hub_id: str | None, key: str, hass: HomeAssistant | None = None) -> None:
         self._hub, self._device = hub, device
         base = link_id(entry.entry_id, hub, device)
         self._attr_unique_id = f"{base}{_SEP}{key}"
         self._attr_translation_key = key
-        self._attr_device_info = network_device_info(entry.entry_id, hub, device, hub_id)
+        self._attr_device_info = network_device_info(entry.entry_id, hub, device, hub_id, hass)
 
     @property
     def _item(self) -> dict[str, Any]:
@@ -164,8 +165,8 @@ class NetCapability(NetEntity):
     _attr_options = ["yes", "no"]
     _attr_entity_registry_enabled_default = False
 
-    def __init__(self, entry: ConfigEntry, hub: str, device: str, hub_id: str | None, key: str) -> None:
-        super().__init__(entry, hub, device, hub_id, key)
+    def __init__(self, entry: ConfigEntry, hub: str, device: str, hub_id: str | None, key: str, hass: HomeAssistant | None = None) -> None:
+        super().__init__(entry, hub, device, hub_id, key, hass)
         self._code = key[len("net_cap_"):]
 
     @property
@@ -194,7 +195,7 @@ async def async_setup_network_devices(hass: HomeAssistant, entry: ConfigEntry, a
         for base, item in wanted.items():
             if base not in added:
                 added.add(base)
-                new += [_CLASSES[k](entry, item["hub"], item["device"], hubs.get(item["hub"]), k) for k in KEYS]
+                new += [_CLASSES[k](entry, item["hub"], item["device"], hubs.get(item["hub"]), k, hass) for k in KEYS]
         if new:
             async_add_entities(new)
         ents = er.async_get(hass)
@@ -228,10 +229,10 @@ def _merge_adb(hass: HomeAssistant, entry: ConfigEntry, ents: er.EntityRegistry,
             continue
         hub, device = link
         target = devs.async_get_or_create(config_entry_id=entry.entry_id,
-                                          **network_device_info(entry.entry_id, hub, device, hubs.get(hub)))
+                                          **network_device_info(entry.entry_id, hub, device, hubs.get(hub), hass))
         for ent in er.async_entries_for_config_entry(ents, entry.entry_id):
             if ent.unique_id.startswith(f"{entry.entry_id}_adb_{adb_id}_") and ent.device_id != target.id:
                 ents.async_update_entity(ent.entity_id, device_id=target.id)
-        old = devs.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_adb_{adb_id}")})
+        old = find_device(hass, entry.entry_id, (DOMAIN, f"{entry.entry_id}_adb_{adb_id}"))
         if old and not er.async_entries_for_device(ents, old.id, include_disabled_entities=True):
             devs.async_remove_device(old.id)

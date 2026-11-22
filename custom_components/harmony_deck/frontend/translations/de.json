@@ -289,6 +289,7 @@
   "pkgAdd": "Hinzufügen",
   "pkgRemove": "Entfernen",
   "tips": {
+    "trafficLog": "Schreibt jeden Befehl an einen Hub oder ein verknüpftes Netzwerkgerät und jede Zustandsänderung (z. B. Hub nicht erreichbar) mit Uhrzeit in das normale Home-Assistant-Log (Logger custom_components.harmony_deck.traffic). Nur zur Fehlersuche, danach wieder ausschalten.",
     "skin": "Grundlook der Karte: Farben, Rundungen und Tastenform.",
     "tileStyle": "Wie die Aktivitäten-Kacheln oben aussehen: mit Symbol, nur Symbol oder nur Text.",
     "colorIcons": "Färbt Symbole der Geräte und Dienste statt einheitlich grau.",
@@ -492,6 +493,7 @@
   "layoutKeypad": "Tastenfeld",
   "noKeys": "Für diese Aktivität gibt es keine Tasten, das Gerät hat keine Befehle.",
   "offRelated": "Beim Ausschalten auch zugehörige Geräte ausschalten",
+  "trafficLog": "Anfragen an Hubs und Netzwerkgeräte im Home-Assistant-Log mitschreiben",
   "helpManualSet": "Von Hand einzuschaltende Geräte in der Hilfe nennen",
   "helpManual": "Von Hand einschalten: {0}",
   "holdHint": "Zum Ausschalten halten",

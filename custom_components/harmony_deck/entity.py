@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DeckCoordinator
+from .devinfo import via
 
 
 def deck_device(entry: ConfigEntry, version: str | None) -> DeviceInfo:
@@ -19,6 +21,18 @@ def deck_device(entry: ConfigEntry, version: str | None) -> DeviceInfo:
         model="Dashboard card",
         sw_version=version,
         entry_type=DeviceEntryType.SERVICE,
+    )
+
+
+def hub_device(hass: HomeAssistant | None, entry: ConfigEntry, hub_id: str, title: str) -> DeviceInfo:
+    """The device of one Harmony hub (below the Harmony Deck device)."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{entry.entry_id}_{hub_id}")},
+        name=f"{title} (Harmony Deck)",
+        manufacturer="Harmony Deck",
+        model="Harmony hub",
+        entry_type=DeviceEntryType.SERVICE,
+        **via(hass, entry.entry_id, (DOMAIN, entry.entry_id)),
     )
 
 
@@ -48,14 +62,7 @@ class HubEntity(CoordinatorEntity[DeckCoordinator]):
         self._attr_unique_id = f"{entry.entry_id}_{hub_id}_{key}"
         self._attr_translation_key = key
         title = (coordinator.data or {}).get("hubs", {}).get(hub_id, {}).get("title") or "Harmony hub"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}_{hub_id}")},
-            name=f"{title} (Harmony Deck)",
-            manufacturer="Harmony Deck",
-            model="Harmony hub",
-            via_device=(DOMAIN, entry.entry_id),
-            entry_type=DeviceEntryType.SERVICE,
-        )
+        self._attr_device_info = hub_device(coordinator.hass, entry, hub_id, title)
 
     @property
     def _hub(self) -> dict:
@@ -85,15 +92,15 @@ class AdbEntity(CoordinatorEntity[DeckCoordinator]):
         if link:
             # 0.12: a Fire TV linked in the network control is one device, "Name (Network)".
             hub_ids = {i["remote"]: h for h, i in lock_hubs(coordinator.hass).items()}
-            self._attr_device_info = network_device_info(entry.entry_id, link[0], link[1], hub_ids.get(link[0]))
+            self._attr_device_info = network_device_info(entry.entry_id, link[0], link[1], hub_ids.get(link[0]), coordinator.hass)
             return
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_adb_{adb_id}")},
             name=f"{title} (ADB)",
             manufacturer="Harmony Deck",
             model="Android TV connection",
-            via_device=(DOMAIN, entry.entry_id),
             entry_type=DeviceEntryType.SERVICE,
+            **via(coordinator.hass, entry.entry_id, (DOMAIN, entry.entry_id)),
         )
 
     @property

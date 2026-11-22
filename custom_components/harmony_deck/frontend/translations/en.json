@@ -289,6 +289,7 @@
   "pkgAdd": "Add",
   "pkgRemove": "Remove",
   "tips": {
+    "trafficLog": "Writes every command sent to a hub or a linked network device and every state change (for example a hub going unavailable) with the time into the normal Home Assistant log (logger custom_components.harmony_deck.traffic). For troubleshooting only, switch it off afterwards.",
     "skin": "Basic look of the card: colours, rounding and key shape.",
     "tileStyle": "How the activity tiles at the top look: with icon, icon only or text only.",
     "colorIcons": "Colours device and service icons instead of plain grey.",
@@ -492,6 +493,7 @@
   "layoutKeypad": "Key pad",
   "noKeys": "This activity has no keys, the device has no commands.",
   "offRelated": "Also turn off related devices when switching off",
+  "trafficLog": "Log requests to hubs and network devices in the Home Assistant log",
   "helpManualSet": "Mention manually powered devices in the help",
   "helpManual": "Switch on by hand: {0}",
   "holdHint": "Hold to switch off",

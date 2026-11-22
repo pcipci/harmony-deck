@@ -49,7 +49,8 @@ export const settingsEditorMixin = {
         <label class="erow"><span>${t.hubName}</span><input type="text" data-hubname data-hub="${esc(h.id)}" value="${esc(h.name)}"></label>
         ${this._swRow(t.hubShown, `data-hubvis data-hub="${esc(h.id)}"`, shown)}
         ${this._swRow(t.offRelated, `data-offrel data-hub="${esc(h.id)}"`, !!this._settings().offRelated?.[h.id])}
-        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}`)}</div>
+        ${this._swRow(t.helpManualSet, 'data-setting="helpManual"', !!this._settings().helpManual)}
+        ${this._swRow(t.trafficLog, 'data-setting="trafficLog"', !!this._settings().trafficLog)}`)}</div>
       <div class="esec" data-t="look"><div class="etitle">${t.secLook}</div>
         ${this._grp(g.skin, `${this._selRow(t.skin, "data-skin", skins, skinGroup(skin))}
           ${skinGroup(skin) === "scheme" ? this._selRow(t.palette, "data-palette", palettes, skin) : ""}
@@ -185,7 +186,7 @@ export const settingsEditorMixin = {
       '[data-setting="keyboardControl"]': "keyCtl", '[data-setting="vibrate"]': "vibrate", '[data-setting="collapseHeader"]': "collapseHeader", '[data-setting="holdSwitch"]': "holdSwitch", "[data-layout]": "layout", "[data-activestyle]": "activeStyle",
       "[data-keystyle]": "keyStyle", "[data-labels]": "labels", "[data-glow]": "glow", '[data-direct="entity"]': "directEntity", '[data-direct="device"]': "directDevice",
       '[data-direct="prefer"]': "directPrefer", '[data-direct="irvol"]': "irVolume", '[data-direct="inact"]': "directAct", '[data-direct="offlock"]': "offlineLock", '[data-direct="model"]': "directModel",
-      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", "[data-glasslook]": "glassLook", "[data-glassbg]": "glassBg", "[data-glassac]": "glassActColors", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual",
+      "[data-hubname]": "hubName", "[data-hubvis]": "hubVis", "[data-glasslook]": "glassLook", "[data-glassbg]": "glassBg", "[data-glassac]": "glassActColors", '[data-setting="jumpRunning"]': "jumpRunning", "[data-offrel]": "offRelated", '[data-setting="helpManual"]': "helpManual", '[data-setting="trafficLog"]': "trafficLog",
       '[data-link="entity"]': "linkEntity", '[data-link="activity"]': "linkActivity",
       '[data-actname]': "actName", '[data-hent="entity"]': "actEntity", "[data-hop]": "actOp", "[data-actscope]": "actScope", "[data-acttile]": "actTile",
     };

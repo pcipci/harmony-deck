@@ -17,7 +17,7 @@ from .actionsmodel import clean_actions
 from .irvolume import clean_config
 from .directdev import clean_config as clean_direct, clean_suggest
 from .const import DOMAIN, HARMONY_DOMAIN, SETTING_KEYS, SIGNAL_ACTIONS
-from . import profiles as prof
+from . import profiles as prof, traffic
 from .hub import conf_commands, hub_info, match_conf, merge_conf_commands
 from .lockws import lock_overview
 
@@ -217,6 +217,8 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
         watch.refresh()
     if "actions" in settings:
         async_dispatcher_send(hass, SIGNAL_ACTIONS)
+    if "trafficLog" in settings:
+        traffic.setup(hass)
     connection.send_result(msg["id"], {"settings": prof.merged(data, name), "profile": name})
 
 

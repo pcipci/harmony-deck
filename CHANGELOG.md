@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.22.0
+
+### Added
+- **Request log:** new setting *Log requests to hubs and network devices* (off by default). When on, every command sent to a hub or a linked network device and every state change of them (for example a hub going unavailable) is written with the time into the normal Home Assistant log, logger `custom_components.harmony_deck.traffic`. Meant for finding out why a hub drops off the WiFi; switch it off afterwards.
+
+### Changed
+- **Fire TV badge:** no black plate or frame any more. In Terminal, Tube radio, Thermal, Nixie, Nostromo, Glass and Clay it is just the symbol in the skin's colour with a glow, laid over the room symbol.
+- **Header symbols (Terminal, Thermal, Nixie, Nostromo):** profile, help, gear and room tools are round without plate and frame. Thermal and Nostromo transport keys have no outline.
+- **Glass:** the Fire TV app keys are glass plates lit from behind in the colour of the app; the running app glows brighter and a light sweep runs over it.
+- **Clay:** app keys are glossy bubbles in the app colour (the running one glows and wobbles once). The volume bar is a bubble that fills from light salmon to red with the level. Lettering in dents (unavailable keys) is imprinted. Devices of the running activity keep dark lettering with a pink symbol, the chosen device looks like the chosen activity (coral bubble).
+
+### Fixed
+- Home Assistant deprecation warnings: devices now point to their parent with `via_device_id` and the Fire TV device lookup no longer uses `async_get_device` (the old calls stop working in Home Assistant 2027.8.0).
+
 ## 0.21.0
 
 Aligns all own skins (Terminal, Radio, Thermal, Nixie, Nostromo, Glass, Clay) and the security card with the skin model. The classic looks are unchanged.

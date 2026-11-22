@@ -199,3 +199,6 @@ Glass: light style B lights the lettering in the function colour, larger halo, c
 
 ### 0.21.0
 Profile window: one profile at a time, the whole row of the chosen profile is lit in the skin's selection style (no check marks). Clay and Glass got proper primary buttons and opaque help windows, Thermal a dark edit header. The security card was checked in all own skins.
+
+### 0.22.0
+New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.

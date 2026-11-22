@@ -6,6 +6,9 @@ const G = 'ha-card[data-skin="glass"]';
 const C = 'ha-card[data-skin="clay"]';
 const X = 'ha-card[data-skin="nixie"]';
 const W = 'ha-card[data-skin="thermal"]';
+const N2 = 'ha-card[data-skin="nostromo"]';
+const R2 = 'ha-card[data-skin="radio"]';
+const T2 = 'ha-card[data-skin="terminal"]';
 
 // Things that are pressed (glass: lit strongly, fades out after release) / belong to the running activity (weakly lit) / selected (brightly lit)
 const PRESSED = [".key:active", ".key.lit", ".kk:active", ".pill:active", ".chip:active", ".d:active", ".actbtn:active", ".tile:active", ".tile.lit", ".linkbar button:active", ".pbtn:active"];
@@ -230,4 +233,52 @@ export const SKIN_CSS_020 = `
 
       /* ---------- Thermal: the edit header sits on a dark plate so the lettering is readable on the heat gradient ---------- */
       ${W} .edittool { background: #0a0614; border-radius: 3px; padding: 8px; }
+
+      /* ---------- Fire TV badge (0.22): no plate, no frame, just the symbol in the skin's colour with a glow, laid over the original ---------- */
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) .fdot { background: transparent !important; box-shadow: none !important; outline: none !important; border: 0 !important; clip-path: none !important; border-radius: 50% !important; width: 16px; height: 16px; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) .fdot ha-icon { --mdc-icon-size: 14px; width: 14px; height: 14px; filter: drop-shadow(0 0 1.5px rgba(0,0,0,.95)) drop-shadow(0 0 3px var(--fdc)); }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) .fdot.f-unknown { opacity: .8; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) .fdot.f-unknown ha-icon { filter: drop-shadow(0 0 1.5px rgba(0,0,0,.9)); }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) :is(.infoitem, .sbtn) .sample .fdot { background: #14110d !important; width: 20px; height: 20px; }
+      ${T2} .fdot { --fdc: #3dff6b; color: #3dff6b !important; } ${N2} .fdot { --fdc: #ffb000; color: #ffb000 !important; } ${W} .fdot { --fdc: #ff7a1c; color: #ffe85a !important; }
+      ${R2} .fdot, ${X} .fdot { --fdc: #ff9a3a; color: #ffd27a !important; } ${G} .fdot { --fdc: #8ff0ff; color: #bff6ff !important; } ${C} .fdot { --fdc: #ff8a7a; color: #e04a3a !important; }
+      :is(${T2}, ${R2}, ${W}, ${X}, ${N2}, ${G}, ${C}) .fdot ha-icon { color: inherit !important; }
+      ${T2} .hubtabs button.sel .fdot { color: #03200a !important; --fdc: #b8ffc8; } :is(${R2}, ${X}) .hubtabs button.sel .fdot { color: #2a170a !important; --fdc: #ffe29a; }
+
+      /* ---------- Header symbols (0.22): round, no plate and no frame around profile, help, gear and room tools; transport keys without outline ---------- */
+      :is(${T2}, ${N2}, ${W}, ${X}) :is(.ib, .profchip) { border: 0 !important; background: transparent !important; box-shadow: none !important; clip-path: none !important; border-radius: 50% !important; }
+      :is(${T2}, ${N2}, ${W}, ${X}) .ib.sel, :is(${T2}, ${N2}, ${W}, ${X}) .ib.hl { background: color-mix(in srgb, var(--hr-accent) 26%, transparent) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--hr-accent) 60%, transparent) !important; }
+      :is(${W}, ${N2}) .transport .key { border-color: transparent !important; box-shadow: none !important; }
+
+      /* ---------- Fire TV app keys (0.22): Glass = glass plate lit from behind in the brand colour, Clay = glossy bubble in the brand colour ---------- */
+      ${G} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 52%, transparent), color-mix(in srgb, var(--c) 12%, #0b0e14) 72%), #0b0e14 !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent), 0 0 10px color-mix(in srgb, var(--c) 30%, transparent) !important; color: color-mix(in srgb, var(--c) 58%, #fff) !important; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
+      ${G} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: inherit !important; }
+      ${G} .appcell.svc.on { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G} .appcell.svc.on::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); transform: translateX(-100%); animation: glsheen 3.6s ease-in-out infinite; pointer-events: none; }
+      @keyframes glsheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+      ${C} :is(.key.svc, .appcell.svc) { background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 46%), var(--c) !important; border: 0 !important; border-radius: 999px !important; box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.35), 0 6px 10px rgba(60,80,50,.35) !important; }
+      ${C} .appcell.svc.on { box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.4), 0 0 0 3px color-mix(in srgb, var(--c) 40%, transparent), 0 0 16px 2px color-mix(in srgb, var(--c) 60%, transparent) !important; animation: claywob .5s ease-out 1; }
+      ${C} .appcell.svc:active { transform: scale(1.05, .92) translateY(2px); box-shadow: inset 2px 4px 10px rgba(0,0,0,.3), 0 2px 4px rgba(60,80,50,.3) !important; }
+
+      /* ---------- Clay (0.22): volume as a bubble that fills (lighter to redder with the level), imprinted lettering in dents, selected device = selected activity ---------- */
+      ${C} .volslider { --cf: color-mix(in srgb, #e4573d calc(var(--v, 0) * 1%), #f7b7a5); }
+      ${C} .volslider.h::-webkit-slider-runnable-track { background:
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%, rgba(80,10,0,.22)) 0 0 / max(0px, calc(var(--v, 0) * 1% - 15px)) 100% no-repeat,
+        radial-gradient(circle 15px at calc(var(--v, 0) * 1% - 15px) 50%, var(--cf) 14.5px, transparent 15px),
+        linear-gradient(90deg, #f7b7a5, var(--cf)) 0 0 / max(0px, calc(var(--v, 0) * 1% - 15px)) 100% no-repeat,
+        var(--cl-dent); box-shadow: inset 0 4px 7px rgba(40,70,35,.5); }
+      ${C} .volslider.v::-webkit-slider-runnable-track { background:
+        linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,0) 42%, rgba(80,10,0,.22)) 0 100% / 100% max(0px, calc(var(--v, 0) * 1% - 15px)) no-repeat,
+        radial-gradient(circle 15px at 50% calc(100% - var(--v, 0) * 1% + 15px), var(--cf) 14.5px, transparent 15px),
+        linear-gradient(0deg, #f7b7a5, var(--cf)) 0 100% / 100% max(0px, calc(var(--v, 0) * 1% - 15px)) no-repeat,
+        var(--cl-dent); box-shadow: inset 4px 0 7px rgba(40,70,35,.5); }
+      ${C} .volslider::-moz-range-progress { background: var(--cf); }
+      ${on(C, [".key.ghost", ".tile.locked", ".key:disabled", ".actbtn.miss", ".pill.ghost"])}, ${on(C, [".key.ghost *", ".tile.locked *", ".key:disabled *", ".actbtn.miss *", ".pill.ghost *"])} { color: rgba(45,75,40,.6) !important; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+      ${on(C, [".key.ghost ha-icon", ".tile.locked ha-icon", ".key:disabled ha-icon", ".actbtn.miss ha-icon", ".pill.ghost ha-icon"])} { filter: drop-shadow(0 1px 0 rgba(255,255,255,.6)); }
+      ${C} .tile.dev.inuse:not(.sel) ha-icon { color: #e0788f !important; }
+      ${C} .tile.dev.inuse:not(.sel) { color: var(--hr-text) !important; } ${C} .tile.dev.inuse:not(.sel) :is(span, small) { color: var(--hr-text) !important; }
+      ${C} .tile.dev.sel, ${C} .tile.dev.inuse.sel { background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 120%, rgba(120,20,5,.4), transparent 60%), var(--cl-coral) !important;
+        box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 2px 3px rgba(50,80,40,.35), 0 6px 18px rgba(228,87,61,.45) !important; transform: scale(.98, .95) translateY(2px); }
+      ${C} .tile.dev.sel ha-icon, ${C} .tile.dev.sel span, ${C} .tile.dev.sel small { color: #fff !important; }
 `;
+

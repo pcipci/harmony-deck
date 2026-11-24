@@ -88,9 +88,25 @@ export const SKIN_CSS_NEW = `
       @keyframes thfly { from { background-position: -14px 40px, 56px 40px, 14px -26px; opacity: .2; } to { background-position: 14px 13px, 14px 13px, 14px 13px; opacity: 1; } }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
+      /* lock marks in the skin's own colour (never the default blue); Nixie: a locked tube stays dark and carries a brass lock */
+      ${T} .tile .lockic { color: #3dff6b !important; filter: drop-shadow(0 0 3px rgba(61,255,107,.6)); } ${T} .tile.locked { color: #1fa63f; border-style: dashed; }
+      ${N} .tile .lockic { color: #ffb000 !important; filter: drop-shadow(0 0 3px rgba(255,176,0,.6)); } ${N} .tile.locked { border-style: dashed; color: #a06a00; }
+      ${R} .tile .lockic { color: #e8b84a !important; filter: drop-shadow(0 0 3px rgba(255,150,30,.6)); }
+      ${X} .tile .lockic { display: inline-block !important; position: absolute; top: 8px; right: 10px; color: #c9a23c !important; filter: drop-shadow(0 0 3px rgba(255,150,30,.5)); }
+      ${X} .tile.locked { opacity: 1; filter: none; background: linear-gradient(180deg, #0a0605, #030201) !important; border-color: #5a5a5a; }
+      ${X} .tile.locked::before { color: #24160c !important; text-shadow: none !important; }
+      ${X} .tile.locked span { color: #6a4a2a; }
       /* security card chips: the whole plate carries the look and the selection, the inner span only holds the text */
-      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"], ${W}, ${N}, ${T}, ${X}, ${R}) .sec .fchip span { background: transparent !important; border-radius: inherit; box-shadow: none; }
+      /* (the card itself carries the class "sec", so the selector is ha-card[...].sec, not a descendant) */
+      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"]).sec .fchip span { background: transparent !important; color: inherit !important; border-radius: inherit; box-shadow: none; }
+      /* angular skins: chips have the corners of their keys, not pills */
+      :is(${W}, ${N}, ${T}).sec :is(.fchip, .fchip span, .favkind button, .pbtn) { border-radius: 0 !important; }
+      ${X}.sec .fchip span { border-radius: 6px !important; }
+      ${W}.sec .fchip input:checked + span { --bx: 46%; --by: 56%; --bw: 50%; --bh: 78%; --sx: 20%; --sy: -12%; background: ${BL}, #0d0a3a !important; color: #fff !important; box-shadow: inset 0 0 0 1px #4a3a90; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      ${W}.sec .favkind button.sel { --bx: 46%; --by: 56%; --bw: 50%; --bh: 78%; --sx: 20%; --sy: -12%; background: ${BL}, #0d0a3a !important; color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; } ${W}.sec .favkind button.sel * { color: #fff !important; }
+      ${W}.sec .fchip span { clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); padding-left: 12px; padding-right: 12px; }
       /* hint bubbles (locked / unavailable / hold): each skin brings its own plate */
+      ${W} .tile > .hintbub { left: 10px; right: 10px; }
       ${W} { --hint-bg: #0a0724; --hint-fg: #6fd0c0; --hint-bd: 1px solid #2f8f9a; --hint-r: 0; }
       ${N} { --hint-bg: #120a00; --hint-fg: #ffb000; --hint-bd: 1px solid #ffb000; --hint-r: 0; }
       ${T} { --hint-bg: #021a05; --hint-fg: #3dff6b; --hint-bd: 1px solid #3dff6b; --hint-r: 0; }

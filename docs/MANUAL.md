@@ -206,5 +206,8 @@ Pebble (Kiesel) is a skin of its own (sand windows, eight stone shapes, painted 
 ### 0.23.4
 Thermal draws active things as one soft heat spot (hot core, yellow, green, teal edge) that flares when pressed and cools down, unavailable things cold blue, locked ones violet, and the three heat dots of a selected device fly in. Hint bubbles follow the skin. Glass: Fire TV keys are tinted glass lit from behind, unavailable keys cracked. Narrow phones show only the active room next to the tools. The device page has no header any more (tap the device again to deselect). Settings rows adapt to the card width. New setting *Slider step* (Settings > Behaviour) for TVs that only know volume steps, such as LG Netcast: the slider sends the missing steps one after the other.
 
+### 0.23.5
+LG Netcast: the volume slider now reaches the chosen level; after the last step the real level is read again and missing steps follow. Hint texts show in every skin. Lock marks follow the skin colour (Nixie: dark tube with a brass lock). Security card chips are square in Terminal, Nostromo and Thermal, whole lit plates in Glass and bubbles in Clay.
+
 ### 0.22.0
 New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.

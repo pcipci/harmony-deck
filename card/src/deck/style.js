@@ -67,8 +67,14 @@ export const styleMixin = {
       .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
       .tile.holdsw.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.seclocked { cursor: not-allowed; }
-      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
-      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
+      /* hint bubble (own element, so a skin's ::before cannot hide it); colours and shape come from the skin (--hint-*) */
+      .hintbub { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 5; display: block; font-style: normal; font-weight: 400; font-size: 0.7rem; line-height: 1.25; text-align: center; white-space: normal; text-transform: none; letter-spacing: 0; padding: 3px 6px; pointer-events: none; background: var(--hint-bg, #222); color: var(--hint-fg, #fff) !important; border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); border-radius: var(--hint-r, 8px); text-shadow: none; filter: none; transform: none; animation: none; }
+      .actbtn > .hintbub { bottom: 6px; }
+      .holdoff > .hintbub { left: auto; right: 0; bottom: auto; top: calc(100% + 4px); z-index: 20; width: max-content; max-width: 70vw; white-space: nowrap; padding: 4px 8px; font-size: 0.75rem; }
+      .hintbub ha-icon, .hintbub::before, .hintbub::after { display: none !important; }
+      .tile.holdoff > .hintbub { left: 4px; right: 4px; top: auto; bottom: 4px; width: auto; white-space: normal; }
+      /* strong enough to win over skin rules that colour everything inside an active or pressed tile */
+      ha-card [data-hint][data-hinttext] > i.hintbub.hintbub { background: var(--hint-bg, #222) !important; color: var(--hint-fg, #fff) !important; -webkit-text-fill-color: currentColor; border: var(--hint-bd, 0) !important; border-radius: var(--hint-r, 8px) !important; box-shadow: var(--hint-sh, none) !important; text-shadow: none !important; filter: none !important; opacity: 1 !important; font-family: inherit; }
       .tile.ts-text { min-height: 56px; } .tile.ts-icon { min-height: 64px; } .tile.ts-icon ha-icon { --mdc-icon-size: 32px; }
       .colorful .cell ha-icon, .colorful .helpkey.inp ha-icon { color: var(--hr-accent); }
       .colorful .power .key ha-icon { color: var(--hr-text); }
@@ -327,7 +333,6 @@ export const styleMixin = {
       .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
       .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
       .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); opacity: 0; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { opacity: 0; } to { opacity: 1; } }
-      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
       .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
       .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
       .pent { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: none; border-radius: 10px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; text-align: left; cursor: pointer; }
@@ -489,7 +494,6 @@ export const styleMixin = {
       .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 1%), var(--hr-tile-bg)); } .holdoff.holding ha-icon { color: color-mix(in srgb, #fff calc(var(--p, 0) * 1%), var(--hr-danger, #e53935)); }
       .ib.holdoff.fired, .tile.holdoff.fired { background: var(--hr-danger, #e53935); color: #fff; } .holdoff.fired ha-icon { color: #fff !important; }
       .holdoff ha-icon { position: relative; }
-      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 4px 8px; border-radius: var(--hint-r, 8px); font-size: 0.75rem; font-weight: 400; pointer-events: none; }
       .textopen { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; cursor: pointer; min-height: 34px; border-radius: var(--hr-seg-radius, 12px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .textopen ha-icon { --mdc-icon-size: 20px; } .textblock { margin-top: 8px; } .textblock.open .dtext { margin: 0; }
       ha-card .dtext { display: flex; gap: 8px; align-items: stretch; } .dfield { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }

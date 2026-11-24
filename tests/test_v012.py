@@ -108,6 +108,42 @@ async def test_fire_tv_without_device_stays_apart(hass: HomeAssistant, hass_stor
     assert dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_adb_adb1")}) is not None
 
 
+async def _steps_done(hass):
+    for _ in range(200):
+        await asyncio.sleep(0.01)
+        if not hass.data[DOMAIN].get("_volume_steps"):
+            return
+    raise AssertionError("volume steps still running")
+
+
+async def test_volume_steps_correct_dropped(hass: HomeAssistant, hass_ws_client):
+    """A TV that drops every third step: after the pass the level is read again and the missing steps follow."""
+    await _setup(hass)
+    from custom_components.harmony_deck import direct as direct_mod
+    direct_mod._STEP_GAP = direct_mod._SETTLE = 0
+    calls = []
+
+    async def step(call):
+        calls.append(call.service)
+        if len(calls) % 3 == 0:
+            return      # lost
+        st = hass.states.get("media_player.tv")
+        lvl = round(st.attributes["volume_level"] * 100) + (1 if call.service == "volume_up" else -1)
+        hass.states.async_set("media_player.tv", st.state, {**st.attributes, "volume_level": lvl / 100})
+
+    for srv in ("volume_up", "volume_down"):
+        hass.services.async_register("media_player", srv, step)
+    er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
+    hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 1024, "volume_level": 0.5})
+    hass.data[DOMAIN]["settings"]["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv"}}}
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "harmony_deck/direct/fix", "hub": REMOTE, "device": "LG", "op": "volume", "value": 0})
+    assert (await client.receive_json())["success"]
+    await _steps_done(hass)
+    assert round(hass.states.get("media_player.tv").attributes["volume_level"] * 100) == 0
+    assert set(calls) == {"volume_down"} and len(calls) > 50     # 50 needed, the lost ones sent again
+
+
 async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_read_only_access_token):
     await _setup(hass)
     sent = []
@@ -115,10 +151,19 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
     async def rec(call):
         sent.append((call.service, {k: v for k, v in call.data.items() if k != "entity_id"}))
 
-    for srv in ("volume_set", "volume_up", "volume_down", "volume_mute", "select_source"):
+    for srv in ("volume_set", "volume_mute", "select_source"):
         hass.services.async_register("media_player", srv, rec)
+
+    async def step(call):     # a TV that answers every step: the level follows
+        sent.append((call.service, {}))
+        st = hass.states.get("media_player.tv")
+        lvl = round(st.attributes["volume_level"] * 100) + (1 if call.service == "volume_up" else -1)
+        hass.states.async_set("media_player.tv", st.state, {**st.attributes, "volume_level": lvl / 100})
+
+    for srv in ("volume_up", "volume_down"):
+        hass.services.async_register("media_player", srv, step)
     from custom_components.harmony_deck import direct as direct_mod
-    direct_mod._STEP_GAP = 0
+    direct_mod._STEP_GAP = direct_mod._SETTLE = 0
     er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
     hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 2048, "volume_level": 0.2, "is_volume_muted": False,
                                                     "source_list": ["ZDF HD", "HDMI1", "Das Erste"], "source": "ZDF HD"})
@@ -131,7 +176,7 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
         return await client.receive_json()
 
     assert (await fix(op="volume", value=95))["success"]
-    await asyncio.sleep(0.2)
+    await _steps_done(hass)
     assert (await fix(op="mute", value=True))["success"]
     # LG Netcast only knows single steps: from 20 % to the limit of 60 % are 40 steps up (not one "set volume")
     assert sent == [("volume_up", {})] * 40 + [("volume_mute", {"is_volume_muted": True})]

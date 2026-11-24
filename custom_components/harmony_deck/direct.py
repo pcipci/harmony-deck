@@ -8,6 +8,7 @@ which adapter answered. Version 0.7 ships no extension yet; the list is the plac
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Any, Protocol
 
@@ -18,6 +19,7 @@ from homeassistant.helpers.storage import Store
 from . import directdev, mismatch
 from .const import DOMAIN
 
+_LOGGER = logging.getLogger(__name__)
 _TIMEOUT = 30
 
 
@@ -166,35 +168,62 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
         await hass.services.async_call(domain, service, data, blocking=True, context=context)
 
 
-_STEP_GAP = 0.05    # seconds between two volume steps sent to a step-only player
+_STEP_GAP = 0.1      # seconds between two volume steps sent to a step-only player
+_SETTLE = 2.5        # seconds to wait after the last step before the real level is read again
+_ROUNDS = 6          # one pass plus up to five corrections (each one smaller)
+_STEP_TIMEOUT = 5    # seconds one step may take
+
+
+async def _refresh(hass: HomeAssistant, entity: str) -> None:
+    """Ask the player for its current state now (a polled player like LG Netcast reports changes only every few seconds)."""
+    try:
+        async with asyncio.timeout(_STEP_TIMEOUT):
+            await hass.services.async_call("homeassistant", "update_entity", {"entity_id": entity}, blocking=True)
+    except Exception:  # noqa: BLE001 - then the last known state is used
+        _LOGGER.debug("volume steps: %s could not be read again", entity)
 
 
 def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Context | None) -> bool:
-    """Step-only player (LG Netcast): send the missing "louder" / "quieter" steps one after the other without waiting for each answer.
+    """Step-only player (LG Netcast): reach the level with single "louder" / "quieter" steps, then check and correct.
 
-    Runs in the background so the card gets its answer at once; a newer level replaces the steps that are still to come.
+    Each step waits for the player's answer (sent too fast, the TV drops some). After the last step the real level is
+    read again after a short pause; if the TV did not get there, the missing steps follow (at most five corrections).
+    Runs in the background so the card gets its answer at once; a newer level replaces the run that is still going.
     False if the player does not report its level (then the normal "set volume" is tried).
     """
-    current = snapshot(hass, entity).get("volume")
-    if current is None or not isinstance(value, (int, float)):
+    if snapshot(hass, entity).get("volume") is None or not isinstance(value, (int, float)):
         return False
-    service, count = directdev.steps_between(current, round(value))
+    target = round(value)
     tasks = hass.data[DOMAIN].setdefault("_volume_steps", {})
     if (old := tasks.pop(entity, None)) is not None:
         old.cancel()
-    if count == 0:
-        return True
 
-    async def send() -> None:
+    async def adjust() -> None:
         try:
-            for _ in range(count):
-                await hass.services.async_call("media_player", service, {"entity_id": entity}, blocking=False, context=context)
-                await asyncio.sleep(_STEP_GAP)
+            for attempt in range(_ROUNDS):
+                await _refresh(hass, entity)
+                current = snapshot(hass, entity).get("volume")
+                if current is None:
+                    return
+                service, count = directdev.steps_between(current, target)
+                if count == 0:
+                    return
+                _LOGGER.debug("volume steps: %s %s -> %s, %s x %s (round %s)", entity, current, target, count, service, attempt + 1)
+                for _ in range(count):
+                    async with asyncio.timeout(_STEP_TIMEOUT):
+                        await hass.services.async_call("media_player", service, {"entity_id": entity}, blocking=True, context=context)
+                    await asyncio.sleep(_STEP_GAP)
+                await asyncio.sleep(_SETTLE)
+            _LOGGER.debug("volume steps: %s did not reach %s", entity, target)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:  # noqa: BLE001 - a step failed (TV off, no answer): stop quietly
+            _LOGGER.debug("volume steps: %s stopped: %s", entity, err)
         finally:
             if tasks.get(entity) is asyncio.current_task():
                 tasks.pop(entity, None)
 
-    tasks[entity] = hass.async_create_background_task(send(), f"{DOMAIN} volume steps {entity}")
+    tasks[entity] = hass.async_create_background_task(adjust(), f"{DOMAIN} volume steps {entity}")
     return True
 
 

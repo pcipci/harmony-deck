@@ -189,9 +189,24 @@
   var RING_IB = '<svg class="hring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg>';
   var RING_TILE = '<svg class="hring big" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27"/></svg>';
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  var showHint = (b, ms = 1600) => {
+    const text = b?.dataset?.hinttext;
+    if (!text) return;
+    b.querySelector(":scope > .hintbub")?.remove();
+    const el = document.createElement("i");
+    el.className = "hintbub";
+    el.textContent = text;
+    b.appendChild(el);
+    b.dataset.hint = "1";
+    clearTimeout(b._hintTm);
+    b._hintTm = setTimeout(() => {
+      el.remove();
+      b.removeAttribute("data-hint");
+    }, ms);
+  };
 
   // src/shared/version.js
-  var VERSION = "0.23.4";
+  var VERSION = "0.23.5";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1329,11 +1344,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindActions(root) {
       root.querySelectorAll(".actbtn[data-actid]").forEach((b) => {
         let tm = null, done = false;
-        const hint = () => {
-          if (!b.dataset.hinttext) return;
-          b.dataset.hint = "1";
-          setTimeout(() => b.removeAttribute("data-hint"), 2200);
-        };
+        const hint = () => showHint(b, 2200);
         const release = () => {
           clearTimeout(tm);
           b.classList.remove("holding");
@@ -1474,18 +1485,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       });
       root.querySelectorAll(".tile[data-seclocked]").forEach((b) => b.addEventListener("click", () => {
         this._buzz(20);
-        b.dataset.hint = "1";
-        setTimeout(() => b.removeAttribute("data-hint"), 1600);
+        showHint(b);
       }));
       root.querySelectorAll(".tile[data-holdsw]").forEach((b) => {
         let tm = null, done = false;
         const stop = () => {
           clearTimeout(tm);
           b.classList.remove("holding");
-          if (!done && tm) {
-            b.dataset.hint = "1";
-            setTimeout(() => b.removeAttribute("data-hint"), 1600);
-          }
+          if (!done && tm) showHint(b);
           tm = null;
         };
         b.addEventListener("pointerdown", (e) => {
@@ -3191,10 +3198,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const stop = () => {
           if (!raf) return;
           reset();
-          if (!done) {
-            b.dataset.hint = "1";
-            setTimeout(() => b.removeAttribute("data-hint"), 1600);
-          }
+          if (!done) showHint(b);
         };
         b.addEventListener("pointerdown", start);
         ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
@@ -5514,8 +5518,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G} .tile:active, ${G} .tile.on { transform: none; }
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
       /* unavailable = fine crack in the glass; locked = the same crack and a darker plate (no lock symbol) */
-      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint]) { position: relative; overflow: hidden; }
-      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint])::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked) { position: relative; overflow: hidden; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked)::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
       ${G} :is(.tile.locked:not(.offline), .key.locked, .appcell.locked) { filter: brightness(.72); opacity: .8; }
       ${G} .lockic { display: none; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
@@ -5610,6 +5614,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${C} .tile.dev.inuse:nth-child(2) { animation-delay: .06s; } ${C} .tile.dev.inuse:nth-child(3) { animation-delay: .12s; } ${C} .tile.dev.inuse:nth-child(4) { animation-delay: .18s; } ${C} .tile.dev.inuse:nth-child(n+5) { animation-delay: .24s; }
       @keyframes claywob { 0% { transform: scale(1); } 30% { transform: scale(1.06, .93) translateY(2px); } 60% { transform: scale(.95, 1.05) translateY(-2px); } 100% { transform: scale(1); } }
       ${C} .tile.dev.sel { animation: none; }
+      /* Activities / Devices switch: the chosen side is written in coral like everything chosen */
+      ${C} .seg .lab.a, ${C} .seg .lab.a * { color: var(--cl-coral) !important; }
+      /* security card: chips are clay bubbles, a chosen one is a coral bubble */
+      ${C} .fchip { border-radius: 999px !important; padding: 0; }
+      ${C} .fchip:has(input:checked) { color: #fff !important; background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 120%, rgba(120,20,5,.4), transparent 60%), var(--cl-coral) !important; box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 2px 3px rgba(50,80,40,.35), 0 6px 14px rgba(228,87,61,.4) !important; transform: scale(.98, .95) translateY(1px); }
+      ${C} .fchip:has(input:checked) * { color: #fff !important; }
       /* switch: the track is a dent, the bubble travels and turns redder on the way */
       ${C} .sw i { background: #a9c79f; box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
       ${C} .sw i::after { background: radial-gradient(circle at 30% 25%, #fff 0 12%, rgba(255,255,255,0) 40%), #eaf3e4; box-shadow: inset -2px -3px 5px var(--cl-shade), 0 3px 4px rgba(50,80,40,.4); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), background .3s; }
@@ -6494,9 +6504,25 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       @keyframes thfly { from { background-position: -14px 40px, 56px 40px, 14px -26px; opacity: .2; } to { background-position: 14px 13px, 14px 13px, 14px 13px; opacity: 1; } }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
+      /* lock marks in the skin's own colour (never the default blue); Nixie: a locked tube stays dark and carries a brass lock */
+      ${T3} .tile .lockic { color: #3dff6b !important; filter: drop-shadow(0 0 3px rgba(61,255,107,.6)); } ${T3} .tile.locked { color: #1fa63f; border-style: dashed; }
+      ${N} .tile .lockic { color: #ffb000 !important; filter: drop-shadow(0 0 3px rgba(255,176,0,.6)); } ${N} .tile.locked { border-style: dashed; color: #a06a00; }
+      ${R3} .tile .lockic { color: #e8b84a !important; filter: drop-shadow(0 0 3px rgba(255,150,30,.6)); }
+      ${X2} .tile .lockic { display: inline-block !important; position: absolute; top: 8px; right: 10px; color: #c9a23c !important; filter: drop-shadow(0 0 3px rgba(255,150,30,.5)); }
+      ${X2} .tile.locked { opacity: 1; filter: none; background: linear-gradient(180deg, #0a0605, #030201) !important; border-color: #5a5a5a; }
+      ${X2} .tile.locked::before { color: #24160c !important; text-shadow: none !important; }
+      ${X2} .tile.locked span { color: #6a4a2a; }
       /* security card chips: the whole plate carries the look and the selection, the inner span only holds the text */
-      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"], ${W2}, ${N}, ${T3}, ${X2}, ${R3}) .sec .fchip span { background: transparent !important; border-radius: inherit; box-shadow: none; }
+      /* (the card itself carries the class "sec", so the selector is ha-card[...].sec, not a descendant) */
+      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"]).sec .fchip span { background: transparent !important; color: inherit !important; border-radius: inherit; box-shadow: none; }
+      /* angular skins: chips have the corners of their keys, not pills */
+      :is(${W2}, ${N}, ${T3}).sec :is(.fchip, .fchip span, .favkind button, .pbtn) { border-radius: 0 !important; }
+      ${X2}.sec .fchip span { border-radius: 6px !important; }
+      ${W2}.sec .fchip input:checked + span { --bx: 46%; --by: 56%; --bw: 50%; --bh: 78%; --sx: 20%; --sy: -12%; background: ${BL}, #0d0a3a !important; color: #fff !important; box-shadow: inset 0 0 0 1px #4a3a90; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      ${W2}.sec .favkind button.sel { --bx: 46%; --by: 56%; --bw: 50%; --bh: 78%; --sx: 20%; --sy: -12%; background: ${BL}, #0d0a3a !important; color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; } ${W2}.sec .favkind button.sel * { color: #fff !important; }
+      ${W2}.sec .fchip span { clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); padding-left: 12px; padding-right: 12px; }
       /* hint bubbles (locked / unavailable / hold): each skin brings its own plate */
+      ${W2} .tile > .hintbub { left: 10px; right: 10px; }
       ${W2} { --hint-bg: #0a0724; --hint-fg: #6fd0c0; --hint-bd: 1px solid #2f8f9a; --hint-r: 0; }
       ${N} { --hint-bg: #120a00; --hint-fg: #ffb000; --hint-bd: 1px solid #ffb000; --hint-r: 0; }
       ${T3} { --hint-bg: #021a05; --hint-fg: #3dff6b; --hint-bd: 1px solid #3dff6b; --hint-r: 0; }
@@ -6684,8 +6710,14 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
       .tile.holdsw.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.seclocked { cursor: not-allowed; }
-      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
-      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
+      /* hint bubble (own element, so a skin's ::before cannot hide it); colours and shape come from the skin (--hint-*) */
+      .hintbub { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 5; display: block; font-style: normal; font-weight: 400; font-size: 0.7rem; line-height: 1.25; text-align: center; white-space: normal; text-transform: none; letter-spacing: 0; padding: 3px 6px; pointer-events: none; background: var(--hint-bg, #222); color: var(--hint-fg, #fff) !important; border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); border-radius: var(--hint-r, 8px); text-shadow: none; filter: none; transform: none; animation: none; }
+      .actbtn > .hintbub { bottom: 6px; }
+      .holdoff > .hintbub { left: auto; right: 0; bottom: auto; top: calc(100% + 4px); z-index: 20; width: max-content; max-width: 70vw; white-space: nowrap; padding: 4px 8px; font-size: 0.75rem; }
+      .hintbub ha-icon, .hintbub::before, .hintbub::after { display: none !important; }
+      .tile.holdoff > .hintbub { left: 4px; right: 4px; top: auto; bottom: 4px; width: auto; white-space: normal; }
+      /* strong enough to win over skin rules that colour everything inside an active or pressed tile */
+      ha-card [data-hint][data-hinttext] > i.hintbub.hintbub { background: var(--hint-bg, #222) !important; color: var(--hint-fg, #fff) !important; -webkit-text-fill-color: currentColor; border: var(--hint-bd, 0) !important; border-radius: var(--hint-r, 8px) !important; box-shadow: var(--hint-sh, none) !important; text-shadow: none !important; filter: none !important; opacity: 1 !important; font-family: inherit; }
       .tile.ts-text { min-height: 56px; } .tile.ts-icon { min-height: 64px; } .tile.ts-icon ha-icon { --mdc-icon-size: 32px; }
       .colorful .cell ha-icon, .colorful .helpkey.inp ha-icon { color: var(--hr-accent); }
       .colorful .power .key ha-icon { color: var(--hr-text); }
@@ -6944,7 +6976,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
       .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
       .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); opacity: 0; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { opacity: 0; } to { opacity: 1; } }
-      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
       .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
       .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
       .pent { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: none; border-radius: 10px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; text-align: left; cursor: pointer; }
@@ -7106,7 +7137,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 1%), var(--hr-tile-bg)); } .holdoff.holding ha-icon { color: color-mix(in srgb, #fff calc(var(--p, 0) * 1%), var(--hr-danger, #e53935)); }
       .ib.holdoff.fired, .tile.holdoff.fired { background: var(--hr-danger, #e53935); color: #fff; } .holdoff.fired ha-icon { color: #fff !important; }
       .holdoff ha-icon { position: relative; }
-      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 4px 8px; border-radius: var(--hint-r, 8px); font-size: 0.75rem; font-weight: 400; pointer-events: none; }
       .textopen { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; cursor: pointer; min-height: 34px; border-radius: var(--hr-seg-radius, 12px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .textopen ha-icon { --mdc-icon-size: 20px; } .textblock { margin-top: 8px; } .textblock.open .dtext { margin: 0; }
       ha-card .dtext { display: flex; gap: 8px; align-items: stretch; } .dfield { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }

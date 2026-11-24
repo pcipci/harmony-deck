@@ -1,5 +1,5 @@
 // Activities view: tiles, links to other entities and the locks that follow from them.
-import { RING_TILE, esc } from "../shared/util.js";
+import { RING_TILE, esc, showHint } from "../shared/util.js";
 import { activityIcon } from "../shared/icons.js";
 
 export const activitiesMixin = {
@@ -93,13 +93,12 @@ export const activitiesMixin = {
     // Not allowed by the security lock: no start, a short hint instead.
     root.querySelectorAll(".tile[data-seclocked]").forEach((b) => b.addEventListener("click", () => {
       this._buzz(20);
-      b.dataset.hint = "1";
-      setTimeout(() => b.removeAttribute("data-hint"), 1600);
+      showHint(b);
     }));
     // Switching from a running activity (option): hold the tile, the fill shows the progress.
     root.querySelectorAll(".tile[data-holdsw]").forEach((b) => {
       let tm = null, done = false;
-      const stop = () => { clearTimeout(tm); b.classList.remove("holding"); if (!done && tm) { b.dataset.hint = "1"; setTimeout(() => b.removeAttribute("data-hint"), 1600); } tm = null; };
+      const stop = () => { clearTimeout(tm); b.classList.remove("holding"); if (!done && tm) showHint(b); tm = null; };
       b.addEventListener("pointerdown", (e) => {
         if (e.button > 0) return;
         done = false; b.classList.add("holding"); this._buzz(8);

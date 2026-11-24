@@ -1,5 +1,5 @@
 // Actions: their buttons under the remote (the editor is in action-editor.js, the steps in steps/).
-import { esc } from "../shared/util.js";
+import { esc, showHint } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 import { stepLabel } from "./steps/index.js";
 
@@ -54,7 +54,7 @@ export const actionsMixin = {
   _bindActions(root) {
     root.querySelectorAll(".actbtn[data-actid]").forEach((b) => {
       let tm = null, done = false;
-      const hint = () => { if (!b.dataset.hinttext) return; b.dataset.hint = "1"; setTimeout(() => b.removeAttribute("data-hint"), 2200); };
+      const hint = () => showHint(b, 2200);
       const release = () => { clearTimeout(tm); b.classList.remove("holding"); tm = null; if (this._holdingAct) { this._holdingAct = false; this._key = ""; setTimeout(() => { this.hass = this._hass; }, 0); } };
       b.addEventListener("pointerdown", (e) => {
         if (e.button > 0 || !b.hasAttribute("data-holdstop") || e.target.closest?.("[data-actmore]")) return;

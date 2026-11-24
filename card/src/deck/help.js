@@ -1,5 +1,5 @@
 // Help box (devices of an activity) and hold-to-switch-off.
-import { esc } from "../shared/util.js";
+import { esc, showHint } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 import { keyIcon, prettyCommand, powerCls } from "../shared/commands.js";
 
@@ -167,7 +167,7 @@ export const helpMixin = {
       const stop = () => {
         if (!raf) return;
         reset();
-        if (!done) { b.dataset.hint = "1"; setTimeout(() => b.removeAttribute("data-hint"), 1600); }
+        if (!done) showHint(b);
       };
       b.addEventListener("pointerdown", start);
       ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));

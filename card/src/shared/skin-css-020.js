@@ -84,8 +84,8 @@ export const SKIN_CSS_020 = `
       ${G} .tile:active, ${G} .tile.on { transform: none; }
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
       /* unavailable = fine crack in the glass; locked = the same crack and a darker plate (no lock symbol) */
-      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint]) { position: relative; overflow: hidden; }
-      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint])::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked) { position: relative; overflow: hidden; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked)::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
       ${G} :is(.tile.locked:not(.offline), .key.locked, .appcell.locked) { filter: brightness(.72); opacity: .8; }
       ${G} .lockic { display: none; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
@@ -180,6 +180,12 @@ export const SKIN_CSS_020 = `
       ${C} .tile.dev.inuse:nth-child(2) { animation-delay: .06s; } ${C} .tile.dev.inuse:nth-child(3) { animation-delay: .12s; } ${C} .tile.dev.inuse:nth-child(4) { animation-delay: .18s; } ${C} .tile.dev.inuse:nth-child(n+5) { animation-delay: .24s; }
       @keyframes claywob { 0% { transform: scale(1); } 30% { transform: scale(1.06, .93) translateY(2px); } 60% { transform: scale(.95, 1.05) translateY(-2px); } 100% { transform: scale(1); } }
       ${C} .tile.dev.sel { animation: none; }
+      /* Activities / Devices switch: the chosen side is written in coral like everything chosen */
+      ${C} .seg .lab.a, ${C} .seg .lab.a * { color: var(--cl-coral) !important; }
+      /* security card: chips are clay bubbles, a chosen one is a coral bubble */
+      ${C} .fchip { border-radius: 999px !important; padding: 0; }
+      ${C} .fchip:has(input:checked) { color: #fff !important; background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.7) 0 6%, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 120%, rgba(120,20,5,.4), transparent 60%), var(--cl-coral) !important; box-shadow: inset -3px -6px 10px rgba(110,20,5,.4), inset 3px 4px 6px rgba(255,200,190,.6), 0 2px 3px rgba(50,80,40,.35), 0 6px 14px rgba(228,87,61,.4) !important; transform: scale(.98, .95) translateY(1px); }
+      ${C} .fchip:has(input:checked) * { color: #fff !important; }
       /* switch: the track is a dent, the bubble travels and turns redder on the way */
       ${C} .sw i { background: #a9c79f; box-shadow: inset 0 3px 6px rgba(40,70,35,.5), inset 0 -2px 3px rgba(255,255,255,.5); }
       ${C} .sw i::after { background: radial-gradient(circle at 30% 25%, #fff 0 12%, rgba(255,255,255,0) 40%), #eaf3e4; box-shadow: inset -2px -3px 5px var(--cl-shade), 0 3px 4px rgba(50,80,40,.4); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), background .3s; }

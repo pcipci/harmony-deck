@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.23.5
+
+### Fixed
+- **Volume on LG Netcast reaches the target.** Each step now waits for the TV's answer (sent too fast, the TV dropped some), and about 2.5 seconds after the last step the card reads the real level again and sends the missing steps (up to five corrections). A new slider position stops a correction that is still running.
+- **Hint text was invisible in Terminal, Nostromo and Nixie** (only the prompt sign or the tube number showed): the hint is now its own element in every skin.
+
+### Changed
+- **Lock marks in the skin's colour:** green in Terminal, amber in Nostromo, brass in Tube radio. In Nixie a locked activity has a dark tube and a small brass lock, so it can be told apart.
+- **Security card chips:** square like the keys in Terminal, Nostromo and Thermal (Thermal: the chosen one is a heat spot); in Glass the whole plate lights up; in Clay they are clay bubbles, a chosen one coral.
+- **Clay: Activities / Devices switch:** the chosen side is written in coral.
+
 ## 0.23.4
 
 ### Added

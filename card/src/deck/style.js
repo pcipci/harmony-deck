@@ -67,8 +67,8 @@ export const styleMixin = {
       .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
       .tile.holdsw.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.seclocked { cursor: not-allowed; }
-      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
-      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
+      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
+      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
       .tile.ts-text { min-height: 56px; } .tile.ts-icon { min-height: 64px; } .tile.ts-icon ha-icon { --mdc-icon-size: 32px; }
       .colorful .cell ha-icon, .colorful .helpkey.inp ha-icon { color: var(--hr-accent); }
       .colorful .power .key ha-icon { color: var(--hr-text); }
@@ -327,7 +327,7 @@ export const styleMixin = {
       .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
       .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
       .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); opacity: 0; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { opacity: 0; } to { opacity: 1; } }
-      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
+      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
       .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
       .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
       .pent { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: none; border-radius: 10px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; text-align: left; cursor: pointer; }
@@ -396,6 +396,10 @@ export const styleMixin = {
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
       .hubtabs button:not(.sel) .rn2 { display: none; } @container (max-width: 260px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      @container (max-width: 419px) { .toprow:not(.ro) .hubtabs button:not(.sel), .toprow:not(.ro) .hubtabs .rooms-lab { display: none; } .toprow.ro .bbtns { display: none; } .toprow .hubtabs button.sel .rn { display: inline; } }
+      /* settings rows: narrow = label above, control full width; wide = label left, control in one fixed column */
+      @container (max-width: 519px) { .erow:not(.swrow):has(> select, > input[type=text], > input[type=number], > .entpick, > .picker) { flex-wrap: wrap; gap: 4px 12px; padding-bottom: 8px; } .erow:not(.swrow):has(> select, > input[type=text], > input[type=number], > .entpick, > .picker) > span:first-child { flex: 1 1 100%; } .erow > select, .erow > input[type=text], .erow > input[type=number], .erow > .entpick, .erow > .picker { flex: 1 1 100%; } }
+      @container (min-width: 520px) { .erow > select, .erow > input[type=text], .erow > input[type=number], .erow > .entpick, .erow > .picker { flex: 0 0 240px; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -485,7 +489,7 @@ export const styleMixin = {
       .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 1%), var(--hr-tile-bg)); } .holdoff.holding ha-icon { color: color-mix(in srgb, #fff calc(var(--p, 0) * 1%), var(--hr-danger, #e53935)); }
       .ib.holdoff.fired, .tile.holdoff.fired { background: var(--hr-danger, #e53935); color: #fff; } .holdoff.fired ha-icon { color: #fff !important; }
       .holdoff ha-icon { position: relative; }
-      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: #222; color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; pointer-events: none; }
+      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 4px 8px; border-radius: var(--hint-r, 8px); font-size: 0.75rem; font-weight: 400; pointer-events: none; }
       .textopen { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; cursor: pointer; min-height: 34px; border-radius: var(--hr-seg-radius, 12px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .textopen ha-icon { --mdc-icon-size: 20px; } .textblock { margin-top: 8px; } .textblock.open .dtext { margin: 0; }
       ha-card .dtext { display: flex; gap: 8px; align-items: stretch; } .dfield { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }

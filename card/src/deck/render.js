@@ -143,7 +143,7 @@ export const renderMixin = {
       : collapseBtn;
     // Tools (lock, profile, help, info, collapse) sit right in the row of the room tabs, apart from the device controls.
     const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-    const top = `<div class="toprow">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+    const top = `<div class="toprow${this._roomsOpen ? " ro" : ""}">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
     // Status chips only for what runs (Harmony activity, Fire TV, linked network devices); nothing runs = no chip line.
     const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
     const boxes = "";
@@ -197,6 +197,10 @@ export const renderMixin = {
   _bindFrame(root) {
     root.querySelectorAll("[data-hubtab]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.hubtab;
+      // Narrow phone: only the active room is shown next to the tools; tapping it swaps the tools for the room row.
+      const narrow = (root.querySelector("ha-card")?.getBoundingClientRect().width || 999) < 420;
+      if (narrow && id === this._hubSel && !this._roomsOpen) { this._roomsOpen = true; this._rerender(); return; }
+      this._roomsOpen = false;
       const go = () => { this._hubSel = id; try { localStorage.setItem("harmony_deck_last_hub", this._hubSel); } catch (e) { /* no storage */ } this._fadeIn = this._fadeIn || false; this._rerender(); };
       // Another skin in the next room: fade out, switch, fade in (not with "reduce motion").
       const card = root.querySelector("ha-card");

@@ -147,7 +147,7 @@ export const devicesMixin = {
     // Part of the running activity: say so, and lead back to the remote of that activity.
     const act = !embed && !this._edit ? this._runningActOf(h, dev) : null;
     const back = act ? `<button class="actlink" data-gotoact="${esc(h.id)}" title="${esc(t.devBackAct)}"><ha-icon icon="${esc(this._actIcon(h.id, act))}"></ha-icon><span>${esc(fmtText(t.devActiveIn, [act]))}</span><ha-icon icon="mdi:arrow-left-top"></ha-icon></button>` : "";
-    return `${embed ? `<div class="devhead emb"><span class="devname">${esc(dev)}</span></div>` : `<div class="devhead"><span class="devname">${esc(dev)}</span>${back}${this._edit ? "" : `<button class="ib devclose" data-devclose="${esc(h.id)}" title="${esc(t.devClose)}"><ha-icon icon="mdi:close"></ha-icon></button>`}</div>`}
+    return `${embed ? `<div class="devhead emb"><span class="devname">${esc(dev)}</span></div>` : (back ? `<div class="devhead">${back}</div>` : "")}
       ${pw}${this._panelHtml(h, own, t, { small: (kb ? kb.html : "") + favBlock + (dp.keys || ""), big: (dp.main || "") + pad + blocks, noLock: true, noKeypad: true })}`;
   },
 
@@ -157,7 +157,13 @@ export const devicesMixin = {
       const hub = b.dataset.hub;
       const same = this._device?.[hub] === b.dataset.dev;
       if (this._edit) { this._device = { ...(this._device || {}), [hub]: same ? null : b.dataset.dev }; this._rerender(); return; }
-      if (same) { this._scrollToRemote(); return; }   // second tap: back to the start of the remote (closing is the x in the device header)
+      if (same) {   // second tap: deselect the device again
+        this._device = { ...(this._device || {}), [hub]: null };
+        this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [hub]: false };
+        this._expandHub = hub;
+        this._rerender();
+        return;
+      }
       const select = () => {
         this._device = { ...(this._device || {}), [hub]: b.dataset.dev };
         if (this._collapseOn()) this._hdrCollapsed = { ...(this._hdrCollapsed || {}), [hub]: true };

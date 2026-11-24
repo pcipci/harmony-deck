@@ -41,6 +41,19 @@ export class HarmonyDeckSecurityCard extends HTMLElement {
     this._render();
   }
 
+  // Look settings changed in the main card (or this tab came back): read the integration again, so the skin follows at once.
+  connectedCallback() {
+    this._onSettings = () => { if (this._hass) setTimeout(() => this._load(), 300); };
+    this._onVisible = () => { if (!document.hidden && this._hass) this._load(); };
+    window.addEventListener("harmony-deck-settings", this._onSettings);
+    document.addEventListener("visibilitychange", this._onVisible);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("harmony-deck-settings", this._onSettings);
+    document.removeEventListener("visibilitychange", this._onVisible);
+  }
+
   getCardSize() { return 8; }
   static getStubConfig() { return {}; }
 }

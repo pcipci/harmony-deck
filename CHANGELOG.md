@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.23.4
+
+### Added
+- **Slider step for TVs with volume steps** (Settings > Behaviour, 1 / 2 / 5): LG Netcast only knows "one level louder / quieter". The volume slider now sends the missing steps one after the other without waiting for each answer, shows the target at once, and moves in the chosen step size. A newer level replaces the steps still to come.
+- **Thermal: soft heat spots.** An active activity, key or device is one irregular heat spot (hot core, yellow, green, teal edge) instead of a filled area, a bit different for every tile. Pressing flares the spot up, then it shrinks and cools down (green, teal). Unavailable things are cold blue, locked ones darker violet. Of the selected devices, the one of the running activity is red-yellow and the one that is only opened orange. The three heat dots are invisible when not selected and fly in from outside to the triangle (not with *reduce motion*).
+- **Hint bubbles in the skin's own look** (locked, unavailable, hold hints): sand in Pebble, glass plate, terminal and amber fields and so on instead of a black square.
+- **Glass:** Fire TV app keys at rest are a weakly tinted dark glass with dim text, lit from behind when the app runs or the key is pressed; unavailable keys show a fine crack in the glass, locked ones the same crack on a darker plate (no lock symbol).
+
+### Changed
+- **Narrow phones (card under about 420 px):** the room row shows only the active room next to the tools; tapping it swaps the tools for all rooms.
+- **Device page:** no device name and no close button any more; tapping the selected device again deselects it. The slim link "Active in <activity>" stays for a device of the running activity.
+- **Settings rows:** on narrow cards the label sits above the control, on wide cards the controls form one fixed column.
+- **Security card:** follows a changed look at once (also when the tab comes back); chips are selected as a whole plate in Glass, Clay and the effect skins, Clay chips are bubbles.
+- **Settings > Hub:** the tab text names the switch for writing requests to the HA log.
+- **Pebble:** no fine repeating streaks on the TV-direct stones, the list in the profile menu no longer cuts its shadows, the selected Activities / Devices stone keeps its coloured symbol.
+
 ## 0.23.3
 
 ### Changed

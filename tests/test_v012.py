@@ -1,5 +1,7 @@
 """0.12: Fire TV as a device of the network control, stricter room rule, inputs among channels, device page controls."""
 
+import asyncio
+
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
@@ -113,8 +115,10 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
     async def rec(call):
         sent.append((call.service, {k: v for k, v in call.data.items() if k != "entity_id"}))
 
-    for srv in ("volume_set", "volume_mute", "select_source"):
+    for srv in ("volume_set", "volume_up", "volume_down", "volume_mute", "select_source"):
         hass.services.async_register("media_player", srv, rec)
+    from custom_components.harmony_deck import direct as direct_mod
+    direct_mod._STEP_GAP = 0
     er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
     hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 2048, "volume_level": 0.2, "is_volume_muted": False,
                                                     "source_list": ["ZDF HD", "HDMI1", "Das Erste"], "source": "ZDF HD"})
@@ -127,8 +131,10 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
         return await client.receive_json()
 
     assert (await fix(op="volume", value=95))["success"]
+    await asyncio.sleep(0.2)
     assert (await fix(op="mute", value=True))["success"]
-    assert sent == [("volume_set", {"volume_level": 0.6}), ("volume_mute", {"is_volume_muted": True})]   # held to the limit
+    # LG Netcast only knows single steps: from 20 % to the limit of 60 % are 40 steps up (not one "set volume")
+    assert sent == [("volume_up", {})] * 40 + [("volume_mute", {"is_volume_muted": True})]
 
     from custom_components.harmony_deck import direct
 

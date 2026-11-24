@@ -35,7 +35,7 @@ export const volSliderMixin = {
     if (!s || this._edit || !r.volume || s.device !== r.volume || (!deviceView && s.activity !== h.current)) return "";
     const st = this._hass.states?.[s.entity];
     const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round((Math.min(lvl, s.cap) / (s.cap || 100)) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" step="${s.step || 1}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round((Math.min(lvl, s.cap) / (s.cap || 100)) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
   },
 
   async _volSend(hub, value, device) {

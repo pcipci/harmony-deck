@@ -191,7 +191,7 @@
   var esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   // src/shared/version.js
-  var VERSION = "0.23.3";
+  var VERSION = "0.23.4";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1811,6 +1811,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         await this._hass.callWS({ type: "harmony_deck/save_settings", settings, profile: this._prof().active });
       } catch (e) {
       }
+      try {
+        window.dispatchEvent(new CustomEvent("harmony-deck-settings"));
+      } catch (e) {
+      }
       this._key = "";
       this.hass = this._hass;
     }
@@ -2142,7 +2146,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const pad = !kb && Object.keys(digitCmds).length >= 3 ? `<details class="block numpad" open><summary class="dname">${t.numbers}</summary><div class="nums">${digits.map((d) => d && digitCmds[d] ? btn(digitCmds[d], d) : "<span></span>").join("")}</div></details>` : "";
       const act = !embed && !this._edit ? this._runningActOf(h, dev) : null;
       const back = act ? `<button class="actlink" data-gotoact="${esc(h.id)}" title="${esc(t.devBackAct)}"><ha-icon icon="${esc(this._actIcon(h.id, act))}"></ha-icon><span>${esc(fmtText(t.devActiveIn, [act]))}</span><ha-icon icon="mdi:arrow-left-top"></ha-icon></button>` : "";
-      return `${embed ? `<div class="devhead emb"><span class="devname">${esc(dev)}</span></div>` : `<div class="devhead"><span class="devname">${esc(dev)}</span>${back}${this._edit ? "" : `<button class="ib devclose" data-devclose="${esc(h.id)}" title="${esc(t.devClose)}"><ha-icon icon="mdi:close"></ha-icon></button>`}</div>`}
+      return `${embed ? `<div class="devhead emb"><span class="devname">${esc(dev)}</span></div>` : back ? `<div class="devhead">${back}</div>` : ""}
       ${pw}${this._panelHtml(h, own, t, { small: (kb ? kb.html : "") + favBlock + (dp.keys || ""), big: (dp.main || "") + pad + blocks, noLock: true, noKeypad: true })}`;
     },
     // Events of the device list.
@@ -2156,7 +2160,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           return;
         }
         if (same) {
-          this._scrollToRemote();
+          this._device = { ...this._device || {}, [hub]: null };
+          this._hdrCollapsed = { ...this._hdrCollapsed || {}, [hub]: false };
+          this._expandHub = hub;
+          this._rerender();
           return;
         }
         const select = () => {
@@ -4770,7 +4777,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const collapsedNow = !this._edit && !compact && !!openNow && !!this._hdrCollapsed?.[h.id];
       const toggleBtn = this._edit || compact ? "" : collapsedNow ? `<button class="ib subtle" data-hdr="${esc(h.id)}" title="${esc(t.expandHeader)}"><ha-icon icon="mdi:chevron-down"></ha-icon></button>` : collapseBtn;
       const tools = `<div class="bbtns">${this._lockMark(h.id, t)}${this._profChip(t)}${helpBtn}${infoBtn}${toggleBtn}</div>`;
-      const top = `<div class="toprow">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
+      const top = `<div class="toprow${this._roomsOpen ? " ro" : ""}">${this._winHtml(h, t, helpAct)}${tabs || (nameTxt ? `<div class="hub">${esc(nameTxt)}</div>` : '<span class="hub"></span>')}${tools}</div>`;
       const bar = parts.length ? `<div class="bar"><div class="chips">${parts.map((x) => x.html).join("")}</div></div>` : "";
       const boxes = "";
       let body;
@@ -4819,6 +4826,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _bindFrame(root) {
       root.querySelectorAll("[data-hubtab]").forEach((b) => b.addEventListener("click", () => {
         const id = b.dataset.hubtab;
+        const narrow = (root.querySelector("ha-card")?.getBoundingClientRect().width || 999) < 420;
+        if (narrow && id === this._hubSel && !this._roomsOpen) {
+          this._roomsOpen = true;
+          this._rerender();
+          return;
+        }
+        this._roomsOpen = false;
         const go = () => {
           this._hubSel = id;
           try {
@@ -5106,7 +5120,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
           ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
-        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
+        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>` + this._selRow(t.volumeStep, "data-volstep", { 1: "1", 2: "2", 5: "5" }, String(this._settings().volumeStep || 1)) + `<div class="ehint">${t.volumeStepHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
@@ -5367,6 +5381,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       });
       root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
       root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
+      root.querySelector("select[data-volstep]")?.addEventListener("change", (e) => {
+        this._saveSettings({ volumeStep: Number(e.target.value) });
+        window.setTimeout(() => this._slLoad?.(), 400);
+      });
       root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
       root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
         this._etab = b.dataset.goetab || "look";
@@ -5495,6 +5513,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${G} .color.red { border-bottom: 3px solid var(--gl-red) !important; } ${G} .color.green { border-bottom: 3px solid var(--gl-green) !important; } ${G} .color.yellow { border-bottom: 3px solid var(--gl-amber) !important; } ${G} .color.blue { border-bottom: 3px solid var(--gl-blue) !important; }
       ${G} .tile:active, ${G} .tile.on { transform: none; }
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
+      /* unavailable = fine crack in the glass; locked = the same crack and a darker plate (no lock symbol) */
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint]) { position: relative; overflow: hidden; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint])::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+      ${G} :is(.tile.locked:not(.offline), .key.locked, .appcell.locked) { filter: brightness(.72); opacity: .8; }
+      ${G} .lockic { display: none; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
       ${lit(ACTIVE, 45, 8, 32, "belong")}
       ${lit(SEL, 100, 14, 56, "sel")}
@@ -5557,7 +5580,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
 
       /* ---------- Knetmasse: bubbles you press, dents for surfaces and states ---------- */
       ${C} { --cl-green: #eaf3e4; --cl-coral: #d94a30; --cl-dent: #bcd3b3; --cl-shade: rgba(60,100,50,.28); --hr-fire: #b85f00; }
-      ${on(C, [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill", ".chip", ".d:where(:not(.ok))", ".actbtn", ".tile", ".linkbar button", ".pbtn", ".ib", ".hubtabs button.sel", ".seg .th"])} {
+      ${on(C, [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill", ".chip", ".d:where(:not(.ok))", ".actbtn", ".tile", ".linkbar button", ".pbtn", ".fchip", ".ib", ".hubtabs button.sel", ".seg .th"])} {
         border: none !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), radial-gradient(circle at 50% 120%, var(--cl-shade), transparent 60%), var(--cl-green) !important;
         box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 6px 8px rgba(50,80,40,.35), 0 2px 0 rgba(50,80,40,.25) !important;
         transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, background .25s, color .25s; color: var(--hr-text); }
@@ -5663,9 +5686,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       :is(${W}, ${N2}) .transport .key { border-color: transparent !important; box-shadow: none !important; }
 
       /* ---------- Fire TV app keys (0.22): Glass = glass plate lit from behind in the brand colour, Clay = glossy bubble in the brand colour ---------- */
-      ${G} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 52%, transparent), color-mix(in srgb, var(--c) 12%, #0b0e14) 72%), #0b0e14 !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent), 0 0 10px color-mix(in srgb, var(--c) 30%, transparent) !important; color: color-mix(in srgb, var(--c) 58%, #fff) !important; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
+      ${G} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 16%, transparent), color-mix(in srgb, var(--c) 6%, #0b0e14) 72%), rgba(14,20,26,.8) !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px color-mix(in srgb, var(--c) 24%, transparent) !important; color: color-mix(in srgb, var(--c) 55%, #8a949c) !important; text-shadow: none; transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
       ${G} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: inherit !important; }
-      ${G} .appcell.svc.on { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G} .appcell.svc.on, ${G} :is(.key.svc, .appcell.svc):active { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G} .appcell.svc.on, ${G} :is(.key.svc, .appcell.svc):active { text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
       ${G} .appcell.svc.on::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); transform: translateX(-100%); animation: glsheen 3.6s ease-in-out infinite; pointer-events: none; }
       @keyframes glsheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
       ${C} :is(.key.svc, .appcell.svc) { background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 46%), var(--c) !important; border: 0 !important; border-radius: 999px !important; box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.35), 0 6px 10px rgba(60,80,50,.35) !important; }
@@ -5845,12 +5869,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         --gap: color-mix(in srgb, #bfc4c5 calc(var(--fk, .5) * 100%), transparent);
         background: radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%),
           linear-gradient(177deg, transparent 33%, var(--gap) 34% 36.5%, transparent 38%) 6% 0 / 58% 100% no-repeat, linear-gradient(183deg, transparent 58%, var(--gap) 59% 61%, transparent 63%) 100% 0 / 62% 100% no-repeat, linear-gradient(179deg, transparent 15%, var(--gap) 16% 17.5%, transparent 19%) 50% 0 / 40% 100% no-repeat,
-          repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px),
           radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%),
           ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important;
         box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.3), 0 6px 9px rgba(0,40,45,.5) !important; }
       ${P} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: #fff !important; filter: none; }
-      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%), repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px), radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.55) !important; }
+      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%), radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.55) !important; }
 
       /* volume: sand groove with Caribbean water up to the pebble (the pebble hides where the water ends), no waves, no bubbles */
       ${P} .volslider { -webkit-appearance: none; appearance: none; background: transparent; }
@@ -5954,6 +5977,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${P} .mentry { min-height: 52px; }
       /* pop-ups scroll or clip at their edge: room for the stone shadows */
       ${P} :is(.hmenu, .win) { padding: 12px 14px 26px !important; }
+      ${P} .plist { padding: 6px 8px 16px; margin: -6px -8px 0; }
+      /* selected Aktivitäten/Geräte stone keeps its coloured symbol */
+      ${P} .seg .lab.a[data-lab="0"] ha-icon { color: #ff9a2e !important; } ${P} .seg .lab.a[data-lab="1"] ha-icon { color: #2aa8a0 !important; } ${P}.pp-off .seg .lab.a ha-icon { color: #4d5759 !important; }
       ${P} :is(.pitem, .profrow):nth-child(4n+1) { transform: rotate(-.5deg); } ${P} :is(.pitem, .profrow):nth-child(4n+2) { transform: rotate(.5deg) scale(.99); } ${P} :is(.pitem, .profrow):nth-child(4n+3) { transform: rotate(.3deg); } ${P} :is(.pitem, .profrow):nth-child(4n+4) { transform: rotate(-.4deg) scale(.99); }
 
       /* Aktivitäten / Geräte: two stones, the active one wet with droplets */
@@ -6391,7 +6417,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   var N = 'ha-card[data-skin="nostromo"]';
   var R3 = 'ha-card[data-skin="radio"]';
   var T3 = 'ha-card[data-skin="terminal"]';
-  var tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
+  var tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "rgba(42,26,80,0) 0 3.4px"}, transparent 7.5px)`).join(",");
+  var BL = "radial-gradient(ellipse var(--bw) var(--bh) at var(--bx) var(--by), #ff3a2a 0%, #ffb02a 28%, #e8e83a 50%, #38d070 72%, #1a8aa0 88%, transparent 100%), radial-gradient(ellipse calc(var(--bw) * .55) calc(var(--bh) * .6) at calc(var(--bx) + var(--sx)) calc(var(--by) + var(--sy)), #ffcf3a 0%, #58d868 60%, transparent 100%)";
+  var BLO = "radial-gradient(ellipse calc(var(--bw) * .85) calc(var(--bh) * .85) at var(--bx) var(--by), #ff8a2a 0%, #f0c02a 34%, #58d070 62%, #1a9aa8 86%, transparent 100%)";
+  var BLP = "radial-gradient(ellipse 60% 85% at 50% 55%, #ffd23a 0%, #ff7a1c 42%, #ff3a2a 70%, transparent 100%)";
+  var BASE = "linear-gradient(135deg, rgba(13,10,58,.92), rgba(10,7,36,.94))";
+  var DOTBOX = "content: ''; position: absolute; left: 0; top: -1px; width: 56px; height: 52px; background-size: 28px 26px; background-repeat: no-repeat; background-position: 14px 13px; pointer-events: none; transform: scale(.55); transform-origin: 0 0;";
   var SKIN_CSS_NEW = `
       /* ---------- Wärmebild: violet-blue night, heat colours, segment letters ---------- */
       ${W2} { font-family: "Bahnschrift", "DIN Alternate", "Arial Narrow", Arial, sans-serif; letter-spacing: .04em; position: relative; overflow: hidden; border-radius: 10px 26px 10px 26px;
@@ -6402,32 +6433,39 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${W2} .tile { background: linear-gradient(135deg, rgba(13,10,58,.82), rgba(10,7,36,.86)); color: #6fd0c0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); position: relative; }
       ${W2} .tile ha-icon, ${W2} .tile.dev ha-icon { color: #6fd0c0 !important; }
       ${W2} .tile:not(.off) ha-icon { display: none; }
-      ${W2} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
-      ${W2} .tile.dev.inuse * { color: #ffa060 !important; }
-      ${W2} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
-      /* heat dots: one = belongs to the running activity, three = shown (selected) */
+      /* heat spot (one soft blob per area, shape and place vary from element to element) */
+      ${W2} .tile, ${W2} .key, ${W2} .mini, ${W2} .appcell { --bx: 38%; --by: 56%; --bw: 46%; --bh: 64%; --sx: 22%; --sy: -14%; }
+      ${W2} :is(.tile, .key, .mini, .appcell):nth-child(4n+2) { --bx: 62%; --by: 46%; --bw: 44%; --bh: 70%; --sx: -18%; --sy: 16%; }
+      ${W2} :is(.tile, .key, .mini, .appcell):nth-child(4n+3) { --bx: 48%; --by: 62%; --bw: 52%; --bh: 60%; --sx: 20%; --sy: -10%; }
+      ${W2} :is(.tile, .key, .mini, .appcell):nth-child(4n) { --bx: 30%; --by: 44%; --bw: 42%; --bh: 72%; --sx: 24%; --sy: 14%; }
+      ${W2} .tile.dev.inuse, ${W2} .tile.on, ${W2} .tile.going { border-color: #4a3a90; color: #fff; background: ${BL}, ${BASE}; box-shadow: none; }
+      ${W2} .tile.dev.inuse *, ${W2} .tile.on *, ${W2} .tile.going *, ${W2} .tile.dev.sel * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      ${W2} .tile.dev.sel:not(.inuse) { border-color: #7a6ad0; color: #fff; background: ${BLO}, ${BASE}; box-shadow: none; }
+      /* heat dots: one = belongs to the running activity, three = shown (selected); dots that are not lit stay invisible, the three fly in from outside */
       ${W2} .tile.dev.inuse::after { display: none; }
-      ${W2} .tile.dev.inuse::before, ${W2} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
-      ${W2} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W2} .tile.dev.sel::before { background-image: ${tri(3)}; }
-      ${W2} .tile.on, ${W2} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
-      ${W2} .tile.on *, ${W2} .tile.going * { color: #ff3a2a !important; }
-      ${W2} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W2} .tile.dev.inuse::before, ${W2} .tile.dev.sel::before, ${W2} .tile.on::before { ${DOTBOX} }
+      ${W2} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W2} .tile.dev.sel::before, ${W2} .tile.on::before { background-image: ${tri(3)}; animation: thfly .7s ease-out both; }
+      /* unavailable = cold blue, locked = darker violet (like a cold object in a heat image) */
+      ${W2} .tile.locked, ${W2} .key.locked, ${W2} .appcell.locked { opacity: 1; filter: none; background: radial-gradient(ellipse 80% 120% at 50% 60%, #1a1060 0%, #0a0630 75%) !important; border-color: #2a1a70; color: #5a3fb0 !important; box-shadow: none; }
+      ${W2} .tile.locked.offline, ${W2} .key:disabled, ${W2} .ib[disabled] { opacity: 1; background: radial-gradient(ellipse 80% 120% at 50% 60%, #1c2a8a 0%, #10104a 70%) !important; border-color: #2a3a9a; color: #4a62c8 !important; }
+      ${W2} .tile.locked *, ${W2} .key.locked *, ${W2} .appcell.locked *, ${W2} .key:disabled *, ${W2} .ib[disabled] * { color: inherit !important; text-shadow: none; }
+      ${W2} .tile .lockic { color: #5a3fb0 !important; } ${W2} .tile.offline .lockic { color: #4a62c8 !important; }
       ${W2} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W2} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
       ${W2} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
       /* keyboard keys: icon keys keep their icon (the small label is hidden on narrow screens), held modifiers light up like any active key, narrow keys leave room for the slanted corners */
-      ${W2} .kk.isfav.shiftkey, ${W2} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W2} .kk.isfav.shiftkey *, ${W2} .kk.shiftkey.on * { color: #2a0600 !important; }
+      ${W2} .kk.isfav.shiftkey, ${W2} .kk.shiftkey.on { background: ${BL}, #0d0a3a !important; border-color: #4a3a90; color: #fff !important; } ${W2} .kk.isfav.shiftkey *, ${W2} .kk.shiftkey.on * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
       ${W2} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
-      ${W2} .key.sel:not(.mute), ${W2} .key.on:not(.mute), ${W2} .key.muted, ${W2} .appcell.svc.on, ${W2} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
-      ${W2} .key.sel *, ${W2} .key.on *, ${W2} .key.muted *, ${W2} .appcell.svc.on *, ${W2} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
-      /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
+      ${W2} .key.sel:not(.mute), ${W2} .key.on:not(.mute), ${W2} .key.muted, ${W2} .appcell.svc.on, ${W2} .ic-row.on { background: ${BL}, #0d0a3a !important; border-color: #4a3a90; color: #fff !important; }
+      ${W2} .key.sel *, ${W2} .key.on *, ${W2} .key.muted *, ${W2} .appcell.svc.on *, ${W2} .ic-row.on * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      /* press feedback: a pressed key lights up with a hot heat spot that then shrinks and cools down slowly (to green and teal), like residual heat */
       ${W2} .key, ${W2} .mini, ${W2} .tile { position: relative; isolation: isolate; }
-      ${W2} .key::after, ${W2} .mini::after, ${W2} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
-      ${W2} .key.lit::after, ${W2} .key:active::after, ${W2} .mini.lit::after, ${W2} .mini:active::after, ${W2} .tile.lit::after, ${W2} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
-      ${W2} .key.lit, ${W2} .key:active, ${W2} .mini.lit, ${W2} .mini:active, ${W2} .tile.lit, ${W2} .tile:active { border-color: #ffe36a; }
+      ${W2} .key::after, ${W2} .mini::after, ${W2} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: ${BLP}; opacity: 0; transform: scale(.55); filter: hue-rotate(95deg); transition: opacity 1.8s ease-out, transform 1.8s ease-out, filter 1.8s ease-out; }
+      ${W2} .key.lit::after, ${W2} .key:active::after, ${W2} .mini.lit::after, ${W2} .mini:active::after, ${W2} .tile.lit::after, ${W2} .tile:active::after { opacity: 1; transform: scale(1); filter: none; transition: opacity .05s, transform .15s, filter .05s; }
+      ${W2} .key.lit, ${W2} .key:active, ${W2} .mini.lit, ${W2} .mini:active, ${W2} .tile.lit, ${W2} .tile:active { border-color: #ff9a2a; }
       ${W2} .key *, ${W2} .mini *, ${W2} .tile * { transition: color 1.8s ease-out; }
-      ${W2} .key.lit *, ${W2} .key:active *, ${W2} .mini.lit *, ${W2} .mini:active *, ${W2} .tile.lit *, ${W2} .tile:active * { color: #2a0600 !important; transition: color .05s; }
+      ${W2} .key.lit *, ${W2} .key:active *, ${W2} .mini.lit *, ${W2} .mini:active *, ${W2} .tile.lit *, ${W2} .tile:active * { color: #fff !important; text-shadow: 0 0 3px #2a0600, 0 0 7px #2a0600; transition: color .05s; }
       ${W2} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
       ${W2} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
       ${W2} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
@@ -6453,8 +6491,20 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${R3} input[type="text"], ${R3} input[type="search"], ${R3} input[type="number"], ${R3} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R3} select option { background: #2a1a10; color: #f1e3c1; }
       ${W2} .editbox, ${W2} .egrp, ${W2} .erow { color: #6fd0c0; } ${X2} .editbox, ${X2} .egrp, ${X2} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
       ${W2} .etabs button.sel, ${W2} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X2} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
+      @keyframes thfly { from { background-position: -14px 40px, 56px 40px, 14px -26px; opacity: .2; } to { background-position: 14px 13px, 14px 13px, 14px 13px; opacity: 1; } }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
+      /* security card chips: the whole plate carries the look and the selection, the inner span only holds the text */
+      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"], ${W2}, ${N}, ${T3}, ${X2}, ${R3}) .sec .fchip span { background: transparent !important; border-radius: inherit; box-shadow: none; }
+      /* hint bubbles (locked / unavailable / hold): each skin brings its own plate */
+      ${W2} { --hint-bg: #0a0724; --hint-fg: #6fd0c0; --hint-bd: 1px solid #2f8f9a; --hint-r: 0; }
+      ${N} { --hint-bg: #120a00; --hint-fg: #ffb000; --hint-bd: 1px solid #ffb000; --hint-r: 0; }
+      ${T3} { --hint-bg: #021a05; --hint-fg: #3dff6b; --hint-bd: 1px solid #3dff6b; --hint-r: 0; }
+      ${X2} { --hint-bg: #120a08; --hint-fg: #f0d9a8; --hint-bd: 1px solid #8a6a2a; --hint-r: 6px; }
+      ${R3} { --hint-bg: #2a1a10; --hint-fg: #f1e3c1; --hint-bd: 1px solid #c8a24a; --hint-r: 10px; }
+      ha-card[data-skin="glass"] { --hint-bg: rgba(14,20,26,.94); --hint-fg: #e8eef2; --hint-bd: 1px solid rgba(255,255,255,.3); --hint-r: 2px; --hint-sh: 0 0 10px rgba(255,255,255,.15); }
+      ha-card[data-skin="clay"] { --hint-bg: #fffaf0; --hint-fg: #4a3a30; --hint-bd: 0; --hint-r: 14px; --hint-sh: 0 3px 8px rgba(60,80,50,.3); }
+      ha-card[data-skin="pebble"] { --hint-bg: #e6d5a8; --hint-fg: #5e4620; --hint-bd: 0; --hint-r: 14px 12px 15px 11px; --hint-sh: 0 3px 8px rgba(0,60,70,.4), inset 0 1px 1px rgba(255,255,255,.5); }
       /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
       ${W2} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
       ${W2} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
@@ -6567,7 +6617,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R3} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R3} .key.ic-row.on:not(.mute) *, ${R3} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W2} *, ${W2} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X2} .pwknob::after, ${W2} *, ${W2} *::before, ${W2} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X2} * { transition: none !important; } }
 `;
 
   // src/deck/style.js
@@ -6634,8 +6684,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .tile.holdsw::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-accent) 45%, transparent); opacity: 0; pointer-events: none; }
       .tile.holdsw.holding::after { opacity: 1; transition: opacity .7s linear; }
       .tile.seclocked { cursor: not-allowed; }
-      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
-      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; }
+      .tile.seclocked[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
+      .tile.holdsw[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; }
       .tile.ts-text { min-height: 56px; } .tile.ts-icon { min-height: 64px; } .tile.ts-icon ha-icon { --mdc-icon-size: 32px; }
       .colorful .cell ha-icon, .colorful .helpkey.inp ha-icon { color: var(--hr-accent); }
       .colorful .power .key ha-icon { color: var(--hr-text); }
@@ -6894,7 +6944,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .actbtn.failed { outline: 2px solid var(--hr-danger, #e55); outline-offset: -2px; color: var(--hr-danger, #e55); }
       .actbtn.fin { animation: actfin 1.2s ease-out 1; } @keyframes actfin { 0% { box-shadow: 0 0 0 0 var(--hr-accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
       .actbtn.holding::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--hr-danger, #e55) 35%, transparent); opacity: 0; animation: acthold .7s linear 1 forwards; pointer-events: none; } @keyframes acthold { from { opacity: 0; } to { opacity: 1; } }
-      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: #222; color: #fff; padding: 3px 6px; border-radius: 8px; font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
+      .actbtn[data-hint]::before { content: attr(data-hinttext); position: absolute; left: 4px; right: 4px; bottom: 6px; z-index: 2; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 3px 6px; border-radius: var(--hint-r, 8px); font-size: 0.7rem; text-align: center; pointer-events: none; white-space: normal; }
       .acttile .acttag { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--hr-accent); opacity: .8; }
       .plist { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow-y: auto; }
       .pent { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: none; border-radius: 10px; background: none; color: var(--hr-text); font: inherit; font-size: 0.88em; text-align: left; cursor: pointer; }
@@ -6963,6 +7013,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .bar .firechip .ib { margin-left: auto; }
       .bar .firechip.f-playing, .bar .firechip.f-on { color: var(--hr-fire); border-color: color-mix(in srgb, var(--hr-fire) 55%, transparent); background: color-mix(in srgb, var(--hr-fire) 10%, transparent); }
       .hubtabs button:not(.sel) .rn2 { display: none; } @container (max-width: 260px) { .toprow .hubtabs button:not(.sel) .rn { display: none; } } @container (max-width: 480px) { .bar .chip { flex: 1 0 100%; }  .toprow .hubtabs button:not(.sel) { padding-right: 6px; } .bbtns .ib { width: 32px; } .profchip { width: 32px; padding: 0; justify-content: center; } .profchip span { display: none; } }
+      @container (max-width: 419px) { .toprow:not(.ro) .hubtabs button:not(.sel), .toprow:not(.ro) .hubtabs .rooms-lab { display: none; } .toprow.ro .bbtns { display: none; } .toprow .hubtabs button.sel .rn { display: inline; } }
+      /* settings rows: narrow = label above, control full width; wide = label left, control in one fixed column */
+      @container (max-width: 519px) { .erow:not(.swrow):has(> select, > input[type=text], > input[type=number], > .entpick, > .picker) { flex-wrap: wrap; gap: 4px 12px; padding-bottom: 8px; } .erow:not(.swrow):has(> select, > input[type=text], > input[type=number], > .entpick, > .picker) > span:first-child { flex: 1 1 100%; } .erow > select, .erow > input[type=text], .erow > input[type=number], .erow > .entpick, .erow > .picker { flex: 1 1 100%; } }
+      @container (min-width: 520px) { .erow > select, .erow > input[type=text], .erow > input[type=number], .erow > .entpick, .erow > .picker { flex: 0 0 240px; } }
       .ib { border: none; font: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: calc(var(--hr-seg-radius, 14px) - 3px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .ib.hl, .ib.sel { color: var(--hr-accent); } .ib ha-icon { --mdc-icon-size: 22px; }
       .profnow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; } .profnow > ha-icon { --mdc-icon-size: 28px; color: var(--hr-accent); flex: none; }
@@ -7052,7 +7106,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .holdoff.holding { background: color-mix(in srgb, var(--hr-danger, #e53935) calc(var(--p, 0) * 1%), var(--hr-tile-bg)); } .holdoff.holding ha-icon { color: color-mix(in srgb, #fff calc(var(--p, 0) * 1%), var(--hr-danger, #e53935)); }
       .ib.holdoff.fired, .tile.holdoff.fired { background: var(--hr-danger, #e53935); color: #fff; } .holdoff.fired ha-icon { color: #fff !important; }
       .holdoff ha-icon { position: relative; }
-      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: #222; color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; pointer-events: none; }
+      .holdoff[data-hint]::after { content: attr(data-hinttext); position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; white-space: nowrap; background: var(--hint-bg, #222); color: var(--hint-fg, #fff); border: var(--hint-bd, 0); box-shadow: var(--hint-sh, none); padding: 4px 8px; border-radius: var(--hint-r, 8px); font-size: 0.75rem; font-weight: 400; pointer-events: none; }
       .textopen { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; cursor: pointer; min-height: 34px; border-radius: var(--hr-seg-radius, 12px); background: var(--hr-tile-bg); color: var(--hr-muted); }
       .textopen ha-icon { --mdc-icon-size: 20px; } .textblock { margin-top: 8px; } .textblock.open .dtext { margin: 0; }
       ha-card .dtext { display: flex; gap: 8px; align-items: stretch; } .dfield { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
@@ -7187,7 +7241,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!s || this._edit || !r.volume || s.device !== r.volume || !deviceView && s.activity !== h.current) return "";
       const st = this._hass.states?.[s.entity];
       const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-      return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round(Math.min(lvl, s.cap) / (s.cap || 100) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+      return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" step="${s.step || 1}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round(Math.min(lvl, s.cap) / (s.cap || 100) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
     },
     async _volSend(hub, value, device) {
       const id = hub + (device ? "/" + device : "");
@@ -7885,6 +7939,21 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (this._watched !== void 0 && watch !== this._watched) this._load();
       this._watched = watch;
       this._render();
+    }
+    // Look settings changed in the main card (or this tab came back): read the integration again, so the skin follows at once.
+    connectedCallback() {
+      this._onSettings = () => {
+        if (this._hass) setTimeout(() => this._load(), 300);
+      };
+      this._onVisible = () => {
+        if (!document.hidden && this._hass) this._load();
+      };
+      window.addEventListener("harmony-deck-settings", this._onSettings);
+      document.addEventListener("visibilitychange", this._onVisible);
+    }
+    disconnectedCallback() {
+      window.removeEventListener("harmony-deck-settings", this._onSettings);
+      document.removeEventListener("visibilitychange", this._onVisible);
     }
     getCardSize() {
       return 8;

@@ -162,12 +162,11 @@ export const SKIN_CSS_023 = `
         --gap: color-mix(in srgb, #bfc4c5 calc(var(--fk, .5) * 100%), transparent);
         background: radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%),
           linear-gradient(177deg, transparent 33%, var(--gap) 34% 36.5%, transparent 38%) 6% 0 / 58% 100% no-repeat, linear-gradient(183deg, transparent 58%, var(--gap) 59% 61%, transparent 63%) 100% 0 / 62% 100% no-repeat, linear-gradient(179deg, transparent 15%, var(--gap) 16% 17.5%, transparent 19%) 50% 0 / 40% 100% no-repeat,
-          repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px),
           radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%),
           ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important;
         box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.3), 0 6px 9px rgba(0,40,45,.5) !important; }
       ${P} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: #fff !important; filter: none; }
-      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%), repeating-linear-gradient(92deg, rgba(255,255,255,.1) 0 1px, transparent 1px 4px), radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.55) !important; }
+      ${P} .appcell.svc.on { background: ${DROPS}, radial-gradient(ellipse at 28% 18%, rgba(255,255,255,.42), transparent 46%), radial-gradient(ellipse at 80% 100%, rgba(0,0,0,.3), transparent 60%), radial-gradient(ellipse 96% 90% at 48% 52%, color-mix(in srgb, var(--c) 94%, #fff) 0 84%, transparent 100%), ${NOISE}, linear-gradient(150deg, #cbcfd0, #9ba2a4) !important; box-shadow: inset 0 1px 1px rgba(255,255,255,.6), inset 0 -3px 6px rgba(0,0,0,.25), 0 0 14px 1px rgba(60,200,190,.55) !important; }
 
       /* volume: sand groove with Caribbean water up to the pebble (the pebble hides where the water ends), no waves, no bubbles */
       ${P} .volslider { -webkit-appearance: none; appearance: none; background: transparent; }
@@ -271,6 +270,9 @@ export const SKIN_CSS_023 = `
       ${P} .mentry { min-height: 52px; }
       /* pop-ups scroll or clip at their edge: room for the stone shadows */
       ${P} :is(.hmenu, .win) { padding: 12px 14px 26px !important; }
+      ${P} .plist { padding: 6px 8px 16px; margin: -6px -8px 0; }
+      /* selected Aktivitäten/Geräte stone keeps its coloured symbol */
+      ${P} .seg .lab.a[data-lab="0"] ha-icon { color: #ff9a2e !important; } ${P} .seg .lab.a[data-lab="1"] ha-icon { color: #2aa8a0 !important; } ${P}.pp-off .seg .lab.a ha-icon { color: #4d5759 !important; }
       ${P} :is(.pitem, .profrow):nth-child(4n+1) { transform: rotate(-.5deg); } ${P} :is(.pitem, .profrow):nth-child(4n+2) { transform: rotate(.5deg) scale(.99); } ${P} :is(.pitem, .profrow):nth-child(4n+3) { transform: rotate(.3deg); } ${P} :is(.pitem, .profrow):nth-child(4n+4) { transform: rotate(-.4deg) scale(.99); }
 
       /* Aktivitäten / Geräte: two stones, the active one wet with droplets */

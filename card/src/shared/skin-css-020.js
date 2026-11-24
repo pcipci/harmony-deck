@@ -83,6 +83,11 @@ export const SKIN_CSS_020 = `
       ${G} .color.red { border-bottom: 3px solid var(--gl-red) !important; } ${G} .color.green { border-bottom: 3px solid var(--gl-green) !important; } ${G} .color.yellow { border-bottom: 3px solid var(--gl-amber) !important; } ${G} .color.blue { border-bottom: 3px solid var(--gl-blue) !important; }
       ${G} .tile:active, ${G} .tile.on { transform: none; }
       ${G} .tile.locked, ${G} .key:disabled, ${G} .actbtn.miss { opacity: .55; }
+      /* unavailable = fine crack in the glass; locked = the same crack and a darker plate (no lock symbol) */
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint]) { position: relative; overflow: hidden; }
+      ${G} :is(.tile.locked, .key:disabled, .actbtn.miss, .key.locked, .appcell.locked):not([data-hint])::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'%3E%3Cpath d='M78 0 L70 9 L74 15 L62 24 L66 28 L54 40 M70 9 L58 8 L50 14 M74 15 L86 18 L92 26 M62 24 L50 26' fill='none' stroke='rgba(255,255,255,.65)' stroke-width='.7' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+      ${G} :is(.tile.locked:not(.offline), .key.locked, .appcell.locked) { filter: brightness(.72); opacity: .8; }
+      ${G} .lockic { display: none; }
       /* three levels: rest, belongs to the running activity (weak), selected (bright); pressed is strongest and fades out after release */
       ${lit(ACTIVE, 45, 8, 32, "belong")}
       ${lit(SEL, 100, 14, 56, "sel")}
@@ -145,7 +150,7 @@ export const SKIN_CSS_020 = `
 
       /* ---------- Knetmasse: bubbles you press, dents for surfaces and states ---------- */
       ${C} { --cl-green: #eaf3e4; --cl-coral: #d94a30; --cl-dent: #bcd3b3; --cl-shade: rgba(60,100,50,.28); --hr-fire: #b85f00; }
-      ${on(C, [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill", ".chip", ".d:where(:not(.ok))", ".actbtn", ".tile", ".linkbar button", ".pbtn", ".ib", ".hubtabs button.sel", ".seg .th"])} {
+      ${on(C, [".key:where(:not(.ghost):not(.svc))", ".kk:where(:not(.ghost))", ".pill", ".chip", ".d:where(:not(.ok))", ".actbtn", ".tile", ".linkbar button", ".pbtn", ".fchip", ".ib", ".hubtabs button.sel", ".seg .th"])} {
         border: none !important; background: radial-gradient(circle at 30% 22%, #fff 0 7%, rgba(255,255,255,0) 30%), radial-gradient(circle at 50% 120%, var(--cl-shade), transparent 60%), var(--cl-green) !important;
         box-shadow: inset -3px -6px 10px var(--cl-shade), inset 3px 4px 6px rgba(255,255,255,.95), 0 6px 8px rgba(50,80,40,.35), 0 2px 0 rgba(50,80,40,.25) !important;
         transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, background .25s, color .25s; color: var(--hr-text); }
@@ -251,9 +256,10 @@ export const SKIN_CSS_020 = `
       :is(${W}, ${N2}) .transport .key { border-color: transparent !important; box-shadow: none !important; }
 
       /* ---------- Fire TV app keys (0.22): Glass = glass plate lit from behind in the brand colour, Clay = glossy bubble in the brand colour ---------- */
-      ${G} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 52%, transparent), color-mix(in srgb, var(--c) 12%, #0b0e14) 72%), #0b0e14 !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent), 0 0 10px color-mix(in srgb, var(--c) 30%, transparent) !important; color: color-mix(in srgb, var(--c) 58%, #fff) !important; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
+      ${G} :is(.key.svc, .appcell.svc) { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 16%, transparent), color-mix(in srgb, var(--c) 6%, #0b0e14) 72%), rgba(14,20,26,.8) !important; border: 0 !important; border-radius: 2px !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px color-mix(in srgb, var(--c) 24%, transparent) !important; color: color-mix(in srgb, var(--c) 55%, #8a949c) !important; text-shadow: none; transition: box-shadow 1s, background 1s; position: relative; overflow: hidden; }
       ${G} :is(.key.svc, .appcell.svc) :is(b, small, span, ha-icon) { color: inherit !important; }
-      ${G} .appcell.svc.on { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G} .appcell.svc.on, ${G} :is(.key.svc, .appcell.svc):active { background: radial-gradient(130% 150% at 50% -10%, color-mix(in srgb, var(--c) 85%, transparent), color-mix(in srgb, var(--c) 30%, #0b0e14) 72%), #0b0e14 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 20px 2px color-mix(in srgb, var(--c) 55%, transparent) !important; color: #fff !important; }
+      ${G} .appcell.svc.on, ${G} :is(.key.svc, .appcell.svc):active { text-shadow: 0 0 6px color-mix(in srgb, var(--c) 70%, transparent); }
       ${G} .appcell.svc.on::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); transform: translateX(-100%); animation: glsheen 3.6s ease-in-out infinite; pointer-events: none; }
       @keyframes glsheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
       ${C} :is(.key.svc, .appcell.svc) { background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.55), transparent 46%), var(--c) !important; border: 0 !important; border-radius: 999px !important; box-shadow: inset -3px -6px 10px rgba(0,0,0,.25), inset 3px 4px 8px rgba(255,255,255,.35), 0 6px 10px rgba(60,80,50,.35) !important; }

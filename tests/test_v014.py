@@ -58,7 +58,7 @@ async def test_volume_slider_ws(hass: HomeAssistant, hass_ws_client, hass_read_o
         return await user.receive_json()
 
     res = await call(type="harmony_deck/direct/sliders")
-    one = {"device": "LG", "entity": "media_player.tv", "cap": 50, "release": False}
+    one = {"device": "LG", "entity": "media_player.tv", "cap": 50, "step": 1, "release": False}
     assert res["result"][REMOTE] == {"activity": {"activity": "TV", **one}, "devices": {"LG": one}}
     assert (await call(type="harmony_deck/direct/volume", hub=REMOTE, value=30))["success"]
     assert (await call(type="harmony_deck/direct/volume", hub=REMOTE, value=99))["result"]["value"] == 50   # held to the limit

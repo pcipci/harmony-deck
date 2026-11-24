@@ -8,7 +8,14 @@ const N = 'ha-card[data-skin="nostromo"]';
 const R = 'ha-card[data-skin="radio"]';
 const T = 'ha-card[data-skin="terminal"]';
 // three dots in a triangle (bottom left, bottom right, top) as one background, n = how many are lit
-const tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "#2a1a50 0 3.4px"}, transparent 7.5px)`).join(",");
+const tri = (n) => [["8px 21px", 1], ["22px 21px", 2], ["15px 9px", 3]].map(([p, i]) => `radial-gradient(circle at ${p}, ${i <= n ? "#ff2a1a 0 3.4px, rgba(255,42,26,.45) 4px 7px" : "rgba(42,26,80,0) 0 3.4px"}, transparent 7.5px)`).join(",");
+
+// heat spot: one soft irregular blob per area (hot core, yellow, green, teal edge); position/size vary per element via --bx/--by/--bw/--bh/--sx/--sy
+const BL = "radial-gradient(ellipse var(--bw) var(--bh) at var(--bx) var(--by), #ff3a2a 0%, #ffb02a 28%, #e8e83a 50%, #38d070 72%, #1a8aa0 88%, transparent 100%), radial-gradient(ellipse calc(var(--bw) * .55) calc(var(--bh) * .6) at calc(var(--bx) + var(--sx)) calc(var(--by) + var(--sy)), #ffcf3a 0%, #58d868 60%, transparent 100%)";
+const BLO = "radial-gradient(ellipse calc(var(--bw) * .85) calc(var(--bh) * .85) at var(--bx) var(--by), #ff8a2a 0%, #f0c02a 34%, #58d070 62%, #1a9aa8 86%, transparent 100%)";
+const BLP = "radial-gradient(ellipse 60% 85% at 50% 55%, #ffd23a 0%, #ff7a1c 42%, #ff3a2a 70%, transparent 100%)";
+const BASE = "linear-gradient(135deg, rgba(13,10,58,.92), rgba(10,7,36,.94))";
+const DOTBOX = "content: ''; position: absolute; left: 0; top: -1px; width: 56px; height: 52px; background-size: 28px 26px; background-repeat: no-repeat; background-position: 14px 13px; pointer-events: none; transform: scale(.55); transform-origin: 0 0;";
 
 export const SKIN_CSS_NEW = `
       /* ---------- Wärmebild: violet-blue night, heat colours, segment letters ---------- */
@@ -20,32 +27,39 @@ export const SKIN_CSS_NEW = `
       ${W} .tile { background: linear-gradient(135deg, rgba(13,10,58,.82), rgba(10,7,36,.86)); color: #6fd0c0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); position: relative; }
       ${W} .tile ha-icon, ${W} .tile.dev ha-icon { color: #6fd0c0 !important; }
       ${W} .tile:not(.off) ha-icon { display: none; }
-      ${W} .tile.dev.inuse { border-color: #ffa060; color: #ffa060; box-shadow: inset 0 0 14px rgba(255,150,60,.55); }
-      ${W} .tile.dev.inuse * { color: #ffa060 !important; }
-      ${W} .tile.dev.sel { border-color: #fff; box-shadow: inset 0 0 0 1px #fff; }
-      /* heat dots: one = belongs to the running activity, three = shown (selected) */
+      /* heat spot (one soft blob per area, shape and place vary from element to element) */
+      ${W} .tile, ${W} .key, ${W} .mini, ${W} .appcell { --bx: 38%; --by: 56%; --bw: 46%; --bh: 64%; --sx: 22%; --sy: -14%; }
+      ${W} :is(.tile, .key, .mini, .appcell):nth-child(4n+2) { --bx: 62%; --by: 46%; --bw: 44%; --bh: 70%; --sx: -18%; --sy: 16%; }
+      ${W} :is(.tile, .key, .mini, .appcell):nth-child(4n+3) { --bx: 48%; --by: 62%; --bw: 52%; --bh: 60%; --sx: 20%; --sy: -10%; }
+      ${W} :is(.tile, .key, .mini, .appcell):nth-child(4n) { --bx: 30%; --by: 44%; --bw: 42%; --bh: 72%; --sx: 24%; --sy: 14%; }
+      ${W} .tile.dev.inuse, ${W} .tile.on, ${W} .tile.going { border-color: #4a3a90; color: #fff; background: ${BL}, ${BASE}; box-shadow: none; }
+      ${W} .tile.dev.inuse *, ${W} .tile.on *, ${W} .tile.going *, ${W} .tile.dev.sel * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      ${W} .tile.dev.sel:not(.inuse) { border-color: #7a6ad0; color: #fff; background: ${BLO}, ${BASE}; box-shadow: none; }
+      /* heat dots: one = belongs to the running activity, three = shown (selected); dots that are not lit stay invisible, the three fly in from outside */
       ${W} .tile.dev.inuse::after { display: none; }
-      ${W} .tile.dev.inuse::before, ${W} .tile.dev.sel::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
-      ${W} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W} .tile.dev.sel::before { background-image: ${tri(3)}; }
-      ${W} .tile.on, ${W} .tile.going { border-color: #ff3a2a; color: #ff3a2a; background: linear-gradient(135deg, rgba(120,12,12,.85), rgba(40,6,20,.9)); box-shadow: inset 0 0 18px rgba(255,42,26,.55); }
-      ${W} .tile.on *, ${W} .tile.going * { color: #ff3a2a !important; }
-      ${W} .tile.on::before { content: ""; position: absolute; left: 8px; top: 6px; width: 28px; height: 26px; background: ${tri(3)}; background-size: 28px 26px; background-repeat: no-repeat; pointer-events: none; transform: scale(.55); transform-origin: 0 0; }
+      ${W} .tile.dev.inuse::before, ${W} .tile.dev.sel::before, ${W} .tile.on::before { ${DOTBOX} }
+      ${W} .tile.dev.inuse::before { background-image: ${tri(1)}; } ${W} .tile.dev.sel::before, ${W} .tile.on::before { background-image: ${tri(3)}; animation: thfly .7s ease-out both; }
+      /* unavailable = cold blue, locked = darker violet (like a cold object in a heat image) */
+      ${W} .tile.locked, ${W} .key.locked, ${W} .appcell.locked { opacity: 1; filter: none; background: radial-gradient(ellipse 80% 120% at 50% 60%, #1a1060 0%, #0a0630 75%) !important; border-color: #2a1a70; color: #5a3fb0 !important; box-shadow: none; }
+      ${W} .tile.locked.offline, ${W} .key:disabled, ${W} .ib[disabled] { opacity: 1; background: radial-gradient(ellipse 80% 120% at 50% 60%, #1c2a8a 0%, #10104a 70%) !important; border-color: #2a3a9a; color: #4a62c8 !important; }
+      ${W} .tile.locked *, ${W} .key.locked *, ${W} .appcell.locked *, ${W} .key:disabled *, ${W} .ib[disabled] * { color: inherit !important; text-shadow: none; }
+      ${W} .tile .lockic { color: #5a3fb0 !important; } ${W} .tile.offline .lockic { color: #4a62c8 !important; }
       ${W} .key { background: #0d0a3a; border-color: #5b3fd0; border-radius: 0; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); color: #6fd0c0; }
       ${W} .key ha-icon { color: #6fd0c0 !important; }
       /* keys that carry a text label show only the segment text; icon-only keys (arrows, volume, transport) keep the icon */
       ${W} .key:not(.ic):has(span[data-segtxt]) ha-icon { display: none; }
       /* keyboard keys: icon keys keep their icon (the small label is hidden on narrow screens), held modifiers light up like any active key, narrow keys leave room for the slanted corners */
-      ${W} .kk.isfav.shiftkey, ${W} .kk.shiftkey.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; } ${W} .kk.isfav.shiftkey *, ${W} .kk.shiftkey.on * { color: #2a0600 !important; }
+      ${W} .kk.isfav.shiftkey, ${W} .kk.shiftkey.on { background: ${BL}, #0d0a3a !important; border-color: #4a3a90; color: #fff !important; } ${W} .kk.isfav.shiftkey *, ${W} .kk.shiftkey.on * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
       ${W} .kbrow .kk span[data-segtxt] svg { max-width: 80%; }
-      ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: linear-gradient(90deg, #ffe85a, #ff7a1c) !important; border-color: #ffe36a; color: #2a0600 !important; }
-      ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #2a0600 !important; text-shadow: none; }
-      /* press feedback: a pressed key lights up white-yellow and then cools down slowly (yellow, orange, red, gone), like residual heat */
+      ${W} .key.sel:not(.mute), ${W} .key.on:not(.mute), ${W} .key.muted, ${W} .appcell.svc.on, ${W} .ic-row.on { background: ${BL}, #0d0a3a !important; border-color: #4a3a90; color: #fff !important; }
+      ${W} .key.sel *, ${W} .key.on *, ${W} .key.muted *, ${W} .appcell.svc.on *, ${W} .ic-row.on * { color: #fff !important; text-shadow: 0 0 3px #0a0724, 0 0 7px #0a0724; }
+      /* press feedback: a pressed key lights up with a hot heat spot that then shrinks and cools down slowly (to green and teal), like residual heat */
       ${W} .key, ${W} .mini, ${W} .tile { position: relative; isolation: isolate; }
-      ${W} .key::after, ${W} .mini::after, ${W} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(255,42,26,0); transition: background-color 1.8s ease-out, box-shadow 1.8s ease-out; box-shadow: 0 0 0 0 rgba(255,60,20,0); }
-      ${W} .key.lit::after, ${W} .key:active::after, ${W} .mini.lit::after, ${W} .mini:active::after, ${W} .tile.lit::after, ${W} .tile:active::after { background-color: #ffe85a; box-shadow: 0 0 16px 3px rgba(255,122,28,.8); transition: background-color .05s, box-shadow .05s; }
-      ${W} .key.lit, ${W} .key:active, ${W} .mini.lit, ${W} .mini:active, ${W} .tile.lit, ${W} .tile:active { border-color: #ffe36a; }
+      ${W} .key::after, ${W} .mini::after, ${W} .tile::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: ${BLP}; opacity: 0; transform: scale(.55); filter: hue-rotate(95deg); transition: opacity 1.8s ease-out, transform 1.8s ease-out, filter 1.8s ease-out; }
+      ${W} .key.lit::after, ${W} .key:active::after, ${W} .mini.lit::after, ${W} .mini:active::after, ${W} .tile.lit::after, ${W} .tile:active::after { opacity: 1; transform: scale(1); filter: none; transition: opacity .05s, transform .15s, filter .05s; }
+      ${W} .key.lit, ${W} .key:active, ${W} .mini.lit, ${W} .mini:active, ${W} .tile.lit, ${W} .tile:active { border-color: #ff9a2a; }
       ${W} .key *, ${W} .mini *, ${W} .tile * { transition: color 1.8s ease-out; }
-      ${W} .key.lit *, ${W} .key:active *, ${W} .mini.lit *, ${W} .mini:active *, ${W} .tile.lit *, ${W} .tile:active * { color: #2a0600 !important; transition: color .05s; }
+      ${W} .key.lit *, ${W} .key:active *, ${W} .mini.lit *, ${W} .mini:active *, ${W} .tile.lit *, ${W} .tile:active * { color: #fff !important; text-shadow: 0 0 3px #2a0600, 0 0 7px #2a0600; transition: color .05s; }
       ${W} .appcell.svc { --c: #0a0724 !important; --fg: #6fd0c0 !important; }
       ${W} .tile.holdoff { background: #0b0830; border-color: #5a4ad0; color: #8fa6ff; position: relative; overflow: hidden; }
       ${W} .tile.holdoff::before { content: ""; position: absolute; left: 50%; top: 50%; width: 28px; height: 26px; margin: -13px 0 0 -40px; background: ${tri(0)}; background-size: 28px 26px; background-repeat: no-repeat; transform: scale(.8); display: block; }
@@ -71,8 +85,20 @@ export const SKIN_CSS_NEW = `
       ${R} input[type="text"], ${R} input[type="search"], ${R} input[type="number"], ${R} textarea { background: #2a1a10; color: #f1e3c1; border: 1px solid #c8a24a; } ${R} select option { background: #2a1a10; color: #f1e3c1; }
       ${W} .editbox, ${W} .egrp, ${W} .erow { color: #6fd0c0; } ${X} .editbox, ${X} .egrp, ${X} .erow { color: #f0d9a8; } ${N} .editbox, ${N} .egrp, ${N} .erow { color: #ffb000; }
       ${W} .etabs button.sel, ${W} .editbox .sel { background: linear-gradient(90deg, #ffe85a, #ff7a1c); color: #2a0600; } ${N} .etabs button.sel { background: #ffb000; color: #1a0f00; } ${X} .etabs button.sel { background: #ff9a3a; color: #1a0e06; }
+      @keyframes thfly { from { background-position: -14px 40px, 56px 40px, 14px -26px; opacity: .2; } to { background-position: 14px 13px, 14px 13px, 14px 13px; opacity: 1; } }
       @keyframes thlock { 0% { background: ${tri(1)}; } 33% { background: ${tri(2)}; } 66%, 100% { background: ${tri(3)}; } }
 
+      /* security card chips: the whole plate carries the look and the selection, the inner span only holds the text */
+      :is(ha-card[data-skin="glass"], ha-card[data-skin="clay"], ha-card[data-skin="pebble"], ${W}, ${N}, ${T}, ${X}, ${R}) .sec .fchip span { background: transparent !important; border-radius: inherit; box-shadow: none; }
+      /* hint bubbles (locked / unavailable / hold): each skin brings its own plate */
+      ${W} { --hint-bg: #0a0724; --hint-fg: #6fd0c0; --hint-bd: 1px solid #2f8f9a; --hint-r: 0; }
+      ${N} { --hint-bg: #120a00; --hint-fg: #ffb000; --hint-bd: 1px solid #ffb000; --hint-r: 0; }
+      ${T} { --hint-bg: #021a05; --hint-fg: #3dff6b; --hint-bd: 1px solid #3dff6b; --hint-r: 0; }
+      ${X} { --hint-bg: #120a08; --hint-fg: #f0d9a8; --hint-bd: 1px solid #8a6a2a; --hint-r: 6px; }
+      ${R} { --hint-bg: #2a1a10; --hint-fg: #f1e3c1; --hint-bd: 1px solid #c8a24a; --hint-r: 10px; }
+      ha-card[data-skin="glass"] { --hint-bg: rgba(14,20,26,.94); --hint-fg: #e8eef2; --hint-bd: 1px solid rgba(255,255,255,.3); --hint-r: 2px; --hint-sh: 0 0 10px rgba(255,255,255,.15); }
+      ha-card[data-skin="clay"] { --hint-bg: #fffaf0; --hint-fg: #4a3a30; --hint-bd: 0; --hint-r: 14px; --hint-sh: 0 3px 8px rgba(60,80,50,.3); }
+      ha-card[data-skin="pebble"] { --hint-bg: #e6d5a8; --hint-fg: #5e4620; --hint-bd: 0; --hint-r: 14px 12px 15px 11px; --hint-sh: 0 3px 8px rgba(0,60,70,.4), inset 0 1px 1px rgba(255,255,255,.5); }
       /* small badges (Fire TV dot at the room icon, hint count at the gear) in the skin's own colours */
       ${W} .fdot { border-radius: 0; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); background: #1a0a30; color: #ffe85a; box-shadow: 0 0 0 1px #ff7a1c, 0 0 8px 1px rgba(255,122,28,.8); width: 18px; height: 16px; }
       ${W} .fdot ha-icon { filter: drop-shadow(0 0 3px #ff7a1c); }
@@ -185,5 +211,5 @@ export const SKIN_CSS_NEW = `
       /* ---------- Tube radio: an active Fire TV direct key is a pressed brass key with a border (app keys stay dark glass) ---------- */
       ${R} .key.ic-row.on:not(.mute) { background: linear-gradient(180deg, #e3d5b0, #bba97f) !important; border: 2px solid #8a6a2a !important; color: #2a170a !important; animation: none !important; transform: translateY(3px); box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 1px 0 #6b4a1a, 0 0 0 2px rgba(255,184,74,.55), 0 0 10px 2px rgba(255,150,30,.45) !important; }
       ${R} .key.ic-row.on:not(.mute) *, ${R} .key.ic-row.on:not(.mute) ha-icon { color: #2a170a !important; text-shadow: none !important; }
-      @media (prefers-reduced-motion: reduce) { ${X} .pwknob::after, ${W} *, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { ${X} .pwknob::after, ${W} *, ${W} *::before, ${W} *::after, ${N}, ${N}::after, ${N} * { animation: none !important; transition: none !important; } ${X} * { transition: none !important; } }
 `;

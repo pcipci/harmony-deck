@@ -345,6 +345,17 @@ PLATFORM_QUIRKS: dict[str, tuple[str, ...]] = {
 }
 
 
+# Players that only know "one level up / down" and no target level: the volume is reached by sending that many steps.
+STEP_PLATFORMS = ("lg_netcast",)
+MAX_STEPS = 60
+
+
+def steps_between(current: int, target: int) -> tuple[str, int]:
+    """("volume_up" | "volume_down", number of steps) to get from the current level to the target (percent)."""
+    diff = int(target) - int(current)
+    return ("volume_up" if diff > 0 else "volume_down", min(abs(diff), MAX_STEPS))
+
+
 def slider_device(activities: Any, activity: Any, links: Any) -> str | None:
     """Harmony device whose volume the slider of the running activity sets, or None (then the card keeps +/-).
 

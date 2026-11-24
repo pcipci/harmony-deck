@@ -178,6 +178,8 @@ export const dataMixin = {
     const settings = { ...this._settings(), ...patch };
     this._info = { ...(this._info || { hubs: {} }), settings };
     try { await this._hass.callWS({ type: "harmony_deck/save_settings", settings, profile: this._prof().active }); } catch (e) { /* kept for this session only */ }
+    // Other Harmony Deck cards on the page (security card) pick the new look up at once.
+    try { window.dispatchEvent(new CustomEvent("harmony-deck-settings")); } catch (e) { /* no window */ }
     this._key = "";
     this.hass = this._hass;
   },

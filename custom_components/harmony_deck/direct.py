@@ -159,9 +159,43 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
     for ext in _extensions(hass, entity):
         if await ext.run(hass, entity, op, value):
             return
+    if op == "volume" and platform(hass, entity) in directdev.STEP_PLATFORMS and _volume_by_steps(hass, entity, value, context):
+        return
     domain, service, data = directdev.service_call(entity, op, value)
     async with asyncio.timeout(_TIMEOUT):
         await hass.services.async_call(domain, service, data, blocking=True, context=context)
+
+
+_STEP_GAP = 0.05    # seconds between two volume steps sent to a step-only player
+
+
+def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Context | None) -> bool:
+    """Step-only player (LG Netcast): send the missing "louder" / "quieter" steps one after the other without waiting for each answer.
+
+    Runs in the background so the card gets its answer at once; a newer level replaces the steps that are still to come.
+    False if the player does not report its level (then the normal "set volume" is tried).
+    """
+    current = snapshot(hass, entity).get("volume")
+    if current is None or not isinstance(value, (int, float)):
+        return False
+    service, count = directdev.steps_between(current, round(value))
+    tasks = hass.data[DOMAIN].setdefault("_volume_steps", {})
+    if (old := tasks.pop(entity, None)) is not None:
+        old.cancel()
+    if count == 0:
+        return True
+
+    async def send() -> None:
+        try:
+            for _ in range(count):
+                await hass.services.async_call("media_player", service, {"entity_id": entity}, blocking=False, context=context)
+                await asyncio.sleep(_STEP_GAP)
+        finally:
+            if tasks.get(entity) is asyncio.current_task():
+                tasks.pop(entity, None)
+
+    tasks[entity] = hass.async_create_background_task(send(), f"{DOMAIN} volume steps {entity}")
+    return True
 
 
 def platform(hass: HomeAssistant, entity: str) -> str | None:

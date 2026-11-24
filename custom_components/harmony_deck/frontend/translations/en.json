@@ -901,8 +901,6 @@
   "irvSetupHint": "If the device misses presses, make the time longer.",
   "volumeCap": "Highest volume for actions",
   "volumeCapHint": "For media players in actions: a step may not set it louder.",
-  "volumeStep": "Slider step (TVs with volume steps)",
-  "volumeStepHint": "For TVs that only know louder / quieter in steps (e.g. LG Netcast): the volume slider moves in this step size, each step sends one command to the TV. Larger = fewer commands, faster to the target.",
   "cPick": "Choose a condition",
   "cPickWait": "What should be waited for? Choose an entity.",
   "cPickIf": "What should be checked? Choose an entity.",

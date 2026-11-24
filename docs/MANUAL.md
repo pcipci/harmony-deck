@@ -209,5 +209,8 @@ Thermal draws active things as one soft heat spot (hot core, yellow, green, teal
 ### 0.23.5
 LG Netcast: the volume slider now reaches the chosen level; after the last step the real level is read again and missing steps follow. Hint texts show in every skin. Lock marks follow the skin colour (Nixie: dark tube with a brass lock). Security card chips are square in Terminal, Nostromo and Thermal, whole lit plates in Glass and bubbles in Clay.
 
+### 0.23.6
+LG Netcast timings moved into the options of the integration (Settings > Devices & services > Harmony Deck > Configure, section LG Netcast): gap between steps, number of corrections, wait before the check. The volume slider stays on the chosen level until the TV reports it. The card setting *Slider step* is gone.
+
 ### 0.22.0
 New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.

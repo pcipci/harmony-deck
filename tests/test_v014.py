@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -58,7 +59,7 @@ async def test_volume_slider_ws(hass: HomeAssistant, hass_ws_client, hass_read_o
         return await user.receive_json()
 
     res = await call(type="harmony_deck/direct/sliders")
-    one = {"device": "LG", "entity": "media_player.tv", "cap": 50, "step": 1, "release": False}
+    one = {"device": "LG", "entity": "media_player.tv", "cap": 50, "release": False}
     assert res["result"][REMOTE] == {"activity": {"activity": "TV", **one}, "devices": {"LG": one}}
     assert (await call(type="harmony_deck/direct/volume", hub=REMOTE, value=30))["success"]
     assert (await call(type="harmony_deck/direct/volume", hub=REMOTE, value=99))["result"]["value"] == 50   # held to the limit
@@ -121,3 +122,37 @@ async def test_volume_slider_device_view(hass: HomeAssistant, hass_ws_client, ha
     await admin.receive_json()
     assert (await call(type="harmony_deck/direct/volume", hub=REMOTE, device="LG", value=10))["success"]   # like the keys
     assert sent == [0.4, 0.1]
+
+
+async def test_volume_slider_step_tv_hold(hass: HomeAssistant, hass_ws_client, hass_read_only_access_token, monkeypatch):
+    """LG Netcast: the slider answer carries how long the card keeps the slider on the target (from the options)."""
+    await _setup(hass)
+    from custom_components.harmony_deck import direct, directws
+
+    async def confs(_hass):
+        return {}
+
+    monkeypatch.setattr(directws, "load_confs", confs)
+    monkeypatch.setattr(directws, "collect_hubs", lambda _h, _c=None: ({REMOTE: {"activities": ACTS}}, {}))
+    monkeypatch.setattr(direct, "step_options", lambda _h: {"step_gap_ms": 0, "corrections": 0, "settle_s": 0})
+
+    async def step(call):
+        st = hass.states.get("media_player.tv")
+        lvl = round(st.attributes["volume_level"] * 100) + (1 if call.service == "volume_up" else -1)
+        hass.states.async_set("media_player.tv", st.state, {**st.attributes, "volume_level": lvl / 100})
+
+    for srv in ("volume_up", "volume_down", "volume_set"):
+        hass.services.async_register("media_player", srv, step)
+    er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
+    hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 1024, "volume_level": 0.2})
+    hass.states.async_set(REMOTE, "on", {"current_activity": "TV", "activity_list": ["TV", "Radio"]})
+    hass.data[DOMAIN]["settings"]["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv", "volumeDirect": True}}}
+    user = await hass_ws_client(hass, hass_read_only_access_token)
+    await user.send_json_auto_id({"type": "harmony_deck/direct/volume", "hub": REMOTE, "value": 30})
+    res = (await user.receive_json())["result"]
+    assert res["value"] == 30 and res["hold"] == 10 * (50 + 250) + 500   # 10 steps (gap held to at least 50 ms), one wait of at least 0.5 s
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        if round(hass.states.get("media_player.tv").attributes["volume_level"] * 100) == 30:
+            break
+    assert round(hass.states.get("media_player.tv").attributes["volume_level"] * 100) == 30

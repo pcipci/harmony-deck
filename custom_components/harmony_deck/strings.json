@@ -309,5 +309,29 @@
     "network_device": {
       "name": "{name} (Network)"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Harmony Deck options",
+        "description": "Technical settings. The card does not need them.",
+        "sections": {
+          "lg_netcast": {
+            "name": "LG Netcast (TVs that only know volume steps)",
+            "description": "The volume slider reaches the target with single louder / quieter steps. After the last step the real level is read again and missing steps are sent.",
+            "data": {
+              "step_gap_ms": "Gap between two steps",
+              "corrections": "Corrections",
+              "settle_s": "Wait before checking"
+            },
+            "data_description": {
+              "step_gap_ms": "Shorter is faster, but a TV may drop steps that come too fast (default 150 ms).",
+              "corrections": "How often missing steps are sent again after the check (0 = never, default 3).",
+              "settle_s": "How long to wait after the last step before the TV's level is read again (default 2.5 s)."
+            }
+          }
+        }
+      }
+    }
   }
 }

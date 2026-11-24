@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.23.6
+
+### Added
+- **Options of the integration** (Settings > Devices & services > Harmony Deck > Configure), section **LG Netcast**: gap between two volume steps (default 150 ms), number of corrections (default 3) and wait before the check (default 2.5 s). They only apply to TVs of the HA integration *LG Netcast*; the card does not need them.
+
+### Changed
+- **Volume slider of an LG Netcast TV** stays on the chosen level after release until the TV reports it (or the time the integration expects for the steps and checks is over), instead of jumping back to an intermediate value.
+
+### Removed
+- **Card setting *Slider step*** (from 0.23.4): it had no effect on the speed; the timings are now options of the integration.
+
 ## 0.23.5
 
 ### Fixed

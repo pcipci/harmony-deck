@@ -34,20 +34,42 @@ export const volSliderMixin = {
     const s = deviceView ? this._sl?.[h.id]?.devices?.[r.volume] : this._sl?.[h.id]?.activity;
     if (!s || this._edit || !r.volume || s.device !== r.volume || (!deviceView && s.activity !== h.current)) return "";
     const st = this._hass.states?.[s.entity];
-    const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" step="${s.step || 1}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round((Math.min(lvl, s.cap) / (s.cap || 100)) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+    const id = h.id + (deviceView ? "/" + s.device : "");
+    const real = st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0;
+    const hold = this._volHold?.[id];
+    if (hold && (real === hold.target || Date.now() > hold.until)) setTimeout(() => this._volHoldEnd(id), 0);
+    const lvl = this._volLive?.[id] ?? (hold ? hold.target : real);
+    return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round((Math.min(lvl, s.cap) / (s.cap || 100)) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
   },
 
   async _volSend(hub, value, device) {
     const id = hub + (device ? "/" + device : "");
     if (this._volSent?.[id] === value) return;
     this._volSent = { ...(this._volSent || {}), [id]: value };
-    try { await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value, ...(device ? { device } : {}) }); } catch (e) {
+    try {
+      const res = await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value, ...(device ? { device } : {}) });
+      // Step-only TV (LG Netcast): the integration still sends steps and checks them; it says how long that may take.
+      // Until then the slider stays on the target, unless the TV reports the target earlier.
+      if (res?.hold > 0) {
+        this._volHold = { ...(this._volHold || {}), [id]: { target: res.value ?? value, until: Date.now() + res.hold } };
+        clearTimeout(this._volHoldTm?.[id]);
+        this._volHoldTm = { ...(this._volHoldTm || {}), [id]: setTimeout(() => this._volHoldEnd(id), res.hold) };
+      }
+    } catch (e) {
       // not possible (any more): back to +/-
       const cur = this._sl?.[hub] || {};
       this._sl = { ...(this._sl || {}), [hub]: device ? { ...cur, devices: { ...(cur.devices || {}), [device]: null } } : { ...cur, activity: null } };
       this._key = ""; this.hass = this._hass;
     }
+  },
+
+  // The hold of a step-only TV is over (target reached or time up): the slider follows the TV again.
+  _volHoldEnd(id) {
+    if (!this._volHold?.[id]) return;
+    this._volHold = { ...this._volHold }; delete this._volHold[id];
+    clearTimeout(this._volHoldTm?.[id]);
+    if (this._volLive) { this._volLive = { ...this._volLive }; delete this._volLive[id]; }
+    this._key = ""; if (this._hass) this.hass = this._hass;
   },
 
   _bindVolSlider(root) {
@@ -60,7 +82,7 @@ export const volSliderMixin = {
       const end = () => {
         clearTimeout(this._volEnd);
         // Let the device report the new level before the card follows the device again.
-        this._volEnd = setTimeout(() => { this._volDrag = false; this._volLive = null; this._volSent = null; this._key = ""; if (this._hass) this.hass = this._hass; }, 1200);
+        this._volEnd = setTimeout(() => { this._volDrag = false; this._volLive = this._volHold?.[id] ? { [id]: this._volHold[id].target } : null; this._volSent = null; this._key = ""; if (this._hass) this.hass = this._hass; }, 1200);
       };
       el.addEventListener("pointerdown", () => { this._volDrag = true; clearTimeout(this._volEnd); });
       el.addEventListener("input", () => {

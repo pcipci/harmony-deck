@@ -211,11 +211,6 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
             settings["volumeCap"] = min(max(int(settings["volumeCap"]), 10), 100)
         except (TypeError, ValueError):
             settings.pop("volumeCap")
-    if "volumeStep" in settings:
-        try:
-            settings["volumeStep"] = min(max(int(settings["volumeStep"]), 1), 10)
-        except (TypeError, ValueError):
-            settings.pop("volumeStep")
     prof.save(data, name, settings, SETTING_KEYS)
     await _commit(hass, data)
     if "directDevices" in settings and (watch := hass.data[DOMAIN].get("direct_watch")):

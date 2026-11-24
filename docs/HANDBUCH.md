@@ -209,5 +209,8 @@ Wärmebild zeichnet Aktives als einen weichen Wärmefleck (heißer Kern, gelb, g
 ### 0.23.5
 LG Netcast: Der Lautstärke-Schieber erreicht jetzt den eingestellten Wert; nach der letzten Stufe wird der echte Wert noch einmal gelesen und fehlende Stufen werden nachgesendet. Hinweistexte erscheinen in allen Looks. Sperr-Schlösser haben die Farbe des Looks (Nixie: dunkle Röhre mit Messing-Schloss). Die Chips der Sicherheitskarte sind in Terminal, Nostromo und Wärmebild eckig, in Glass ganze leuchtende Platten und in Knetmasse Blasen.
 
+### 0.23.6
+Die Zeiten für LG Netcast stehen jetzt in den Optionen der Integration (Einstellungen > Geräte & Dienste > Harmony Deck > Konfigurieren, Abschnitt LG Netcast): Abstand zwischen den Stufen, Anzahl der Nachregelungen, Wartezeit vor der Prüfung. Der Lautstärke-Schieber bleibt auf dem eingestellten Wert, bis der Fernseher ihn meldet. Die Karteneinstellung *Schieber-Schrittweite* entfällt.
+
 ### 0.22.0
 Neue Einstellung *Anfragen an Hubs und Netzwerkgeräte im Log mitschreiben* (Einstellungen > Hub, standardmäßig aus): schreibt Befehle und Zustandswechsel von Hubs und verknüpften Geräten ins Home-Assistant-Log (Logger custom_components.harmony_deck.traffic). Das Fire-TV-Abzeichen ist in allen eigenen Skins nur noch ein leuchtendes Symbol. Clay und Glas haben richtige Fire-TV-App-Tasten, Clay eine Lautstärke-Blase. Die Home-Assistant-Warnungen zu veralteten Aufrufen sind behoben.

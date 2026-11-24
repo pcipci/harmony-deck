@@ -309,5 +309,29 @@
     "network_device": {
       "name": "{name} (Netzwerk)"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Harmony Deck Optionen",
+        "description": "Technische Einstellungen. Die Karte braucht sie nicht.",
+        "sections": {
+          "lg_netcast": {
+            "name": "LG Netcast (Fernseher, die nur Lautstärke-Stufen kennen)",
+            "description": "Der Lautstärke-Schieber erreicht das Ziel mit einzelnen Lauter-/Leiser-Stufen. Nach der letzten Stufe wird der echte Wert gelesen und fehlende Stufen werden nachgesendet.",
+            "data": {
+              "step_gap_ms": "Abstand zwischen zwei Stufen",
+              "corrections": "Nachregelungen",
+              "settle_s": "Wartezeit vor der Prüfung"
+            },
+            "data_description": {
+              "step_gap_ms": "Kürzer ist schneller, aber ein Fernseher verliert Stufen, die zu schnell kommen (Standard 150 ms).",
+              "corrections": "Wie oft fehlende Stufen nach der Prüfung nachgesendet werden (0 = nie, Standard 3).",
+              "settle_s": "Wie lange nach der letzten Stufe gewartet wird, bevor der Wert des Fernsehers erneut gelesen wird (Standard 2,5 s)."
+            }
+          }
+        }
+      }
+    }
   }
 }

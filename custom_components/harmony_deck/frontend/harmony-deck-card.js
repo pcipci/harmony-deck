@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.23.5";
+  var VERSION = "0.23.6";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -5124,7 +5124,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
           ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
-        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>` + this._selRow(t.volumeStep, "data-volstep", { 1: "1", 2: "2", 5: "5" }, String(this._settings().volumeStep || 1)) + `<div class="ehint">${t.volumeStepHint}</div>`)}</div>
+        ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
@@ -5385,10 +5385,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       });
       root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
       root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
-      root.querySelector("select[data-volstep]")?.addEventListener("change", (e) => {
-        this._saveSettings({ volumeStep: Number(e.target.value) });
-        window.setTimeout(() => this._slLoad?.(), 400);
-      });
       root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
       root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
         this._etab = b.dataset.goetab || "look";
@@ -7270,21 +7266,43 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const s = deviceView ? this._sl?.[h.id]?.devices?.[r.volume] : this._sl?.[h.id]?.activity;
       if (!s || this._edit || !r.volume || s.device !== r.volume || !deviceView && s.activity !== h.current) return "";
       const st = this._hass.states?.[s.entity];
-      const lvl = this._volLive?.[h.id + (deviceView ? "/" + s.device : "")] ?? (st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0);
-      return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" step="${s.step || 1}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round(Math.min(lvl, s.cap) / (s.cap || 100) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
+      const id = h.id + (deviceView ? "/" + s.device : "");
+      const real = st?.attributes?.volume_level != null ? Math.round(st.attributes.volume_level * 100) : 0;
+      const hold = this._volHold?.[id];
+      if (hold && (real === hold.target || Date.now() > hold.until)) setTimeout(() => this._volHoldEnd(id), 0);
+      const lvl = this._volLive?.[id] ?? (hold ? hold.target : real);
+      return `<input type="range" class="volslider ${orient || "h"}" min="0" max="${s.cap}" value="${Math.min(lvl, s.cap)}" data-volhub="${h.id}" ${deviceView ? `data-voldev="${esc(s.device)}"` : ""} data-volrel="${s.release ? 1 : 0}" style="--v:${Math.round(Math.min(lvl, s.cap) / (s.cap || 100) * 100)}" title="${Math.min(lvl, s.cap)} %" aria-label="${this._t().volume || "Volume"}">`;
     },
     async _volSend(hub, value, device) {
       const id = hub + (device ? "/" + device : "");
       if (this._volSent?.[id] === value) return;
       this._volSent = { ...this._volSent || {}, [id]: value };
       try {
-        await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value, ...device ? { device } : {} });
+        const res = await this._hass.callWS({ type: "harmony_deck/direct/volume", hub, value, ...device ? { device } : {} });
+        if (res?.hold > 0) {
+          this._volHold = { ...this._volHold || {}, [id]: { target: res.value ?? value, until: Date.now() + res.hold } };
+          clearTimeout(this._volHoldTm?.[id]);
+          this._volHoldTm = { ...this._volHoldTm || {}, [id]: setTimeout(() => this._volHoldEnd(id), res.hold) };
+        }
       } catch (e) {
         const cur = this._sl?.[hub] || {};
         this._sl = { ...this._sl || {}, [hub]: device ? { ...cur, devices: { ...cur.devices || {}, [device]: null } } : { ...cur, activity: null } };
         this._key = "";
         this.hass = this._hass;
       }
+    },
+    // The hold of a step-only TV is over (target reached or time up): the slider follows the TV again.
+    _volHoldEnd(id) {
+      if (!this._volHold?.[id]) return;
+      this._volHold = { ...this._volHold };
+      delete this._volHold[id];
+      clearTimeout(this._volHoldTm?.[id]);
+      if (this._volLive) {
+        this._volLive = { ...this._volLive };
+        delete this._volLive[id];
+      }
+      this._key = "";
+      if (this._hass) this.hass = this._hass;
     },
     _bindVolSlider(root) {
       root.querySelectorAll("input[data-volhub]").forEach((el) => {
@@ -7301,7 +7319,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           clearTimeout(this._volEnd);
           this._volEnd = setTimeout(() => {
             this._volDrag = false;
-            this._volLive = null;
+            this._volLive = this._volHold?.[id] ? { [id]: this._volHold[id].target } : null;
             this._volSent = null;
             this._key = "";
             if (this._hass) this.hass = this._hass;

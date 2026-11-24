@@ -120,9 +120,7 @@ def _device_slider(hass: HomeAssistant, links: dict[str, Any], device: str) -> d
         return None
     cap = int((hass.data[DOMAIN].get("settings") or {}).get("volumeCap") or 80)
     plat = direct.platform(hass, entity)
-    # Step-only players: the slider moves in steps of the setting (1, 2, 5 ...), each step is one command to the player.
-    step = int((hass.data[DOMAIN].get("settings") or {}).get("volumeStep") or 1) if plat in directdev.STEP_PLATFORMS else 1
-    return {"device": device, "entity": entity, "cap": cap, "step": step, "release": "volume_on_release" in directdev.quirks(plat, [])}
+    return {"device": device, "entity": entity, "cap": cap, "release": "volume_on_release" in directdev.quirks(plat, [])}
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/direct/sliders"})
@@ -159,15 +157,19 @@ async def ws_volume(hass: HomeAssistant, connection: websocket_api.ActiveConnect
     if slider is None or op is None:
         connection.send_error(msg["id"], "invalid", "no volume slider for this device")
         return
+    target = min(op[1], slider["cap"])
+    before = direct.snapshot(hass, slider["entity"]).get("volume")
     try:
-        await direct.run(hass, slider["entity"], "volume", min(op[1], slider["cap"]), connection.context(msg))
+        await direct.run(hass, slider["entity"], "volume", target, connection.context(msg))
     except TimeoutError:
         connection.send_error(msg["id"], "failed", f"{slider['device']}: no answer")
         return
     except Exception as err:  # noqa: BLE001 - the message goes to the card
         connection.send_error(msg["id"], "failed", str(err))
         return
-    connection.send_result(msg["id"], {"ok": True, "value": min(op[1], slider["cap"])})
+    # Step-only TV: the steps run in the background; the card keeps its slider on the target for up to "hold" ms.
+    hold = directdev.step_hold_ms(direct.step_options(hass), before, target) if direct.platform(hass, slider["entity"]) in directdev.STEP_PLATFORMS else 0
+    connection.send_result(msg["id"], {"ok": True, "value": target, **({"hold": hold} if hold else {})})
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/direct/rescan", vol.Required("hub"): str, vol.Required("device"): str})

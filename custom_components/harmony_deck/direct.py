@@ -168,10 +168,14 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
         await hass.services.async_call(domain, service, data, blocking=True, context=context)
 
 
-_STEP_GAP = 0.1      # seconds between two volume steps sent to a step-only player
-_SETTLE = 2.5        # seconds to wait after the last step before the real level is read again
-_ROUNDS = 6          # one pass plus up to five corrections (each one smaller)
+# Timings for step-only players come from the options of the integration (section "LG Netcast"), see step_options().
 _STEP_TIMEOUT = 5    # seconds one step may take
+
+
+def step_options(hass: HomeAssistant) -> dict[str, Any]:
+    """Options of the integration for step-only TVs: gap between steps (ms), corrections, wait before the check (s)."""
+    entries = hass.config_entries.async_entries(DOMAIN)
+    return directdev.clean_step_options((entries[0].options or {}).get("lg_netcast") if entries else None)
 
 
 async def _refresh(hass: HomeAssistant, entity: str) -> None:
@@ -187,7 +191,7 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
     """Step-only player (LG Netcast): reach the level with single "louder" / "quieter" steps, then check and correct.
 
     Each step waits for the player's answer (sent too fast, the TV drops some). After the last step the real level is
-    read again after a short pause; if the TV did not get there, the missing steps follow (at most five corrections).
+    read again after a short pause; if the TV did not get there, the missing steps follow (corrections: options of the integration).
     Runs in the background so the card gets its answer at once; a newer level replaces the run that is still going.
     False if the player does not report its level (then the normal "set volume" is tried).
     """
@@ -198,9 +202,12 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
     if (old := tasks.pop(entity, None)) is not None:
         old.cancel()
 
+    opt = step_options(hass)
+    gap, settle, rounds = opt["step_gap_ms"] / 1000, opt["settle_s"], 1 + opt["corrections"]
+
     async def adjust() -> None:
         try:
-            for attempt in range(_ROUNDS):
+            for attempt in range(rounds):
                 await _refresh(hass, entity)
                 current = snapshot(hass, entity).get("volume")
                 if current is None:
@@ -212,8 +219,9 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
                 for _ in range(count):
                     async with asyncio.timeout(_STEP_TIMEOUT):
                         await hass.services.async_call("media_player", service, {"entity_id": entity}, blocking=True, context=context)
-                    await asyncio.sleep(_STEP_GAP)
-                await asyncio.sleep(_SETTLE)
+                    await asyncio.sleep(gap)
+                if attempt + 1 < rounds:
+                    await asyncio.sleep(settle)
             _LOGGER.debug("volume steps: %s did not reach %s", entity, target)
         except asyncio.CancelledError:
             raise

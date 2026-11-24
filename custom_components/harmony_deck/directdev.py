@@ -350,6 +350,38 @@ STEP_PLATFORMS = ("lg_netcast",)
 MAX_STEPS = 60
 
 
+STEP_DEFAULTS = {"step_gap_ms": 150, "corrections": 3, "settle_s": 2.5}
+
+
+def clean_step_options(raw: Any) -> dict[str, Any]:
+    """Options of the integration for step-only TVs, held to sane ranges; missing or broken values take the default."""
+    raw = raw if isinstance(raw, dict) else {}
+
+    def num(key: str, low: float, high: float, cast: Any) -> Any:
+        try:
+            value = cast(raw.get(key, STEP_DEFAULTS[key]))
+        except (TypeError, ValueError):
+            return STEP_DEFAULTS[key]
+        if isinstance(value, float) and not math.isfinite(value):
+            return STEP_DEFAULTS[key]
+        return min(max(value, low), high)
+
+    return {"step_gap_ms": num("step_gap_ms", 50, 1000, int), "corrections": num("corrections", 0, 5, int),
+            "settle_s": round(num("settle_s", 0.5, 10, float), 1)}
+
+
+def step_hold_ms(options: Any, current: Any, target: Any) -> int:
+    """How long the card keeps its slider on the target while the steps run and are checked (it lets go earlier once the
+    TV reports the target). Each step: the gap plus about a quarter second for the TV's answer."""
+    if not isinstance(current, (int, float)) or not isinstance(target, (int, float)):
+        return 0
+    opt = clean_step_options(options)
+    count = min(abs(round(target) - round(current)), MAX_STEPS)
+    if count == 0:
+        return 0
+    return int(count * (opt["step_gap_ms"] + 250) + opt["settle_s"] * 1000 * (1 + opt["corrections"]))
+
+
 def steps_between(current: int, target: int) -> tuple[str, int]:
     """("volume_up" | "volume_down", number of steps) to get from the current level to the target (percent)."""
     diff = int(target) - int(current)

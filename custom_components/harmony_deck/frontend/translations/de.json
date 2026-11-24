@@ -901,8 +901,6 @@
   "irvSetupHint": "Verschluckt das Gerät Tastendrücke, den Abstand vergrößern.",
   "volumeCap": "Höchste Lautstärke für Aktionen",
   "volumeCapHint": "Gilt für Mediaplayer in Aktionen: Ein Schritt darf nicht lauter stellen.",
-  "volumeStep": "Schieber-Schrittweite (Fernseher mit Lautstärke-Schritten)",
-  "volumeStepHint": "Bei Fernsehern, die nur lauter/leiser in Stufen können (z. B. LG Netcast): der Lautstärke-Schieber springt in dieser Schrittweite, je Stufe geht ein Befehl an den Fernseher. Größer = weniger Befehle, schneller am Ziel.",
   "cPick": "Bedingung wählen",
   "cPickWait": "Worauf soll gewartet werden? Wähle eine Entität.",
   "cPickIf": "Was soll geprüft werden? Wähle eine Entität.",

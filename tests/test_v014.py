@@ -156,3 +156,12 @@ async def test_volume_slider_step_tv_hold(hass: HomeAssistant, hass_ws_client, h
         if round(hass.states.get("media_player.tv").attributes["volume_level"] * 100) == 30:
             break
     assert round(hass.states.get("media_player.tv").attributes["volume_level"] * 100) == 30
+
+
+def test_midnight_callback_runs_in_event_loop():
+    """async_track_time_change runs a plain function or lambda in an executor thread; the state write needs the event loop."""
+    from homeassistant.core import is_callback
+
+    from custom_components.harmony_deck.lockent import InterventionsToday
+
+    assert is_callback(InterventionsToday._midnight)

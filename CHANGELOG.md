@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.7
+
+### Fixed
+- **HA log warning "calls async_write_ha_state from a thread other than the event loop"** (sensor *Interventions today*, reset at midnight): the midnight update now runs in the event loop.
+
 ## 0.23.6
 
 ### Added

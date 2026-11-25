@@ -196,7 +196,12 @@ class InterventionsToday(LockEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         # The count starts again at midnight, which is not a change the manager reports.
-        self.async_on_remove(async_track_time_change(self.hass, lambda _now: self.async_write_ha_state(), hour=0, minute=0, second=5))
+        self.async_on_remove(async_track_time_change(self.hass, self._midnight, hour=0, minute=0, second=5))
+
+    @callback
+    def _midnight(self, _now: Any) -> None:
+        # A plain function (or lambda) would run in an executor thread; writing the state must happen in the event loop.
+        self.async_write_ha_state()
 
 
 class Intervention(LockEntity, EventEntity):

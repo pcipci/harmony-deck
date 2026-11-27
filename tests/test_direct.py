@@ -104,9 +104,9 @@ def test_steps_between():
 
 
 def test_step_options_and_hold():
-    assert dd.clean_step_options(None) == {"step_gap_ms": 150, "corrections": 3, "settle_s": 2.5}
+    assert dd.clean_step_options(None) == {"step_gap_ms": 100, "corrections": 3, "settle_s": 2.5}
     assert dd.clean_step_options({"step_gap_ms": 5, "corrections": 9, "settle_s": "x"}) == {"step_gap_ms": 50, "corrections": 5, "settle_s": 2.5}
     assert dd.clean_step_options({"step_gap_ms": 100.0, "corrections": 0, "settle_s": 1}) == {"step_gap_ms": 100, "corrections": 0, "settle_s": 1.0}
     assert dd.step_hold_ms(None, 50, 50) == 0 and dd.step_hold_ms(None, None, 10) == 0
-    # 20 steps of 150 + 250 ms, then 2.5 s wait for the first check and each of the 3 corrections
-    assert dd.step_hold_ms(None, 30, 10) == 20 * 400 + 2500 * 4
+    # 20 steps of 100 + 250 ms, then 2.5 s wait for the first check and each of the 3 corrections
+    assert dd.step_hold_ms(None, 30, 10) == 20 * 350 + 2500 * 4

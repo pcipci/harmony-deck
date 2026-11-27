@@ -15,6 +15,7 @@ from .direct_watch import watcher
 from .entity import DeckEntity, HubEntity
 from .lock import lock_hubs
 from .netent import async_setup_network_devices
+from .screenent import setup_platform as _screen_platform
 from .lockent import InterventionsToday, LastAction, ReleasedUntil, setup_platform as _lock_platform
 
 
@@ -42,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     _add_hubs()
     entry.async_on_unload(coordinator.async_add_listener(_add_hubs))
     await async_setup_network_devices(hass, entry, async_add_entities)
+    await _screen_platform("main_color")(hass, entry, async_add_entities)
 
 
 class HubsFound(DeckEntity, SensorEntity):

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0
+
+### Added
+- **TV picture and main colour for LG Netcast TVs (optional, per device).** Switch it on in the options of the integration (Settings > Devices & services > Harmony Deck > Configure > pick the TV > *TV picture*). It adds three entities to the TV's network device: **TV picture** (image), **Main colour** (sensor: `#rrggbb`, attributes `rgb_color`, `hs_color`, `brightness`; for coloured lamps in an automation) and **Picture available** (binary sensor). The picture comes from the media player itself (its `entity_picture`), so there is no extra connection to the TV and no token is stored. A new picture is fetched either **when the player reports one** (default) or **every few seconds** (poll gap 1 to 10 s, default 2 s). Without a picture for longer than the set time (default 10 s) *Picture available* goes off and the main colour becomes *unknown*; until then the colour keeps its last value, so short gaps do not make lamps jump. The colour is smoothed against flicker and prefers frequent, coloured areas over black bars.
+
+### Changed
+- **Options per device.** The LG Netcast timings (gap between steps, corrections, wait) are now set **per TV** in the options of the integration: first pick the TV, then its values. Values of the earlier global dialog are used as long as a TV has none of its own. Default gap is now **100 ms** (was 150 ms).
+- **Volume on LG Netcast waits until the level settles.** After the last step the TV's level is read about every half second until it stays the same (at most the set wait), and only then are missing steps sent. A fixed wait could read a level the TV had not reached yet and overshoot with short gaps.
+
 ## 0.23.7
 
 ### Fixed

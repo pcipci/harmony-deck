@@ -23,6 +23,9 @@
       },
       "lock_active": {
         "name": "Sperre wirksam"
+      },
+      "picture_available": {
+        "name": "Bild verfügbar"
       }
     },
     "sensor": {
@@ -223,6 +226,9 @@
           "yes": "Ja",
           "no": "Nein"
         }
+      },
+      "main_color": {
+        "name": "Hauptfarbe"
       }
     },
     "switch": {
@@ -262,6 +268,11 @@
             }
           }
         }
+      }
+    },
+    "image": {
+      "tv_picture": {
+        "name": "TV-Bild"
       }
     }
   },
@@ -314,23 +325,57 @@
     "step": {
       "init": {
         "title": "Harmony Deck Optionen",
-        "description": "Technische Einstellungen. Die Karte braucht sie nicht.",
+        "description": "Technische Einstellungen pro verknüpftem Netzwerk-Fernseher (LG Netcast). Die Karte braucht sie nicht. Wähle den Fernseher.",
+        "data": {
+          "device": "Fernseher"
+        }
+      },
+      "device": {
+        "title": "{name}",
+        "description": "Technische Einstellungen dieses Fernsehers. Die Karte braucht sie nicht.",
         "sections": {
-          "lg_netcast": {
-            "name": "LG Netcast (Fernseher, die nur Lautstärke-Stufen kennen)",
-            "description": "Der Lautstärke-Schieber erreicht das Ziel mit einzelnen Lauter-/Leiser-Stufen. Nach der letzten Stufe wird der echte Wert gelesen und fehlende Stufen werden nachgesendet.",
+          "volume": {
+            "name": "Lautstärke (Fernseher kennt nur Lautstärke-Schritte)",
+            "description": "Der Lautstärkeregler erreicht das Ziel mit einzelnen Lauter-/Leiser-Schritten. Danach wird der Pegel gelesen, bis er gleich bleibt, und fehlende Schritte werden nachgeschickt.",
             "data": {
-              "step_gap_ms": "Abstand zwischen zwei Stufen",
-              "corrections": "Nachregelungen",
-              "settle_s": "Wartezeit vor der Prüfung"
+              "step_gap_ms": "Abstand zwischen zwei Schritten",
+              "corrections": "Korrekturen",
+              "settle_s": "Längste Wartezeit vor der Prüfung"
             },
             "data_description": {
-              "step_gap_ms": "Kürzer ist schneller, aber ein Fernseher verliert Stufen, die zu schnell kommen (Standard 150 ms).",
-              "corrections": "Wie oft fehlende Stufen nach der Prüfung nachgesendet werden (0 = nie, Standard 3).",
-              "settle_s": "Wie lange nach der letzten Stufe gewartet wird, bevor der Wert des Fernsehers erneut gelesen wird (Standard 2,5 s)."
+              "step_gap_ms": "Kürzer ist schneller, aber zu schnelle Schritte verliert oder überzieht ein Fernseher (Standard 100 ms).",
+              "corrections": "Wie oft fehlende Schritte nach der Prüfung nachgeschickt werden (0 = nie, Standard 3).",
+              "settle_s": "Nach dem letzten Schritt wird der Pegel etwa jede halbe Sekunde gelesen, bis er gleich bleibt, höchstens so lange (Standard 2,5 s)."
+            }
+          },
+          "picture": {
+            "name": "TV-Bild (für Automationen, z. B. Farblampen)",
+            "description": "Fügt dem Gerät dieses Fernsehers die Entitäten TV-Bild, Hauptfarbe und Bild verfügbar hinzu. Das Bild kommt vom Media Player selbst, nichts verlässt dein Netz.",
+            "data": {
+              "picture": "TV-Bild",
+              "picture_mode": "Neues Bild",
+              "picture_interval_s": "Abfrageabstand",
+              "picture_timeout_s": "Zeit ohne Bild"
+            },
+            "data_description": {
+              "picture": "Standardmäßig aus. Jedes Bild kostet den Fernseher etwas Arbeit.",
+              "picture_mode": "Wenn der Media Player ein neues Bild meldet, oder alle paar Sekunden.",
+              "picture_interval_s": "Nur bei „alle paar Sekunden“ (Standard 2 s). Schneller als der Fernseher neue Bilder macht, bringt nichts.",
+              "picture_timeout_s": "So lange ohne Bild, dann geht Bild verfügbar aus und die Hauptfarbe auf unbekannt; bis dahin behält die Farbe ihren letzten Wert (Standard 10 s)."
             }
           }
         }
+      }
+    },
+    "abort": {
+      "no_devices": "Kein verknüpfter Netzwerk-Fernseher mit Optionen. Verknüpfe zuerst einen LG-Netcast-Fernseher in den Einstellungen der Karte (Reiter Netzwerksteuerung)."
+    }
+  },
+  "selector": {
+    "picture_mode": {
+      "options": {
+        "change": "Wenn der Media Player ein neues hat",
+        "poll": "Alle paar Sekunden (Abfrageabstand)"
       }
     }
   }

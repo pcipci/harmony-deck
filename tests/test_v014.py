@@ -134,7 +134,7 @@ async def test_volume_slider_step_tv_hold(hass: HomeAssistant, hass_ws_client, h
 
     monkeypatch.setattr(directws, "load_confs", confs)
     monkeypatch.setattr(directws, "collect_hubs", lambda _h, _c=None: ({REMOTE: {"activities": ACTS}}, {}))
-    monkeypatch.setattr(direct, "step_options", lambda _h: {"step_gap_ms": 0, "corrections": 0, "settle_s": 0})
+    monkeypatch.setattr(direct, "step_options", lambda _h, _e=None: {"step_gap_ms": 0, "corrections": 0, "settle_s": 0})
 
     async def step(call):
         st = hass.states.get("media_player.tv")

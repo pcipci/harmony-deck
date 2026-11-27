@@ -212,5 +212,8 @@ LG Netcast: Der Lautstärke-Schieber erreicht jetzt den eingestellten Wert; nach
 ### 0.23.6
 Die Zeiten für LG Netcast stehen jetzt in den Optionen der Integration (Einstellungen > Geräte & Dienste > Harmony Deck > Konfigurieren, Abschnitt LG Netcast): Abstand zwischen den Stufen, Anzahl der Nachregelungen, Wartezeit vor der Prüfung. Der Lautstärke-Schieber bleibt auf dem eingestellten Wert, bis der Fernseher ihn meldet. Die Karteneinstellung *Schieber-Schrittweite* entfällt.
 
+### 0.24.0
+Die Optionen der Integration gelten jetzt pro Fernseher (LG Netcast): erst den Fernseher wählen, dann Abstand zwischen den Stufen (Standard 100 ms), Nachregelungen und längste Wartezeit. Nach der letzten Stufe wird der Pegel gelesen, bis er gleich bleibt, erst dann kommen fehlende Stufen. Neu, optional pro Fernseher: die Entitäten **TV-Bild**, **Hauptfarbe** und **Bild verfügbar** (in den Optionen des Fernsehers einschalten; das Bild kommt vom Media Player, neu bei Änderung oder alle paar Sekunden). Die Hauptfarbe kannst du in einer Automation für Farblampen nutzen; ohne Bilder geht sie nach der eingestellten Zeit auf unbekannt.
+
 ### 0.22.0
 Neue Einstellung *Anfragen an Hubs und Netzwerkgeräte im Log mitschreiben* (Einstellungen > Hub, standardmäßig aus): schreibt Befehle und Zustandswechsel von Hubs und verknüpften Geräten ins Home-Assistant-Log (Logger custom_components.harmony_deck.traffic). Das Fire-TV-Abzeichen ist in allen eigenen Skins nur noch ein leuchtendes Symbol. Clay und Glas haben richtige Fire-TV-App-Tasten, Clay eine Lautstärke-Blase. Die Home-Assistant-Warnungen zu veralteten Aufrufen sind behoben.

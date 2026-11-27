@@ -120,7 +120,7 @@ async def test_volume_steps_correct_dropped(hass: HomeAssistant, hass_ws_client,
     """A TV that drops every third step: after the pass the level is read again and the missing steps follow."""
     await _setup(hass)
     from custom_components.harmony_deck import direct as direct_mod
-    monkeypatch.setattr(direct_mod, "step_options", lambda _h: {"step_gap_ms": 0, "corrections": 5, "settle_s": 0})
+    monkeypatch.setattr(direct_mod, "step_options", lambda _h, _e=None: {"step_gap_ms": 0, "corrections": 5, "settle_s": 0})
     calls = []
 
     async def step(call):
@@ -163,7 +163,7 @@ async def test_device_page_controls(hass: HomeAssistant, hass_ws_client, hass_re
     for srv in ("volume_up", "volume_down"):
         hass.services.async_register("media_player", srv, step)
     from custom_components.harmony_deck import direct as direct_mod
-    monkeypatch.setattr(direct_mod, "step_options", lambda _h: {"step_gap_ms": 0, "corrections": 5, "settle_s": 0})
+    monkeypatch.setattr(direct_mod, "step_options", lambda _h, _e=None: {"step_gap_ms": 0, "corrections": 5, "settle_s": 0})
     er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
     hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 2048, "volume_level": 0.2, "is_volume_muted": False,
                                                     "source_list": ["ZDF HD", "HDMI1", "Das Erste"], "source": "ZDF HD"})
@@ -204,15 +204,20 @@ def test_source_cache_remembers_list_while_player_is_off():
 
 
 async def test_options_flow_lg_netcast(hass: HomeAssistant):
-    """The options of the integration hold the timings for LG Netcast; the volume code reads them from there."""
+    """The options of the integration hold the timings per LG Netcast TV (0.24: per device); the volume code reads them there."""
     await _setup(hass)
     from custom_components.harmony_deck import direct as direct_mod
 
+    er.async_get(hass).async_get_or_create("media_player", "lg_netcast", "tv1", suggested_object_id="tv")
+    hass.states.async_set("media_player.tv", "on", {"supported_features": 4 | 8 | 1024, "volume_level": 0.5})
+    hass.data[DOMAIN]["settings"]["directDevices"] = {REMOTE: {"LG": {"entity": "media_player.tv"}}}
     entry = hass.config_entries.async_entries(DOMAIN)[0]
-    assert direct_mod.step_options(hass) == {"step_gap_ms": 150, "corrections": 3, "settle_s": 2.5}
+    assert direct_mod.step_options(hass, "media_player.tv") == {"step_gap_ms": 100, "corrections": 3, "settle_s": 2.5}
     flow = await hass.config_entries.options.async_init(entry.entry_id)
-    assert flow["type"] == "form" and flow["step_id"] == "init"
-    res = await hass.config_entries.options.async_configure(flow["flow_id"], {"lg_netcast": {"step_gap_ms": 100, "corrections": 2, "settle_s": 1.5}})
+    assert flow["type"] == "form" and flow["step_id"] == "device"
+    res = await hass.config_entries.options.async_configure(flow["flow_id"], {
+        "volume": {"step_gap_ms": 100, "corrections": 2, "settle_s": 1.5},
+        "picture": {"picture": False, "picture_mode": "change", "picture_interval_s": 2, "picture_timeout_s": 10}})
     assert res["type"] == "create_entry"
-    assert entry.options == {"lg_netcast": {"step_gap_ms": 100, "corrections": 2, "settle_s": 1.5}}
-    assert direct_mod.step_options(hass) == {"step_gap_ms": 100, "corrections": 2, "settle_s": 1.5}
+    assert entry.options["devices"]["media_player.tv"]["corrections"] == 2
+    assert direct_mod.step_options(hass, "media_player.tv") == {"step_gap_ms": 100, "corrections": 2, "settle_s": 1.5}

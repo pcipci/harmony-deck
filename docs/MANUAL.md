@@ -212,5 +212,8 @@ LG Netcast: the volume slider now reaches the chosen level; after the last step 
 ### 0.23.6
 LG Netcast timings moved into the options of the integration (Settings > Devices & services > Harmony Deck > Configure, section LG Netcast): gap between steps, number of corrections, wait before the check. The volume slider stays on the chosen level until the TV reports it. The card setting *Slider step* is gone.
 
+### 0.24.0
+Options of the integration are now per TV (LG Netcast): pick the TV, then gap between steps (default 100 ms), corrections and the longest wait. After the last step the level is read until it stays the same before missing steps are sent. New, optional per TV: **TV picture**, **Main colour** and **Picture available** entities (switch on in the options of the TV; the picture comes from the media player, new on change or every few seconds). Use the main colour in an automation to colour lamps; without pictures the colour goes unknown after the set time.
+
 ### 0.22.0
 New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.

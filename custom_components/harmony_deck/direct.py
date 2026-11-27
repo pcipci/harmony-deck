@@ -172,10 +172,31 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
 _STEP_TIMEOUT = 5    # seconds one step may take
 
 
-def step_options(hass: HomeAssistant) -> dict[str, Any]:
-    """Options of the integration for step-only TVs: gap between steps (ms), corrections, wait before the check (s)."""
+def step_options(hass: HomeAssistant, entity: str | None = None) -> dict[str, Any]:
+    """Options of the integration for a step-only TV (per device): gap between steps (ms), corrections, longest wait
+    before the check (s); a device without own values takes the earlier global ones, then the defaults."""
     entries = hass.config_entries.async_entries(DOMAIN)
-    return directdev.clean_step_options((entries[0].options or {}).get("lg_netcast") if entries else None)
+    return directdev.clean_step_options(directdev.device_options(entries[0].options if entries else None, entity))
+
+
+_POLL = 0.5     # seconds between two readings while waiting for the TV's level to settle
+
+
+async def _wait_stable(hass: HomeAssistant, entity: str, settle: float) -> None:
+    """After the steps: read the level about every half second until two readings agree (the TV has worked off its
+    queue), at most `settle` seconds. A fixed wait read a stale level when the TV was still busy, and the correction
+    then went too far."""
+    if settle <= 0:
+        return
+    end = hass.loop.time() + settle
+    last = snapshot(hass, entity).get("volume")
+    while (left := end - hass.loop.time()) > 0:
+        await asyncio.sleep(min(_POLL, left))
+        await _refresh(hass, entity)
+        now = snapshot(hass, entity).get("volume")
+        if now is not None and now == last:
+            return
+        last = now
 
 
 async def _refresh(hass: HomeAssistant, entity: str) -> None:
@@ -191,7 +212,7 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
     """Step-only player (LG Netcast): reach the level with single "louder" / "quieter" steps, then check and correct.
 
     Each step waits for the player's answer (sent too fast, the TV drops some). After the last step the real level is
-    read again after a short pause; if the TV did not get there, the missing steps follow (corrections: options of the integration).
+    read again once it stays the same (at most the wait of the options); if the TV did not get there, the missing steps follow (corrections: options of the integration).
     Runs in the background so the card gets its answer at once; a newer level replaces the run that is still going.
     False if the player does not report its level (then the normal "set volume" is tried).
     """
@@ -202,7 +223,7 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
     if (old := tasks.pop(entity, None)) is not None:
         old.cancel()
 
-    opt = step_options(hass)
+    opt = step_options(hass, entity)
     gap, settle, rounds = opt["step_gap_ms"] / 1000, opt["settle_s"], 1 + opt["corrections"]
 
     async def adjust() -> None:
@@ -221,7 +242,7 @@ def _volume_by_steps(hass: HomeAssistant, entity: str, value: Any, context: Cont
                         await hass.services.async_call("media_player", service, {"entity_id": entity}, blocking=True, context=context)
                     await asyncio.sleep(gap)
                 if attempt + 1 < rounds:
-                    await asyncio.sleep(settle)
+                    await _wait_stable(hass, entity, settle)
             _LOGGER.debug("volume steps: %s did not reach %s", entity, target)
         except asyncio.CancelledError:
             raise

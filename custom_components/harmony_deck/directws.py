@@ -168,7 +168,7 @@ async def ws_volume(hass: HomeAssistant, connection: websocket_api.ActiveConnect
         connection.send_error(msg["id"], "failed", str(err))
         return
     # Step-only TV: the steps run in the background; the card keeps its slider on the target for up to "hold" ms.
-    hold = directdev.step_hold_ms(direct.step_options(hass), before, target) if direct.platform(hass, slider["entity"]) in directdev.STEP_PLATFORMS else 0
+    hold = directdev.step_hold_ms(direct.step_options(hass, slider["entity"]), before, target) if direct.platform(hass, slider["entity"]) in directdev.STEP_PLATFORMS else 0
     connection.send_result(msg["id"], {"ok": True, "value": target, **({"hold": hold} if hold else {})})
 
 

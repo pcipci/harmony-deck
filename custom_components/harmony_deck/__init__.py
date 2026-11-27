@@ -26,7 +26,7 @@ from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 _VERSION_KEY = "card_url"
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.EVENT, Platform.NUMBER, Platform.SELECT, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.EVENT, Platform.IMAGE, Platform.NUMBER, Platform.SELECT, Platform.SENSOR, Platform.SWITCH]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -98,10 +98,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.runtime_data = coordinator
         _ensure_devices(hass, entry, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        entry.async_on_unload(entry.add_update_listener(_options_changed))
     except Exception:  # noqa: BLE001
         _LOGGER.exception("Harmony Deck status entities could not be set up; the card keeps working")
         entry.runtime_data = None
     return True
+
+
+async def _options_changed(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Options saved: the TV picture of each device starts, changes its timing or stops (no restart needed)."""
+    if screen := hass.data.get(DOMAIN, {}).get("screen"):
+        screen.sync()
 
 
 def _ensure_devices(hass: HomeAssistant, entry: ConfigEntry, coordinator: DeckCoordinator) -> None:
@@ -131,6 +138,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         watch.stop()
     if log := domain_data.pop("traffic", None):
         log.stop()
+    if screen := domain_data.pop("screen", None):
+        screen.stop()
     if getattr(entry, "runtime_data", None):
         unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
         entry.runtime_data.clear_issues()

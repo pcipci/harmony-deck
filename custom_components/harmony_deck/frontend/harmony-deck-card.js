@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.23.7";
+  var VERSION = "0.24.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";

@@ -18,6 +18,12 @@
         "state": {
           "on": "mdi:lock"
         }
+      },
+      "picture_available": {
+        "default": "mdi:image-check-outline",
+        "state": {
+          "off": "mdi:image-off-outline"
+        }
       }
     },
     "sensor": {
@@ -72,6 +78,9 @@
           "on": "mdi:power-plug",
           "off": "mdi:power-plug-off-outline"
         }
+      },
+      "main_color": {
+        "default": "mdi:palette"
       }
     },
     "switch": {
@@ -97,6 +106,11 @@
     "event": {
       "intervention": {
         "default": "mdi:shield-alert"
+      }
+    },
+    "image": {
+      "tv_picture": {
+        "default": "mdi:television-shimmer"
       }
     }
   },

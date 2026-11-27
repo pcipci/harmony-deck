@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Mapping
 from typing import Any
 
 CAPS = ("state", "power_on", "power_off", "volume_set", "volume_read", "mute", "source_select", "source_read", "app_read", "app_list")
@@ -350,12 +351,52 @@ STEP_PLATFORMS = ("lg_netcast",)
 MAX_STEPS = 60
 
 
-STEP_DEFAULTS = {"step_gap_ms": 150, "corrections": 3, "settle_s": 2.5}
+STEP_DEFAULTS = {"step_gap_ms": 100, "corrections": 3, "settle_s": 2.5}
+
+# Players whose own settings sit in the options of the integration (per device): volume steps and the TV picture.
+OPTION_PLATFORMS = ("lg_netcast",)
+
+SCREEN_MODES = ("change", "poll")
+SCREEN_DEFAULTS = {"picture": False, "picture_mode": "change", "picture_interval_s": 2.0, "picture_timeout_s": 10}
+
+
+def clean_screen_options(raw: Any) -> dict[str, Any]:
+    """TV picture options of one device: on/off, new picture on change or polled, poll gap (s), time without picture
+    before "not available" (s); held to sane ranges, missing or broken values take the default."""
+    raw = dict(raw) if isinstance(raw, Mapping) else {}
+
+    def num(key: str, low: float, high: float) -> float:
+        try:
+            value = float(raw.get(key, SCREEN_DEFAULTS[key]))
+        except (TypeError, ValueError):
+            return float(SCREEN_DEFAULTS[key])
+        if not math.isfinite(value):
+            return float(SCREEN_DEFAULTS[key])
+        return min(max(value, low), high)
+
+    mode = raw.get("picture_mode")
+    return {"picture": raw.get("picture") is True,
+            "picture_mode": mode if mode in SCREEN_MODES else SCREEN_DEFAULTS["picture_mode"],
+            "picture_interval_s": round(num("picture_interval_s", 1, 10) * 2) / 2,
+            "picture_timeout_s": int(round(num("picture_timeout_s", 2, 120)))}
+
+
+def device_options(options: Any, entity: str | None) -> dict[str, Any]:
+    """Volume step and picture options of one player from the options of the integration.
+
+    0.24: stored per device under "devices"; a device without own values takes the earlier global "lg_netcast" values.
+    """
+    options = dict(options) if isinstance(options, Mapping) else {}
+    devices = options.get("devices")
+    own = devices.get(entity) if isinstance(devices, Mapping) else None
+    if not isinstance(own, Mapping):
+        own = None
+    return {**clean_step_options(own if own is not None else options.get("lg_netcast")), **clean_screen_options(own)}
 
 
 def clean_step_options(raw: Any) -> dict[str, Any]:
     """Options of the integration for step-only TVs, held to sane ranges; missing or broken values take the default."""
-    raw = raw if isinstance(raw, dict) else {}
+    raw = dict(raw) if isinstance(raw, Mapping) else {}
 
     def num(key: str, low: float, high: float, cast: Any) -> Any:
         try:

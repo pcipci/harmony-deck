@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .entity import AdbEntity, DeckEntity, HubEntity
 from .lockent import LockActive, setup_platform as _lock_platform
+from .screenent import setup_platform as _screen_platform
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -34,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     _add_hubs()
     entry.async_on_unload(coordinator.async_add_listener(_add_hubs))
+    await _screen_platform("picture_available")(hass, entry, async_add_entities)
 
 
 class DeckReady(DeckEntity, BinarySensorEntity):

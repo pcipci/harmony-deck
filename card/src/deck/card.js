@@ -51,6 +51,7 @@ import { sequencePanelMixin } from "./sequence-panel.js";
 import { settingsEditorMixin } from "./settings-editor.js";
 import { skinDecorMixin } from "./skin-decor.js";
 import { styleMixin } from "./style.js";
+import { viewStateMixin } from "./viewstate.js";
 import { volSliderMixin } from "./volslider.js";
 
 export class HarmonyDeckCard extends HTMLElement {
@@ -91,15 +92,26 @@ export class HarmonyDeckCard extends HTMLElement {
     const keep = this._scrollRemote ? null : this._scrollState();
     this._render(hubs);
     if (keep) { keep(); requestAnimationFrame(keep); }
+    this._viewSave();
   }
 
   connectedCallback() {
     this._onKey = this._onKey || ((e) => this._keydown(e));
     document.addEventListener("keydown", this._onKey, true);
+    // Remember the view when the page is left or hidden (app switch) and, calmly, while scrolling.
+    this._onViewLeave = this._onViewLeave || (() => this._viewSave());
+    this._onViewScroll = this._onViewScroll || (() => { clearTimeout(this._viewScrollT); this._viewScrollT = setTimeout(() => this._viewSave(), 600); });
+    document.addEventListener("visibilitychange", this._onViewLeave);
+    window.addEventListener("pagehide", this._onViewLeave);
+    window.addEventListener("scroll", this._onViewScroll, { capture: true, passive: true });
   }
 
   disconnectedCallback() {
     document.removeEventListener("keydown", this._onKey, true);
+    this._viewSave();
+    document.removeEventListener("visibilitychange", this._onViewLeave);
+    window.removeEventListener("pagehide", this._onViewLeave);
+    window.removeEventListener("scroll", this._onViewScroll, { capture: true });
     this._ro?.disconnect();
     if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
   }
@@ -110,6 +122,6 @@ export class HarmonyDeckCard extends HTMLElement {
 }
 
 // The functions of the card live in one module per area; here they are attached to the class.
-for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
   Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
 }

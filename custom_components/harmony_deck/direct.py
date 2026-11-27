@@ -172,11 +172,24 @@ async def run(hass: HomeAssistant, entity: str, op: str, value: Any, context: Co
 _STEP_TIMEOUT = 5    # seconds one step may take
 
 
-def step_options(hass: HomeAssistant, entity: str | None = None) -> dict[str, Any]:
-    """Options of the integration for a step-only TV (per device): gap between steps (ms), corrections, longest wait
-    before the check (s); a device without own values takes the earlier global ones, then the defaults."""
+def device_tech(hass: HomeAssistant, entity: str | None) -> dict[str, Any]:
+    """Technical values of a step-only TV (LG Netcast): volume steps and TV picture.
+
+    Set on the device page of the card (stored on the link, 0.24.1); a TV without them keeps what the options of the
+    integration held in 0.24.0 / 0.23.6, else the defaults.
+    """
     entries = hass.config_entries.async_entries(DOMAIN)
-    return directdev.clean_step_options(directdev.device_options(entries[0].options if entries else None, entity))
+    options = dict(entries[0].options or {}) if entries else {}
+    for devices in config(hass).values():
+        for link in devices.values():
+            if link["entity"] == entity and "tech" in link:
+                return directdev.device_options({"devices": {entity: link["tech"]}}, entity)
+    return directdev.device_options(options, entity)
+
+
+def step_options(hass: HomeAssistant, entity: str | None = None) -> dict[str, Any]:
+    """Volume step values of a step-only TV: gap between steps (ms), corrections, longest wait before the check (s)."""
+    return directdev.clean_step_options(device_tech(hass, entity))
 
 
 _POLL = 0.5     # seconds between two readings while waiting for the TV's level to settle
@@ -348,6 +361,8 @@ def overview(hass: HomeAssistant, hubs: dict[str, Any]) -> dict[str, Any]:
                             capsLive=caps(hass, entity), sources=remember_sources(hass, entity),
                             sourcesLive=bool(_sources(hass, entity)))
                 item["inputList"] = _inputs(hass, info, label, linked[label])
+                if plat in directdev.OPTION_PLATFORMS:
+                    item["tech"] = device_tech(hass, entity)     # shown in the section "Technical" of the device page
             elif label in (prefs["never"].get(hub) or []):
                 item["noSuggest"] = True
             elif not prefs["off"] and (pick := directdev.suggest({**item, "label": label}, free, area)) is not None:

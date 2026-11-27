@@ -68,10 +68,12 @@ The Universal Remote Card supports many more platforms and is very flexible; HA�
 
 ## Installation
 
-### HACS
+### Marketplace / HACS
 
-1. HACS → ⋮ → **Custom repositories** → add `https://github.com/pcipci/harmony-deck`, type **Integration**.
-2. Install **Harmony Deck** and restart Home Assistant.
+Since Home Assistant 2026.11 HACS is built in as the **Marketplace** (Settings → Marketplace); older versions use the HACS add-on. Until Harmony Deck is in the default list, add it as a custom repository:
+
+1. Marketplace (or HACS) → ⋮ → **Custom repositories** → add `https://github.com/pcipci/harmony-deck`, type **Integration**.
+2. Install **Harmony Deck** and restart Home Assistant if asked.
 3. Settings → Devices & services → **Add integration** → **Harmony Deck**.
 
 ### Manual
@@ -104,7 +106,7 @@ The full guide is the [manual](docs/MANUAL.md) (German: [Handbuch](docs/HANDBUCH
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Two effect skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), an amber magic eye that follows the volume, sunken brass buttons with a lamp behind, keys with a state as lit dark glass, faint lamp flicker, a dial with the room and the running activity, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion". 0.17 adds **Thermal** (heat vision with segment letters), **Nixie** (number tubes, brass toggle switches) and **Nostromo** (amber ship computer); since 0.18 each room can have its own skin.
+Eight of the 15 skins go further than colours: **Terminal** (green phosphor screen, scanlines, snow, a rolling bar and now and then a flicker; activities as list lines, the running one inverted) and **Tube radio** (wood and brass, every tile a pilot lamp (lit = running or selected), an amber magic eye that follows the volume, sunken brass buttons with a lamp behind, keys with a state as lit dark glass, faint lamp flicker, a dial with the room and the running activity, a rocker plate for Activities/Devices). Effects only lie over the card, animations stop with "reduce motion". **Thermal** (heat vision: active things are soft heat spots, unavailable ones cold blue, locked ones violet), **Nixie** (number tubes, brass toggle switches) and **Nostromo** (amber ship computer) follow, then **Glass**, **Clay** and **Pebble** below. The other seven skins (Homebase, Dark, Light, Paper, Nord, Catppuccin, Synthwave) are colour schemes. Each room can have its own skin.
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Skin Terminal">

@@ -91,6 +91,8 @@ def clean_device(raw: Any) -> dict[str, Any] | None:
     fire = clean_fire(raw.get("fire"))
     if fire is not None:
         out["fire"] = fire
+    if isinstance(raw.get("tech"), dict):      # 0.24.1: technical values of a step-only TV (LG Netcast), see device_options
+        out["tech"] = {**clean_step_options(raw["tech"]), **clean_screen_options(raw["tech"])}
     return out
 
 
@@ -382,9 +384,11 @@ def clean_screen_options(raw: Any) -> dict[str, Any]:
 
 
 def device_options(options: Any, entity: str | None) -> dict[str, Any]:
-    """Volume step and picture options of one player from the options of the integration.
+    """Volume step and picture values of one player.
 
-    0.24: stored per device under "devices"; a device without own values takes the earlier global "lg_netcast" values.
+    `options` is {"devices": {entity: values}, "lg_netcast": values}: since 0.24.1 the card's device page stores them on
+    the link (direct.device_tech puts them under "devices"); 0.24.0 kept them in the options of the integration, 0.23.6
+    globally under "lg_netcast". Whatever is found first counts; missing values take the defaults.
     """
     options = dict(options) if isinstance(options, Mapping) else {}
     devices = options.get("devices")

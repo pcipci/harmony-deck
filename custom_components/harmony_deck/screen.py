@@ -1,6 +1,6 @@
 """TV picture of a linked network TV (LG Netcast) and its main colour, for automations (e.g. coloured lamps).
 
-Optional per device (options of the integration, off by default). The picture comes from the media player itself
+Optional per device (card: device page > Technical, off by default). The picture comes from the media player itself
 (its entity_picture, the same one Home Assistant shows), so there is no own connection to the TV and no token is kept.
 Per device: "TV picture" (image), "Main colour" (sensor, #rrggbb with rgb_color) and "Picture available" (binary sensor).
 
@@ -192,7 +192,7 @@ def _player(hass: HomeAssistant, entity: str) -> Any:
 
 
 def picture_devices(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, dict[str, Any]]:
-    """Linked players with the TV picture switched on in the options: entity -> options."""
+    """Linked players with the TV picture switched on: entity -> their technical values."""
     from . import direct
 
     out: dict[str, dict[str, Any]] = {}
@@ -201,7 +201,7 @@ def picture_devices(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, dict[s
             entity = link["entity"]
             if entity in out or direct.platform(hass, entity) not in directdev.OPTION_PLATFORMS:
                 continue
-            opts = directdev.device_options(entry.options, entity)
+            opts = direct.device_tech(hass, entity)
             if opts["picture"]:
                 out[entity] = opts
     return out

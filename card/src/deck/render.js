@@ -37,6 +37,7 @@ export const renderMixin = {
   },
 
   _render(hubs) {
+    if (hubs && this._info && !this._viewTried) this._viewRestore(hubs);
     if (hubs && !this._jumped) this._autoJump(hubs);
     const t = this._t();
     const skin = this._skin();

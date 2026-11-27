@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.1
+
+### Added
+- **Remember the view.** Coming back to the card (for example after switching apps on a phone or tablet) it opens the room, Activities/Devices, the chosen device, the folded header and the scroll position you left, per browser. After a time without use (setting *Remember the view* in Settings > Behaviour: off, 30 minutes, **2 hours** by default, 6 hours), or when an activity was changed elsewhere meanwhile, the card starts as before and jumps to the running activity. Windows such as settings, actions or the lock are never reopened.
+
+### Changed
+- **LG Netcast values on the device page of the card.** The volume timings (gap between steps, corrections, longest wait) and the optional **TV picture** (switch, new picture on change or every few seconds, poll gap, time without picture) are no longer in the options of the integration. They sit in the section **Technical** of the device page of each LG Netcast TV (Settings > Network control > cog of the TV), stored with the link of that TV. Values set in 0.24.0 (and the global ones of 0.23.6) are taken over until you change them. The *Configure* dialog of the integration is gone. Switching the TV picture on or off adds or removes its entities at once, without a restart.
+- README, README.de and README.ru: all effect skins are named, install steps for the Marketplace (HACS is built into Home Assistant 2026.11).
+
 ## 0.24.0
 
 ### Added
@@ -251,7 +260,7 @@ Includes 0.20.2.
 
 ### Changed
 - **One window for everything:** gear, help and profile open in the same frame (title, close cross, same position and width, long content scrolls inside). Only one is open at a time: the same symbol closes it, another symbol switches to it. The profile is a list in this window instead of the system drop-down.
-- **Room tabs:** the selected room shows its full name ("EG Wohnzimmer"), the others the first word ("OG"), so the tool symbols no longer cover tabs.
+- **Room tabs:** the selected room shows its full name ("Living room"), the others the first word ("Upstairs"), so the tool symbols no longer cover tabs.
 - **Tube radio:** settings switches are round brass buttons to press (pressed in with an amber ring = on); the dial shows the activity name below the scale; keys without a state glow around the edge while pressed; clearly visible flicker of the devices of the running activity, also in Terminal (green).
 - The "Direct" block of a device stays open when you press one of its keys.
 

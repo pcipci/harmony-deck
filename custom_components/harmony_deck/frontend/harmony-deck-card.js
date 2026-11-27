@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.24.0";
+  var VERSION = "0.24.1";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -2335,7 +2335,32 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${(item.quirks || []).map((q) => `<div class="ehint ddquirk">${esc(t.ddQuirks[q] || q)}</div>`).join("")}
       <div class="egrp">${rowsHtml}${caption}</div><div class="ddmsg ehint" data-ddmsg></div>
       ${this._ddInputsHtml(item, link, () => item.sources, d, t)}${this._ddOffCheckHtml(link, d, t)}
-      ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}</div>`;
+      ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}
+      ${this._ddTechHtml(item, d, t)}</div>`;
+    },
+    // Technical values of a TV that only knows volume steps (LG Netcast, 0.24.1): how the volume is reached and the
+    // optional TV picture with its main colour. The integration sends them (item.tech) only for such TVs.
+    _ddTechHtml(item, device, t) {
+      const v = item.tech;
+      if (!v) return "";
+      const num2 = (key, label, min, max, step, unit) => `<label class="erow"><span>${label}</span><input type="number" min="${min}" max="${max}" step="${step}" value="${esc(String(v[key]))}" data-ddtech="${key}" data-dev="${esc(device)}" aria-label="${esc(label)} (${unit})"></label>`;
+      const mode = [["change", t.ddTechModeChange], ["poll", t.ddTechModePoll]].map(([m, label]) => `<option value="${m}" ${v.picture_mode === m ? "selected" : ""}>${esc(label)}</option>`).join("");
+      const pic = v.picture ? `<label class="erow"><span>${t.ddTechMode}</span><select data-ddtech="picture_mode" data-dev="${esc(device)}">${mode}</select></label>
+        ${v.picture_mode === "poll" ? num2("picture_interval_s", t.ddTechInterval, 1, 10, 0.5, "s") : ""}
+        ${num2("picture_timeout_s", t.ddTechTimeout, 2, 120, 1, "s")}<div class="ehint">${t.ddTechPicEnts}</div>` : "";
+      return `<details class="ddcaps ddtech" ${this._ddTechOpen ? "open" : ""} data-ddtechbox><summary>${t.ddTech}</summary>
+      <div class="ehint">${t.ddTechHint}</div>
+      <div class="dname">${t.ddTechVolume}</div>
+      ${num2("step_gap_ms", t.ddTechGap, 50, 1e3, 10, "ms")}${num2("corrections", t.ddTechCorr, 0, 5, 1, "x")}${num2("settle_s", t.ddTechSettle, 0.5, 10, 0.5, "s")}
+      <div class="ehint">${t.ddTechVolHint}</div>
+      <div class="dname">${t.ddTechPicture}</div>
+      ${this._swRow(t.ddTechPic, `data-ddtech="picture" data-dev="${esc(device)}"`, !!v.picture)}<div class="ehint">${t.ddTechPicHint}</div>${pic}</details>`;
+    },
+    _ddTechSave(hub, device, key, raw) {
+      const cur = this._dd?.hubs?.[hub]?.[device]?.tech || {};
+      const value = key === "picture" ? !!raw : key === "picture_mode" ? raw : Number(raw);
+      if (key !== "picture" && key !== "picture_mode" && !Number.isFinite(value)) return;
+      return this._ddSave(hub, device, { tech: { ...cur, [key]: value } });
     },
     // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
     _ddCapList(item, caps, t) {
@@ -2428,6 +2453,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._ddSave(hub, s.dataset.dev, { inputs });
       }));
       root.querySelectorAll("select[data-ddoff]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, { offCheck: s.value === "watch" ? void 0 : s.value })));
+      root.querySelectorAll("[data-ddtechbox]").forEach((el) => el.addEventListener("toggle", () => {
+        this._ddTechOpen = el.open;
+      }));
+      root.querySelectorAll("[data-ddtech]").forEach((el) => el.addEventListener("change", () => this._ddTechSave(el.closest("[data-hub]").dataset.hub, el.dataset.dev, el.dataset.ddtech, el.type === "checkbox" ? el.checked : el.value)));
       root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
     }
   };
@@ -4648,6 +4677,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
     },
     _render(hubs) {
+      if (hubs && this._info && !this._viewTried) this._viewRestore(hubs);
       if (hubs && !this._jumped) this._autoJump(hubs);
       const t = this._t();
       const skin = this._skin();
@@ -5047,6 +5077,103 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
   };
 
+  // src/deck/viewstate.js
+  var KEY2 = "harmony_deck_view";
+  var VIEW_CHOICES = [0, 30, 120, 360];
+  var DEFAULT_MIN = 120;
+  function viewToRestore(saved, now, minutes, hubs) {
+    if (!saved || typeof saved !== "object" || !minutes || typeof saved.at !== "number") return null;
+    if (now - saved.at > minutes * 6e4 || now < saved.at) return null;
+    const ids = new Set(hubs.map((h) => h.id));
+    const current = saved.current || {};
+    if (hubs.some((h) => h.id in current && (current[h.id] || "") !== (h.current || ""))) return null;
+    const devices = {};
+    for (const [hub, dev] of Object.entries(saved.device || {})) if (ids.has(hub) && typeof dev === "string") devices[hub] = dev;
+    const collapsed = {};
+    for (const [hub, on3] of Object.entries(saved.collapsed || {})) if (ids.has(hub)) collapsed[hub] = !!on3;
+    return {
+      hub: ids.has(saved.hub) ? saved.hub : null,
+      mode: saved.mode === "devices" || saved.mode === "activities" ? saved.mode : null,
+      device: devices,
+      collapsed,
+      scroll: Array.isArray(saved.scroll) ? saved.scroll.filter((s) => Array.isArray(s) && s.length === 2 && s.every(Number.isFinite)) : []
+    };
+  }
+  var viewStateMixin = {
+    _viewMinutes() {
+      const v = this._config.remember_view ?? this._settings().rememberView;
+      return VIEW_CHOICES.includes(Number(v)) ? Number(v) : DEFAULT_MIN;
+    },
+    _viewKey() {
+      return `${KEY2}:${window.location.pathname}`;
+    },
+    // The scrollable parents of the card, from the card outwards (the same walk as _scrollState in render.js).
+    _viewScrollers() {
+      const out = [];
+      let n = this;
+      while (n) {
+        out.push(n);
+        n = n.parentElement || n.getRootNode?.().host || null;
+      }
+      out.push(document.scrollingElement);
+      return out.filter(Boolean);
+    },
+    // Called once on the first full render (hub list and configuration known), before the jump to the running activity.
+    _viewRestore(hubs) {
+      if (this._viewTried) return;
+      this._viewTried = true;
+      if (this._edit || this._editMode) return;
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem(this._viewKey()) || "null");
+      } catch (e) {
+      }
+      const v = viewToRestore(saved, Date.now(), this._viewMinutes(), hubs);
+      if (!v) return;
+      if (v.hub) this._hubSel = v.hub;
+      if (v.mode) this._modeState = v.mode;
+      const devs = {};
+      for (const [hub, dev] of Object.entries(v.device)) if (this._devicesOf(hub)?.[dev]) devs[hub] = dev;
+      if (Object.keys(devs).length) this._device = { ...this._device || {}, ...devs };
+      if (Object.keys(v.collapsed).length) this._hdrCollapsed = { ...this._hdrCollapsed || {}, ...v.collapsed };
+      this._jumped = true;
+      this._scrollRemote = false;
+      if (v.scroll.length) {
+        const put = () => {
+          const els = this._viewScrollers();
+          v.scroll.forEach(([i, y]) => {
+            if (els[i] && Math.abs(els[i].scrollTop - y) > 1) els[i].scrollTop = y;
+          });
+        };
+        [0, 250, 800].forEach((ms) => setTimeout(() => requestAnimationFrame(put), ms));
+      }
+    },
+    _viewSave() {
+      if (!this._viewTried || !this._viewMinutes() || this._edit || this._editMode) return;
+      const hubs = this._hubs?.() || [];
+      const scroll = this._viewScrollers().map((e, i) => [i, e.scrollTop || 0]).filter(([, y]) => y > 0);
+      const data = {
+        at: Date.now(),
+        hub: this._hubSel || "",
+        mode: this._modeState || "",
+        device: this._device || {},
+        collapsed: this._hdrCollapsed || {},
+        scroll,
+        current: Object.fromEntries(hubs.map((h) => [h.id, h.current || ""]))
+      };
+      try {
+        localStorage.setItem(this._viewKey(), JSON.stringify(data));
+      } catch (e) {
+      }
+    },
+    _viewForget() {
+      try {
+        localStorage.removeItem(this._viewKey());
+      } catch (e) {
+      }
+    }
+  };
+
   // src/deck/settings-editor.js
   var settingsEditorMixin = {
     _etabNow() {
@@ -5123,6 +5250,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${this._swRow(t.keyCtl, 'data-setting="keyboardControl"', !!(this._config.keyboard_control ?? this._settings().keyboardControl))}`)}
         ${this._grp(g.view, `${this._swRow(t.collapseHeader, 'data-setting="collapseHeader"', this._collapseOn())}
           ${this._swRow(t.jumpRunning, 'data-setting="jumpRunning"', this._jumpOn())}
+          ${this._selRow(t.rememberView, "data-remview", Object.fromEntries(VIEW_CHOICES.map((m) => [String(m), t.rememberViewOpts[m]])), String(this._viewMinutes()))}
           ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
         ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
@@ -5292,6 +5420,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         "[data-pebbleflaw]": "pebbleFlaw",
         "[data-glassac]": "glassActColors",
         '[data-setting="jumpRunning"]': "jumpRunning",
+        "[data-remview]": "rememberView",
         '[data-setting="fillView"]': "fillView",
         "[data-offrel]": "offRelated",
         '[data-setting="helpManual"]': "helpManual",
@@ -5384,6 +5513,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._saveSettings({ hiddenHubs: [...hid] });
       });
       root.querySelectorAll(".linkbox").forEach((box) => box.addEventListener("change", () => this._saveLink(box)));
+      root.querySelector("select[data-remview]")?.addEventListener("change", (e) => {
+        const m = Number(e.target.value);
+        if (!m) this._viewForget();
+        this._saveSettings({ rememberView: m });
+      });
       root.querySelector("select[data-volcap]")?.addEventListener("change", (e) => this._saveSettings({ volumeCap: Number(e.target.value) }));
       root.querySelectorAll("input[data-setting]").forEach((i) => i.addEventListener("change", () => this._saveSettings({ [i.dataset.setting]: i.checked })));
       root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
@@ -7413,13 +7547,26 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         keep();
         requestAnimationFrame(keep);
       }
+      this._viewSave();
     }
     connectedCallback() {
       this._onKey = this._onKey || ((e) => this._keydown(e));
       document.addEventListener("keydown", this._onKey, true);
+      this._onViewLeave = this._onViewLeave || (() => this._viewSave());
+      this._onViewScroll = this._onViewScroll || (() => {
+        clearTimeout(this._viewScrollT);
+        this._viewScrollT = setTimeout(() => this._viewSave(), 600);
+      });
+      document.addEventListener("visibilitychange", this._onViewLeave);
+      window.addEventListener("pagehide", this._onViewLeave);
+      window.addEventListener("scroll", this._onViewScroll, { capture: true, passive: true });
     }
     disconnectedCallback() {
       document.removeEventListener("keydown", this._onKey, true);
+      this._viewSave();
+      document.removeEventListener("visibilitychange", this._onViewLeave);
+      window.removeEventListener("pagehide", this._onViewLeave);
+      window.removeEventListener("scroll", this._onViewScroll, { capture: true });
       this._ro?.disconnect();
       if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
     }
@@ -7430,7 +7577,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

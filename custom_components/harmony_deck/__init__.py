@@ -98,17 +98,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.runtime_data = coordinator
         _ensure_devices(hass, entry, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-        entry.async_on_unload(entry.add_update_listener(_options_changed))
     except Exception:  # noqa: BLE001
         _LOGGER.exception("Harmony Deck status entities could not be set up; the card keeps working")
         entry.runtime_data = None
     return True
-
-
-async def _options_changed(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Options saved: the TV picture of each device starts, changes its timing or stops (no restart needed)."""
-    if screen := hass.data.get(DOMAIN, {}).get("screen"):
-        screen.sync()
 
 
 def _ensure_devices(hass: HomeAssistant, entry: ConfigEntry, coordinator: DeckCoordinator) -> None:

@@ -67,9 +67,11 @@ Die Universal Remote Card unterstützt viel mehr Plattformen und ist sehr frei g
 
 ## Installation
 
-### HACS
+### Marketplace / HACS
 
-1. HACS → ⋮ → **Benutzerdefinierte Repositories** → `https://github.com/pcipci/harmony-deck` hinzufügen, Typ **Integration**.
+Seit Home Assistant 2026.11 ist HACS als **Marketplace** eingebaut (Einstellungen → Marketplace); ältere Versionen nutzen die HACS-Erweiterung. Solange Harmony Deck nicht in der Standardliste ist, füge es als benutzerdefiniertes Repository hinzu:
+
+1. Marketplace (oder HACS) → ⋮ → **Benutzerdefinierte Repositories** → `https://github.com/pcipci/harmony-deck` hinzufügen, Typ **Integration**.
 2. **Harmony Deck** installieren, Home Assistant neu starten.
 3. Einstellungen → Geräte & Dienste → **Integration hinzufügen** → **Harmony Deck**.
 
@@ -103,7 +105,7 @@ Die ausführliche Anleitung steht im [Handbuch](docs/HANDBUCH.md) (englisch: [Ma
   <img src="docs/images/skins.png" width="32%" alt="Looks">
 </p>
 
-Zwei Effekt-Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm mit Scanlines, Rauschen, durchlaufendem Balken und gelegentlichem Flackern; Aktivitäten als Listenzeilen, die laufende invertiert) und **Röhrenradio** (Holz und Messing, die laufende Aktivität als Glas-Kontrolllampe, ein bernsteinfarbenes magisches Auge, das der Lautstärke folgt, versenkbare Messingknöpfe mit Lampe dahinter, Tasten mit Zustand als leuchtendes dunkles Glas, leichtes Lampenflackern, eine Skala mit Raum und laufender Aktivität). Die Effekte liegen nur über der Karte, die Animationen stoppen bei „Bewegung reduzieren“.
+Acht der 15 Looks gehen über Farben hinaus: **Terminal** (grüner Leuchtschirm mit Scanlines, Rauschen, durchlaufendem Balken und gelegentlichem Flackern; Aktivitäten als Listenzeilen, die laufende invertiert) und **Röhrenradio** (Holz und Messing, die laufende Aktivität als Glas-Kontrolllampe, ein bernsteinfarbenes magisches Auge, das der Lautstärke folgt, versenkbare Messingknöpfe mit Lampe dahinter, Tasten mit Zustand als leuchtendes dunkles Glas, leichtes Lampenflackern, eine Skala mit Raum und laufender Aktivität). Die Effekte liegen nur über der Karte, die Animationen stoppen bei „Bewegung reduzieren“. Dazu kommen **Wärmebild** (Wärmebildkamera: Aktives ist ein weicher Wärmefleck, Nicht-Verfügbares kaltblau, Gesperrtes violett), **Nixie** (Zahlenröhren, Messing-Kippschalter) und **Nostromo** (bernsteinfarbener Bordcomputer), weiter unten **Glas**, **Knetmasse** und **Kiesel**. Die übrigen sieben Looks (Homebase, Dunkel, Hell, Papier, Nord, Catppuccin, Synthwave) sind Farbschemata. Jeder Raum kann einen eigenen Look haben.
 
 <p align="center">
   <img src="docs/images/skin-terminal.png" width="32%" alt="Look Terminal">

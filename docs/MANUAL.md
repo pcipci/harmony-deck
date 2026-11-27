@@ -212,6 +212,9 @@ LG Netcast: the volume slider now reaches the chosen level; after the last step 
 ### 0.23.6
 LG Netcast timings moved into the options of the integration (Settings > Devices & services > Harmony Deck > Configure, section LG Netcast): gap between steps, number of corrections, wait before the check. The volume slider stays on the chosen level until the TV reports it. The card setting *Slider step* is gone.
 
+### 0.24.1
+LG Netcast: the volume timings and the optional TV picture (with Main colour and Picture available) are set on the device page of the TV in the card (section Technical), not in the integration dialog any more; earlier values are taken over. New setting *Remember the view* (Settings > Behaviour, default 2 hours): the card reopens at the room, device and scroll position you left.
+
 ### 0.24.0
 Options of the integration are now per TV (LG Netcast): pick the TV, then gap between steps (default 100 ms), corrections and the longest wait. After the last step the level is read until it stays the same before missing steps are sent. New, optional per TV: **TV picture**, **Main colour** and **Picture available** entities (switch on in the options of the TV; the picture comes from the media player, new on change or every few seconds). Use the main colour in an automation to colour lamps; without pictures the colour goes unknown after the set time.
 

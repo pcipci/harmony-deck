@@ -1,5 +1,5 @@
 // Data access of the main card: hub knowledge from the integration, shared settings, sending commands.
-import { ALIASES } from "../shared/commands.js";
+import { ALIASES, GROUP_OF } from "../shared/commands.js";
 
 export const dataMixin = {
   // Optional: hold each key for a moment (config `hold_secs`), helps hosts that miss very short key presses.
@@ -154,7 +154,15 @@ export const dataMixin = {
 
   _buzz(ms = 15) { if (this._vibrateOn() && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) { /* not supported */ } },
 
-  _has(hubId, device, action) { return !!this._cmd(hubId, device, action) || !!this._adbCode(hubId, device, action); },
+  _has(hubId, device, action) {
+    if (this._groupHidden(hubId, device, GROUP_OF[action])) return false;
+    return !!this._cmd(hubId, device, action) || !!this._adbCode(hubId, device, action);
+  },
+
+  // A key group hidden for this device (0.26); the hide mode still shows everything.
+  _groupHidden(hubId, device, group) {
+    return !!group && !!device && !this._hideMode() && (this._settings().hideGroups?.[hubId]?.[device] || []).includes(group);
+  },
 
   // Keys the user hid for a device (own list per hub, separate from the lock); the editor in hide mode still sees everything.
   _hiddenKeys(hubId, dev) { return this._settings().hideKeys?.[hubId]?.[dev] || []; },

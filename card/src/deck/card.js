@@ -106,6 +106,10 @@ export class HarmonyDeckCard extends HTMLElement {
     document.addEventListener("visibilitychange", this._onViewLeave);
     window.addEventListener("pagehide", this._onViewLeave);
     window.addEventListener("scroll", this._onViewScroll, { capture: true, passive: true });
+    // A held key stops on every release anywhere on the page, also when its button was redrawn meanwhile.
+    this._onHoldEnd = this._onHoldEnd || (() => this._keyHold?.());
+    ["pointerup", "pointercancel", "blur"].forEach((ev) => window.addEventListener(ev, this._onHoldEnd, true));
+    document.addEventListener("visibilitychange", this._onHoldEnd);
   }
 
   disconnectedCallback() {
@@ -116,6 +120,9 @@ export class HarmonyDeckCard extends HTMLElement {
     window.removeEventListener("scroll", this._onViewScroll, { capture: true });
     this._ro?.disconnect();
     clearInterval(this._mTimer); this._mTimer = null;
+    this._keyHold?.();
+    ["pointerup", "pointercancel", "blur"].forEach((ev) => window.removeEventListener(ev, this._onHoldEnd, true));
+    document.removeEventListener("visibilitychange", this._onHoldEnd);
     if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
   }
 

@@ -199,7 +199,7 @@ export const styleMixin = {
       .mbar .mtitle { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; color: var(--hr-text, inherit); min-width: 0; }
       .mbar .mtitle b { font-size: 1.05em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mbar .mtitle span { font-size: 0.85em; color: var(--hr-muted, inherit); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mbar.idle .mtitle { opacity: 0.7; }
+      .mbar.idle .mtitle { opacity: 0.7; } .mbar.replace { margin: 0; }
       .mbar .mwrap { position: relative; display: flex; flex-direction: column; gap: 0; }
       .mbar .mseek { width: 100%; min-height: 40px; } .mbar .mseek.ro { pointer-events: none; }
       /* Plain skins: a filled bar (the time fits inside on wide cards); skins with their own slider look keep theirs. */
@@ -216,6 +216,7 @@ export const styleMixin = {
       }
       .mbar .mtrans .key[disabled] { pointer-events: none; }
       .pills.firekeys { margin-top: 8px; }
+      .hgroups .hgroup { padding-right: 24px; gap: 6px; } .hgroups .hgroup.hidden { opacity: 0.55; } .hgroups .hgroup > span { min-width: 0; }
       .colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
       .color { width: 100%; height: 12px; border-radius: 6px; min-height: 0; }
       .color.red { background: #e53935; } .color.green { background: #43a047; } .color.yellow { background: #fdd835; } .color.blue { background: #1e88e5; }
@@ -271,6 +272,11 @@ export const styleMixin = {
       .pkgmapbox { display: flex; flex-direction: column; gap: 6px; } .pkgmapbox > summary { cursor: pointer; font-size: 0.9em; padding: 6px 0; color: var(--hr-text); }
       .iconrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.9em; color: var(--hr-muted); }
       .iconrow .iname { display: inline-flex; align-items: center; gap: 6px; min-width: 0; } .iconrow .iname ha-icon { --mdc-icon-size: 20px; flex: none; }
+      /* 0.26: one layout for every icon row, like the other settings rows: wide = name left, button in a fixed column; narrow = name above, button full width. */
+      .iconrow { flex-wrap: nowrap; } .iconrow .iname { flex: 1 1 auto; } .iconrow > .iconbtn { flex: 0 0 min(55%, 240px); max-width: none; justify-content: flex-start; }
+      .iconrow > .iconbtn > span { flex: 1 1 auto; text-align: left; }
+      .iconrow:has(> .icongrid) { flex-wrap: wrap; }
+      @container (max-width: 519px) { .iconrow { flex-wrap: wrap; gap: 4px 12px; padding-bottom: 8px; } .iconrow .iname { flex: 1 1 100%; } .iconrow > .iconbtn { flex: 1 1 100%; } }
       .iconbtn { display: inline-flex; align-items: center; gap: 8px; font: inherit; color: var(--hr-text); background: var(--hr-tile-bg); border: none; border-radius: 12px; padding: 6px 10px; cursor: pointer; min-width: 0; max-width: 62%; } .iconbtn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .iconbtn ha-icon { --mdc-icon-size: 20px; flex: none; }
       .icongrid { flex: 1 0 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; padding: 6px 0 4px; }
       .iconcell { position: relative; display: flex; align-items: center; justify-content: center; height: 44px; border: none; border-radius: 12px; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 24px; } .iconcell.sel { box-shadow: inset 0 0 0 2px var(--hr-accent); color: var(--hr-accent); } .iconcell small { position: absolute; right: 4px; bottom: 2px; font-size: 0.6em; opacity: .6; }

@@ -44,6 +44,8 @@ The **gear** (top right, next to the room tabs) opens a small window with the th
 - **Media bar (0.25):** in *Settings › Activities › Media player* choose one media player per activity (never automatic; players of the hub's room come first). The bar under the keys shows title and app, progress with *elapsed / total* (draggable if the player can seek), play / pause / stop and jumps of 10 and 30 seconds, and only what the player can do. A Fire TV jumps with fast-forward / rewind key presses and shows the bar only when it reports a title or position. *Show media bar* hides it per activity.
 - **Fire TV keys in activities (0.25):** with a linked Fire TV a row under the cross offers Search and Settings (and Back / Home / Menu when the cross belongs to another device).
 
+- **0.26:** with a Fire TV as media player the bar replaces the playback row (one row with jumps). Holding a key never keeps repeating after release.
+
 ## 4. Devices
 
 The slider **Activities / Devices** switches to the device view. Tap a device to open its own remote with all its commands in groups (inputs, sound, menus, numbers …). Devices are never locked, not even by the lock.
@@ -58,7 +60,7 @@ When an activity does not start right (TV off, wrong input), open the **life rin
 
 **ⓘ › Favorites** → choose a device → tap keys (star). Favourites appear as their own block above the remote.
 
-**Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. This is not the lock: hidden keys are only not shown. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
+**Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. Above the keys of the device the **key groups** (cross, Back / Home / Menu, volume, channel, playback, colour keys) can be hidden as a whole (0.26). This is not the lock: hidden keys are only not shown. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
 
 ## 7. Actions and sequences
 

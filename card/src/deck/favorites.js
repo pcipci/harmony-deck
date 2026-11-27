@@ -1,6 +1,6 @@
 // Favourites: per device and per activity, display and editor.
+import { KEY_GROUPS, GROUP_ICONS, keyIcon, chipIcon, prettyCommand } from "../shared/commands.js";
 import { esc } from "../shared/util.js";
-import { keyIcon, chipIcon, prettyCommand } from "../shared/commands.js";
 
 export const favoritesMixin = {
   _actInvolved(hubId, act) {
@@ -70,6 +70,28 @@ export const favoritesMixin = {
     await this._saveSettings({ hideKeys: all });
   },
 
+  // Hide mode, device page: the key groups of the device as switches (cross, volume, channel ...), per device.
+  _hideGroupsHtml(hubId, device, t) {
+    if (!this._hideMode() || !device) return "";
+    const has = (g) => KEY_GROUPS[g].some((a) => !!this._cmd(hubId, device, a) || !!this._adbCode(hubId, device, a));
+    const hidden = this._settings().hideGroups?.[hubId]?.[device] || [];
+    const chips = Object.keys(KEY_GROUPS).filter(has).map((g) => {
+      const off = hidden.includes(g);
+      return `<button class="key cell hgroup ${off ? "hidden" : ""}" data-hgroup="${g}" data-hub="${esc(hubId)}" data-device="${esc(device)}" aria-pressed="${off}"><ha-icon icon="${GROUP_ICONS[g]}"></ha-icon><span>${esc(t.keyGroups?.[g] || g)}</span><ha-icon class="star eye" icon="${off ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon></button>`;
+    }).join("");
+    return chips ? `<div class="block hgroups"><span class="dname">${t.keyGroupsTitle}</span><div class="cells">${chips}</div></div>` : "";
+  },
+
+  async _toggleGroup(hubId, device, group) {
+    const all = JSON.parse(JSON.stringify(this._settings().hideGroups || {}));
+    const list = ((all[hubId] ||= {})[device] ||= []);
+    const i = list.indexOf(group);
+    if (i >= 0) list.splice(i, 1); else list.push(group);
+    if (!list.length) delete all[hubId][device];
+    if (!Object.keys(all[hubId]).length) delete all[hubId];
+    await this._saveSettings({ hideGroups: all });
+  },
+
   // Mark on a key in edit mode: star (favourites) or eye (hide keys).
   _editMark(hubId, device, c, favs) {
     if (this._hideMode()) return `<ha-icon class="star eye" icon="${this._hiddenKeys(hubId, device).includes(c) ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon>`;
@@ -87,6 +109,7 @@ export const favoritesMixin = {
 
   // Events of the favourites editor.
   _bindFavorites(root) {
+    root.querySelectorAll("button[data-hgroup]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); this._toggleGroup(b.dataset.hub, b.dataset.device, b.dataset.hgroup); }));
     root.querySelectorAll("[data-favkind]").forEach((b) => b.addEventListener("click", () => { this._favKind = b.dataset.favkind; this._rerender(); }));
     root.querySelectorAll("select[data-afsel]").forEach((sel) => sel.addEventListener("change", () => { this._afSel = { ...(this._afSel || {}), [sel.dataset.hub]: sel.value }; this._rerender(); }));
     root.querySelectorAll("details[data-fdev]").forEach((d) => d.addEventListener("toggle", () => {

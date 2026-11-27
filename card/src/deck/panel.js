@@ -1,6 +1,8 @@
 // Remote panel: D-pad, volume, channel, transport, colour keys.
 import { esc } from "../shared/util.js";
 
+const MAX_REPEAT = 60;      // about 20 seconds of holding
+
 export const panelMixin = {
   _key_(hubId, device, action, icon, cls = "", label = "", sub = "") {
     const cmd = this._cmd(hubId, device, action);
@@ -45,7 +47,8 @@ export const panelMixin = {
     // Fire TV keys of an activity (Home, Back, Search ...), placed under the cross; see _fireActKeys in fire.js.
     const FK = L("nav", extra.fire || "");
     const K = (dev, a, icon, cls, label) => (extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label));
-    const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
+    const volOff = this._groupHidden(h.id, r.volume, "volume");
+    const slH = volOff ? "" : this._volSlider(h, r, "h", !!extra.noLock), slV = volOff ? "" : this._volSlider(h, r, "v", !!extra.noLock);
     const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
     // Mute shows "pressed" when the linked player of the volume device reports muted (Harmony itself does not know it).
     const mutedNow = (() => { const l = r.volume && this._settings().directDevices?.[h.id]?.[r.volume]; return !!l && this._hass?.states?.[l.entity]?.attributes?.is_volume_muted === true; })();
@@ -82,6 +85,8 @@ export const panelMixin = {
     const tr = r.transport && ["play", "pause", "stop", "rewind", "forward"].some((a) => this._has(h.id, r.transport, a)) ? `<div class="transport">
         ${["rewind", "play", "pause", "stop", "forward"].map((a) => this._has(h.id, r.transport, a)
           ? K(r.transport, a, { rewind: "mdi:rewind", play: "mdi:play", pause: "mdi:pause", stop: "mdi:stop", forward: "mdi:fast-forward" }[a]) : "").join("")}</div>` : "";
+    // 0.26: the media bar of a Fire TV takes the place of this row (one row with the jumps), see mediabar.js.
+    const trow = extra.trReplace != null ? L("transport", extra.trReplace) : L("transport", tr);
     const dcfg = r.nav ? this._directFor(h.id, r.nav) : null;
     const kmap = dcfg?.keymap || {};
     const mapApp = (c) => this._appsOf(h.id).find((a) => a.name === kmap[c]);
@@ -98,7 +103,7 @@ export const panelMixin = {
     // Only volume (games consoles, controlled elsewhere): one wide row instead of an empty remote.
     if (hasVol && !hasNav && !hasCh) {
       const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
-      return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
+      return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${trow}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
     }
     const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
     const discCol = disc.length ? `<div class="sidecol">${disc.map((d) => this._cmdKey(h.id, r.nav, d.c, d.ic, "tall", t[d.k] || d.k)).join("")}</div>` : "";
@@ -114,7 +119,7 @@ export const panelMixin = {
     const topPills = pillCol ? "" : pills;
     const panel = hasVol || hasNav || hasCh ? `<div class="panel ${discCol ? "wide3" : pillCol ? "mid3" : ""} ${vol ? "" : "nol"} ${third ? "" : "nor"}">${L("nav", topPills)}${vol ? L("volume", vol) : ""}${L("nav", nav)}${third}</div>` : "";
     const textRow = dcfg?.entity && !this._edit && hasNav ? this._textBlock(h.id, dcfg.entity, t) : "";
-    const pcol = `${panel}${FK}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
+    const pcol = `${panel}${FK}${textRow}${trow}${L("nav", colors)}`.trim();
     if (!pcol && !extra.noKeypad && !extra.small && !extra.big) return `<div class="hint nokeys">${t.noKeys}</div>`;
     return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
   },
@@ -138,7 +143,12 @@ export const panelMixin = {
       const pre = b.dataset.pre;   // key that needs two commands in a row (Löschen = cursor left + Delete)
       this._sendCmd(b.dataset.hub, b.dataset.device, pre ? [pre, b.dataset.cmd] : b.dataset.cmd, pre ? { delay_secs: 0.15 } : {});
     };
-    const stop = () => { clearTimeout(delay); clearInterval(loop); };
+    // 0.26: a held key must always stop. A redraw while holding (the volume changed, a state came in) replaces this
+    // button, so its own pointerup never comes; the card also stops on any pointerup of the page, when the app is
+    // hidden, and after at most MAX_REPEAT sends.
+    let count = 0;
+    const stop = () => { clearTimeout(delay); clearInterval(loop); delay = loop = null; if (this._keyHold === stop) this._keyHold = null; };
+    const repeat = () => { if (++count > MAX_REPEAT || !this.isConnected) { stop(); return; } send(); };
     b.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       if (this._edit) {
@@ -148,7 +158,10 @@ export const panelMixin = {
       send();
       if (b.classList.contains("kl") && this._shiftOn) { this._shiftOn = false; setTimeout(() => this._rerender(), 0); return; }
       if (b.classList.contains("once") || b.classList.contains("chip") || b.classList.contains("pill") || b.classList.contains("ok") || b.classList.contains("helpkey")) return;
-      delay = setTimeout(() => { loop = setInterval(send, 350); }, 450);
+      this._keyHold?.();
+      count = 0;
+      this._keyHold = stop;
+      delay = setTimeout(() => { loop = setInterval(repeat, 350); }, 450);
     });
     ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
   },

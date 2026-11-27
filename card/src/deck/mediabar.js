@@ -56,8 +56,10 @@ export function barParts(seen, adb) {
     stop: !!(f & MF.STOP),
     jumps: seek || !!adb,
   };
-  // Fire TV (ADB) without title or position: its remote already has these keys, so no bar.
-  parts.show = adb ? parts.title || parts.progress : parts.title || parts.progress || parts.play || parts.stop || parts.jumps;
+  // Fire TV (ADB, 0.26): the bar takes the place of the transport row of the remote (one row with the jumps), so it is
+  // always shown; the caller keeps the old row while the player is not reachable.
+  parts.replace = !!adb;
+  parts.show = adb ? true : parts.title || parts.progress || parts.play || parts.stop || parts.jumps;
   return parts;
 }
 
@@ -98,6 +100,12 @@ export const mediaBarMixin = {
     });
   },
 
+  // {html, replace}: replace = the bar stands in for the transport row of the remote (Fire TV over ADB, reachable).
+  _mediaBar(h, t) {
+    const html = this._mediaBarHtml(h, t);
+    return { html, replace: !!html && html.includes('class="mbar replace') };
+  },
+
   _mediaBarHtml(h, t) {
     if (this._edit || this._config.compact || !h.current || h.starting) return "";
     const p = this._actPlayer(h.id, h.current);
@@ -105,11 +113,12 @@ export const mediaBarMixin = {
     const st = this._hass?.states?.[p.entity];
     const parts = barParts(this._mSeen(p.entity), this._isAdbPlayer(p.entity));
     if (!parts.show) return "";
+    if (parts.replace && (!st || ["unavailable", "unknown"].includes(st.state))) return "";
     const a = st?.attributes || {};
     const live = !!st && !OFF.includes(st.state);
     const playing = st?.state === "playing";
     const hub = esc(h.id);
-    const key = (act, icon, label, on = false, value = null) => `<button class="key mkey ${on ? "on" : ""}" data-mhub="${hub}" data-mact="${act}" ${value != null ? `data-mval="${value}"` : ""} title="${esc(label)}" ${live ? "" : "disabled"}><ha-icon icon="${icon}"></ha-icon></button>`;
+    const key = (act, icon, label, on = false, value = null) => `<button class="key mkey ${on ? "on" : ""}" data-mhub="${hub}" data-mact="${act}" ${value != null ? `data-mval="${value}"` : ""} title="${esc(label)}" ${live || parts.replace ? "" : "disabled"}><ha-icon icon="${icon}"></ha-icon></button>`;
     let title = "";
     if (parts.title) {
       const main = live ? a.media_title || a.media_series_title || a.app_name || "" : "";
@@ -132,7 +141,13 @@ export const mediaBarMixin = {
       parts.stop ? key("stop", "mdi:stop", t.mediaStop) : "",
       jb(10), jb(30)].join("");
     const tr = keys ? `<div class="transport mtrans">${keys}</div>` : "";
-    return `<div class="mbar ${live ? "" : "idle"}" data-mbar="${hub}" ${playing && parts.progress ? "data-mplaying" : ""} data-ment="${esc(p.entity)}">${title}${prog}${tr}</div>`;
+    return `<div class="mbar ${parts.replace ? "replace " : ""}${live ? "" : "idle"}" data-mbar="${hub}" ${playing && parts.progress ? "data-mplaying" : ""} data-ment="${esc(p.entity)}">${title}${prog}${tr}</div>`;
+  },
+
+  // Extra for _panelHtml: the bar below the keys, or in place of the transport row (Fire TV).
+  _mediaExtra(h, t) {
+    const mb = this._mediaBar(h, t);
+    return mb.replace ? { trReplace: mb.html } : { media: mb.html };
   },
 
   async _mediaSend(hub, action, value) {

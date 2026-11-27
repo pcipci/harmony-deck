@@ -50,7 +50,7 @@ export const devicesMixin = {
       return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" ${ac ? `style="--gac: ${ac}"` : ""} data-hub="${esc(h.id)}" data-dev="${esc(n)}">
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
     }).join("");
-    const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
+    const remote = sel ? this._hideGroupsHtml(h.id, sel, t) + this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
     const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
     if (part === "list") return `<div class="devlist">${list}</div>`;
     if (part === "below") return `<div class="devremote">${remote}</div>`;

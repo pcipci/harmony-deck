@@ -44,6 +44,8 @@ Mit **Fertig** speicherst du, mit **Abbrechen** verwirfst du alle Änderungen di
 - **Medienleiste (0.25):** Unter *Einstellungen › Aktivitäten › Mediaplayer* wählst du je Aktivität einen Mediaplayer (nie automatisch; Player im Raum des Hubs stehen oben). Die Leiste unter den Tasten zeigt Titel und App, Fortschritt als „abgelaufen / gesamt“ (ziehbar, wenn der Player spulen kann), Wiedergabe / Pause / Stopp und Sprünge um 10 und 30 Sekunden, und nur, was der Player kann. Ein Fire TV springt mit Vor-/Zurückspul-Tasten und zeigt die Leiste nur, wenn er Titel oder Position meldet. *Medienleiste zeigen* blendet sie je Aktivität aus.
 - **Fire-TV-Tasten in Aktivitäten (0.25):** Bei verknüpftem Fire TV bietet eine Reihe unter dem Steuerkreuz Suchen und Einstellungen (und Zurück / Home / Menü, wenn das Steuerkreuz zu einem anderen Gerät gehört).
 
+- **0.26:** Mit einem Fire TV als Mediaplayer ersetzt die Leiste die Wiedergabe-Reihe (eine Reihe mit Sprüngen). Eine gehaltene Taste wiederholt nach dem Loslassen nie weiter.
+
 ## 4. Geräte
 
 Der Schieber **Aktivitäten / Geräte** wechselt in die Geräteansicht. Ein Gerät antippen öffnet seine eigene Fernbedienung mit allen Befehlen, sortiert nach Gruppen (Eingänge, Ton, Menüs, Ziffern …). Geräte sind nie gesperrt, auch nicht bei aktiver Sperre.
@@ -58,7 +60,7 @@ Startet eine Aktivität nicht richtig (Fernseher aus, falscher Eingang), öffnes
 
 **ⓘ › Favoriten** → Gerät wählen → Tasten antippen (Stern). Favoriten erscheinen als eigener Block über der Fernbedienung.
 
-**Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
+**Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Oberhalb der Tasten lassen sich auch ganze **Tastengruppen** (Steuerkreuz, Zurück / Home / Menü, Lautstärke, Programm, Wiedergabe, Farbtasten) ausblenden (0.26). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
 
 ## 7. Aktionen und Sequenzen
 

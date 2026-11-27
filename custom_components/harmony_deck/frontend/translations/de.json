@@ -809,7 +809,7 @@
     "actions": "Aktionen"
   },
   "hideKeys": "Tasten ausblenden",
-  "hideEditHint": "Tippe Tasten an, die für dieses Gerät nicht mehr erscheinen sollen (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten. Das ist keine Sperre: Mit erneutem Antippen kommen sie zurück.",
+  "hideEditHint": "Tippe Tasten an, die für dieses Gerät nicht mehr erscheinen sollen (Auge). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten. Das ist keine Sperre: Mit erneutem Antippen kommen sie zurück. Ganze Gruppen (Steuerkreuz, Lautstärke, Wiedergabe …) schaltest du oberhalb der Tasten aus.",
   "pkgUnmap": "Zuordnung entfernen (Paket: {0})",
   "actNone": "Noch keine Aktionen.",
   "actTile": "Als Kachel in der Aktivitätenliste zeigen",
@@ -1097,5 +1097,14 @@
   "mediaProgress": "Fortschritt",
   "mediaPlay": "Wiedergabe",
   "mediaPause": "Pause",
-  "mediaStop": "Stopp"
+  "mediaStop": "Stopp",
+  "keyGroupsTitle": "Tastengruppen dieses Geräts",
+  "keyGroups": {
+    "nav": "Steuerkreuz",
+    "pills": "Zurück / Home / Menü",
+    "volume": "Lautstärke",
+    "channel": "Programm",
+    "transport": "Wiedergabe",
+    "colors": "Farbtasten"
+  }
 }

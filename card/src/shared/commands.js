@@ -15,6 +15,14 @@ export const ALIASES = {
   red: ["Red"], green: ["Green"], yellow: ["Yellow"], blue: ["Blue"],
 };
 
+// Key groups of the remote that can be hidden per device (0.26, Settings: favourites > hide keys).
+export const KEY_GROUPS = {
+  nav: ["up", "down", "left", "right", "ok"], pills: ["back", "home", "menu"], volume: ["volume_up", "volume_down", "mute"],
+  channel: ["channel_up", "channel_down"], transport: ["play", "pause", "stop", "rewind", "forward"], colors: ["red", "green", "yellow", "blue"],
+};
+export const GROUP_OF = Object.fromEntries(Object.entries(KEY_GROUPS).flatMap(([g, acts]) => acts.map((a) => [a, g])));
+export const GROUP_ICONS = { nav: "mdi:gamepad-round-outline", pills: "mdi:home-outline", volume: "mdi:volume-high", channel: "mdi:format-list-numbered", transport: "mdi:play-pause", colors: "mdi:palette-outline" };
+
 // Icons for device keys. A block only shows icons when most of its keys have one.
 export const KEY_ICONS = [
   [/^Input.*Hdmi|^Hdmi/i, "mdi:hdmi-port"], [/^Input.*(Av|Component|Video|Scart)/i, "mdi:audio-video"],

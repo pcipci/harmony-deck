@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.26.0
+
+### Added
+- **Hide whole key groups per device.** In the favourites editor, mode *Hide keys*, the device page now lists the key groups of the device: cross, Back / Home / Menu, volume, channel, playback and colour keys. A hidden group disappears on the device page and in every activity where this device has that role, and the space is used by the rest. Useful for self-learned infrared devices where Harmony adds up/down or stop keys that do nothing. Per device (not per activity); tap again to bring a group back.
+
+### Changed
+- **Fire TV media bar replaces the playback row.** When the media player of an activity is a Fire TV / Android TV over ADB, the bar is shown even without title or position and takes the place of the playback row under the cross: one row with -30 / -10 s, play, pause, stop and +10 / +30 s. Without an assigned player, with *Show media bar* off or while the player is not reachable, the old row stays.
+- **Settings rows of the device and activity symbols** follow the same layout as all other settings rows: on narrow cards the name above and the choice below in full width, on wide cards side by side.
+- README screenshots renewed with English example data and the current interface (media bar, Fire TV keys, all effect skins).
+
+### Fixed
+- **Keys that kept repeating.** Holding a key repeats it; if the card was redrawn while the finger was still down (for example because a state changed), the release could get lost and the key went on sending (and vibrating) until the app was closed. A held key now stops on every release anywhere on the page, when the app is hidden, and after about 20 seconds at most.
+
 ## 0.25.0
 
 ### Added

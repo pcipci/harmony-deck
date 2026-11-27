@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.25.0";
+  var VERSION = "0.26.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -692,6 +692,16 @@
     yellow: ["Yellow"],
     blue: ["Blue"]
   };
+  var KEY_GROUPS = {
+    nav: ["up", "down", "left", "right", "ok"],
+    pills: ["back", "home", "menu"],
+    volume: ["volume_up", "volume_down", "mute"],
+    channel: ["channel_up", "channel_down"],
+    transport: ["play", "pause", "stop", "rewind", "forward"],
+    colors: ["red", "green", "yellow", "blue"]
+  };
+  var GROUP_OF = Object.fromEntries(Object.entries(KEY_GROUPS).flatMap(([g, acts]) => acts.map((a) => [a, g])));
+  var GROUP_ICONS = { nav: "mdi:gamepad-round-outline", pills: "mdi:home-outline", volume: "mdi:volume-high", channel: "mdi:format-list-numbered", transport: "mdi:play-pause", colors: "mdi:palette-outline" };
   var KEY_ICONS = [
     [/^Input.*Hdmi|^Hdmi/i, "mdi:hdmi-port"],
     [/^Input.*(Av|Component|Video|Scart)/i, "mdi:audio-video"],
@@ -1425,7 +1435,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const cols = Number(this._config.columns) || 3;
       const rest = (shown.length + aTiles.length) % cols;
       const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
-      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { media: this._mediaBarHtml(h, t), fire: this._fireActKeys(h, this._roles(h.id, cur), cur, t), small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
+      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { ...this._mediaExtra(h, t), fire: this._fireActKeys(h, this._roles(h.id, cur), cur, t), small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
       if (part === "grid") return `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>`;
       if (part === "below") return body;
       return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>${body}`;
@@ -1792,7 +1802,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
     },
     _has(hubId, device, action) {
+      if (this._groupHidden(hubId, device, GROUP_OF[action])) return false;
       return !!this._cmd(hubId, device, action) || !!this._adbCode(hubId, device, action);
+    },
+    // A key group hidden for this device (0.26); the hide mode still shows everything.
+    _groupHidden(hubId, device, group) {
+      return !!group && !!device && !this._hideMode() && (this._settings().hideGroups?.[hubId]?.[device] || []).includes(group);
     },
     // Keys the user hid for a device (own list per hub, separate from the lock); the editor in hide mode still sees everything.
     _hiddenKeys(hubId, dev) {
@@ -2053,7 +2068,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         return `<button class="tile dev ${sel === n ? "sel" : ""} ${used[n] ? "inuse" : ""}" ${ac ? `style="--gac: ${ac}"` : ""} data-hub="${esc(h.id)}" data-dev="${esc(n)}">
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
       }).join("");
-      const remote = sel ? this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
+      const remote = sel ? this._hideGroupsHtml(h.id, sel, t) + this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
       const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
       if (part === "list") return `<div class="devlist">${list}</div>`;
       if (part === "below") return `<div class="devremote">${remote}</div>`;
@@ -2532,6 +2547,27 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!list.length) delete all[hubId][device];
       await this._saveSettings({ hideKeys: all });
     },
+    // Hide mode, device page: the key groups of the device as switches (cross, volume, channel ...), per device.
+    _hideGroupsHtml(hubId, device, t) {
+      if (!this._hideMode() || !device) return "";
+      const has = (g) => KEY_GROUPS[g].some((a) => !!this._cmd(hubId, device, a) || !!this._adbCode(hubId, device, a));
+      const hidden = this._settings().hideGroups?.[hubId]?.[device] || [];
+      const chips = Object.keys(KEY_GROUPS).filter(has).map((g) => {
+        const off = hidden.includes(g);
+        return `<button class="key cell hgroup ${off ? "hidden" : ""}" data-hgroup="${g}" data-hub="${esc(hubId)}" data-device="${esc(device)}" aria-pressed="${off}"><ha-icon icon="${GROUP_ICONS[g]}"></ha-icon><span>${esc(t.keyGroups?.[g] || g)}</span><ha-icon class="star eye" icon="${off ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon></button>`;
+      }).join("");
+      return chips ? `<div class="block hgroups"><span class="dname">${t.keyGroupsTitle}</span><div class="cells">${chips}</div></div>` : "";
+    },
+    async _toggleGroup(hubId, device, group) {
+      const all = JSON.parse(JSON.stringify(this._settings().hideGroups || {}));
+      const list = (all[hubId] ||= {})[device] ||= [];
+      const i = list.indexOf(group);
+      if (i >= 0) list.splice(i, 1);
+      else list.push(group);
+      if (!list.length) delete all[hubId][device];
+      if (!Object.keys(all[hubId]).length) delete all[hubId];
+      await this._saveSettings({ hideGroups: all });
+    },
     // Mark on a key in edit mode: star (favourites) or eye (hide keys).
     _editMark(hubId, device, c, favs) {
       if (this._hideMode()) return `<ha-icon class="star eye" icon="${this._hiddenKeys(hubId, device).includes(c) ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon>`;
@@ -2548,6 +2584,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     // Events of the favourites editor.
     _bindFavorites(root) {
+      root.querySelectorAll("button[data-hgroup]").forEach((b) => b.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._toggleGroup(b.dataset.hub, b.dataset.device, b.dataset.hgroup);
+      }));
       root.querySelectorAll("[data-favkind]").forEach((b) => b.addEventListener("click", () => {
         this._favKind = b.dataset.favkind;
         this._rerender();
@@ -3802,7 +3842,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       stop: !!(f & MF.STOP),
       jumps: seek || !!adb
     };
-    parts.show = adb ? parts.title || parts.progress : parts.title || parts.progress || parts.play || parts.stop || parts.jumps;
+    parts.replace = !!adb;
+    parts.show = adb ? true : parts.title || parts.progress || parts.play || parts.stop || parts.jumps;
     return parts;
   }
   var mediaBarMixin = {
@@ -3845,6 +3886,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         return p ? [p.entity, p.bar, st?.state, a.media_title, a.media_artist, a.media_series_title, a.app_name, a.media_duration, a.media_position, a.media_position_updated_at, a.supported_features] : null;
       });
     },
+    // {html, replace}: replace = the bar stands in for the transport row of the remote (Fire TV over ADB, reachable).
+    _mediaBar(h, t) {
+      const html = this._mediaBarHtml(h, t);
+      return { html, replace: !!html && html.includes('class="mbar replace') };
+    },
     _mediaBarHtml(h, t) {
       if (this._edit || this._config.compact || !h.current || h.starting) return "";
       const p = this._actPlayer(h.id, h.current);
@@ -3852,11 +3898,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const st = this._hass?.states?.[p.entity];
       const parts = barParts(this._mSeen(p.entity), this._isAdbPlayer(p.entity));
       if (!parts.show) return "";
+      if (parts.replace && (!st || ["unavailable", "unknown"].includes(st.state))) return "";
       const a = st?.attributes || {};
       const live = !!st && !OFF.includes(st.state);
       const playing = st?.state === "playing";
       const hub = esc(h.id);
-      const key = (act, icon, label, on3 = false, value = null) => `<button class="key mkey ${on3 ? "on" : ""}" data-mhub="${hub}" data-mact="${act}" ${value != null ? `data-mval="${value}"` : ""} title="${esc(label)}" ${live ? "" : "disabled"}><ha-icon icon="${icon}"></ha-icon></button>`;
+      const key = (act, icon, label, on3 = false, value = null) => `<button class="key mkey ${on3 ? "on" : ""}" data-mhub="${hub}" data-mact="${act}" ${value != null ? `data-mval="${value}"` : ""} title="${esc(label)}" ${live || parts.replace ? "" : "disabled"}><ha-icon icon="${icon}"></ha-icon></button>`;
       let title = "";
       if (parts.title) {
         const main = live ? a.media_title || a.media_series_title || a.app_name || "" : "";
@@ -3883,7 +3930,12 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         jb(30)
       ].join("");
       const tr = keys ? `<div class="transport mtrans">${keys}</div>` : "";
-      return `<div class="mbar ${live ? "" : "idle"}" data-mbar="${hub}" ${playing && parts.progress ? "data-mplaying" : ""} data-ment="${esc(p.entity)}">${title}${prog}${tr}</div>`;
+      return `<div class="mbar ${parts.replace ? "replace " : ""}${live ? "" : "idle"}" data-mbar="${hub}" ${playing && parts.progress ? "data-mplaying" : ""} data-ment="${esc(p.entity)}">${title}${prog}${tr}</div>`;
+    },
+    // Extra for _panelHtml: the bar below the keys, or in place of the transport row (Fire TV).
+    _mediaExtra(h, t) {
+      const mb = this._mediaBar(h, t);
+      return mb.replace ? { trReplace: mb.html } : { media: mb.html };
     },
     async _mediaSend(hub, action, value) {
       this._buzz?.();
@@ -4445,6 +4497,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
   };
 
   // src/deck/panel.js
+  var MAX_REPEAT = 60;
   var panelMixin = {
     _key_(hubId, device, action, icon, cls = "", label = "", sub = "") {
       const cmd = this._cmd(hubId, device, action);
@@ -4492,7 +4545,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const L = (role, html) => lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html;
       const FK = L("nav", extra.fire || "");
       const K = (dev, a, icon, cls, label) => extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label);
-      const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
+      const volOff = this._groupHidden(h.id, r.volume, "volume");
+      const slH = volOff ? "" : this._volSlider(h, r, "h", !!extra.noLock), slV = volOff ? "" : this._volSlider(h, r, "v", !!extra.noLock);
       const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
       const mutedNow = (() => {
         const l = r.volume && this._settings().directDevices?.[h.id]?.[r.volume];
@@ -4528,6 +4582,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         </div></div>` : "";
       const tr = r.transport && ["play", "pause", "stop", "rewind", "forward"].some((a) => this._has(h.id, r.transport, a)) ? `<div class="transport">
         ${["rewind", "play", "pause", "stop", "forward"].map((a) => this._has(h.id, r.transport, a) ? K(r.transport, a, { rewind: "mdi:rewind", play: "mdi:play", pause: "mdi:pause", stop: "mdi:stop", forward: "mdi:fast-forward" }[a]) : "").join("")}</div>` : "";
+      const trow = extra.trReplace != null ? L("transport", extra.trReplace) : L("transport", tr);
       const dcfg = r.nav ? this._directFor(h.id, r.nav) : null;
       const kmap = dcfg?.keymap || {};
       const mapApp = (c) => this._appsOf(h.id).find((a) => a.name === kmap[c]);
@@ -4545,7 +4600,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       if (hasVol && !hasNav && !hasCh) {
         const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
-        return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
+        return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${trow}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
       }
       const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
       const discCol = disc.length ? `<div class="sidecol">${disc.map((d) => this._cmdKey(h.id, r.nav, d.c, d.ic, "tall", t[d.k] || d.k)).join("")}</div>` : "";
@@ -4560,7 +4615,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const topPills = pillCol ? "" : pills;
       const panel = hasVol || hasNav || hasCh ? `<div class="panel ${discCol ? "wide3" : pillCol ? "mid3" : ""} ${vol ? "" : "nol"} ${third ? "" : "nor"}">${L("nav", topPills)}${vol ? L("volume", vol) : ""}${L("nav", nav)}${third}</div>` : "";
       const textRow = dcfg?.entity && !this._edit && hasNav ? this._textBlock(h.id, dcfg.entity, t) : "";
-      const pcol = `${panel}${FK}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
+      const pcol = `${panel}${FK}${textRow}${trow}${L("nav", colors)}`.trim();
       if (!pcol && !extra.noKeypad && !extra.small && !extra.big) return `<div class="hint nokeys">${t.noKeys}</div>`;
       return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
     },
@@ -4587,9 +4642,19 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         const pre = b.dataset.pre;
         this._sendCmd(b.dataset.hub, b.dataset.device, pre ? [pre, b.dataset.cmd] : b.dataset.cmd, pre ? { delay_secs: 0.15 } : {});
       };
+      let count = 0;
       const stop = () => {
         clearTimeout(delay);
         clearInterval(loop);
+        delay = loop = null;
+        if (this._keyHold === stop) this._keyHold = null;
+      };
+      const repeat = () => {
+        if (++count > MAX_REPEAT || !this.isConnected) {
+          stop();
+          return;
+        }
+        send();
       };
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -4604,8 +4669,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           return;
         }
         if (b.classList.contains("once") || b.classList.contains("chip") || b.classList.contains("pill") || b.classList.contains("ok") || b.classList.contains("helpkey")) return;
+        this._keyHold?.();
+        count = 0;
+        this._keyHold = stop;
         delay = setTimeout(() => {
-          loop = setInterval(send, 350);
+          loop = setInterval(repeat, 350);
         }, 450);
       });
       ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
@@ -7243,7 +7311,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .mbar .mtitle { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; color: var(--hr-text, inherit); min-width: 0; }
       .mbar .mtitle b { font-size: 1.05em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mbar .mtitle span { font-size: 0.85em; color: var(--hr-muted, inherit); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mbar.idle .mtitle { opacity: 0.7; }
+      .mbar.idle .mtitle { opacity: 0.7; } .mbar.replace { margin: 0; }
       .mbar .mwrap { position: relative; display: flex; flex-direction: column; gap: 0; }
       .mbar .mseek { width: 100%; min-height: 40px; } .mbar .mseek.ro { pointer-events: none; }
       /* Plain skins: a filled bar (the time fits inside on wide cards); skins with their own slider look keep theirs. */
@@ -7260,6 +7328,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       .mbar .mtrans .key[disabled] { pointer-events: none; }
       .pills.firekeys { margin-top: 8px; }
+      .hgroups .hgroup { padding-right: 24px; gap: 6px; } .hgroups .hgroup.hidden { opacity: 0.55; } .hgroups .hgroup > span { min-width: 0; }
       .colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
       .color { width: 100%; height: 12px; border-radius: 6px; min-height: 0; }
       .color.red { background: #e53935; } .color.green { background: #43a047; } .color.yellow { background: #fdd835; } .color.blue { background: #1e88e5; }
@@ -7315,6 +7384,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .pkgmapbox { display: flex; flex-direction: column; gap: 6px; } .pkgmapbox > summary { cursor: pointer; font-size: 0.9em; padding: 6px 0; color: var(--hr-text); }
       .iconrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.9em; color: var(--hr-muted); }
       .iconrow .iname { display: inline-flex; align-items: center; gap: 6px; min-width: 0; } .iconrow .iname ha-icon { --mdc-icon-size: 20px; flex: none; }
+      /* 0.26: one layout for every icon row, like the other settings rows: wide = name left, button in a fixed column; narrow = name above, button full width. */
+      .iconrow { flex-wrap: nowrap; } .iconrow .iname { flex: 1 1 auto; } .iconrow > .iconbtn { flex: 0 0 min(55%, 240px); max-width: none; justify-content: flex-start; }
+      .iconrow > .iconbtn > span { flex: 1 1 auto; text-align: left; }
+      .iconrow:has(> .icongrid) { flex-wrap: wrap; }
+      @container (max-width: 519px) { .iconrow { flex-wrap: wrap; gap: 4px 12px; padding-bottom: 8px; } .iconrow .iname { flex: 1 1 100%; } .iconrow > .iconbtn { flex: 1 1 100%; } }
       .iconbtn { display: inline-flex; align-items: center; gap: 8px; font: inherit; color: var(--hr-text); background: var(--hr-tile-bg); border: none; border-radius: 12px; padding: 6px 10px; cursor: pointer; min-width: 0; max-width: 62%; } .iconbtn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .iconbtn ha-icon { --mdc-icon-size: 20px; flex: none; }
       .icongrid { flex: 1 0 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; padding: 6px 0 4px; }
       .iconcell { position: relative; display: flex; align-items: center; justify-content: center; height: 44px; border: none; border-radius: 12px; background: var(--hr-tile-bg); color: var(--hr-text); cursor: pointer; --mdc-icon-size: 24px; } .iconcell.sel { box-shadow: inset 0 0 0 2px var(--hr-accent); color: var(--hr-accent); } .iconcell small { position: absolute; right: 4px; bottom: 2px; font-size: 0.6em; opacity: .6; }
@@ -7854,6 +7928,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       document.addEventListener("visibilitychange", this._onViewLeave);
       window.addEventListener("pagehide", this._onViewLeave);
       window.addEventListener("scroll", this._onViewScroll, { capture: true, passive: true });
+      this._onHoldEnd = this._onHoldEnd || (() => this._keyHold?.());
+      ["pointerup", "pointercancel", "blur"].forEach((ev) => window.addEventListener(ev, this._onHoldEnd, true));
+      document.addEventListener("visibilitychange", this._onHoldEnd);
     }
     disconnectedCallback() {
       document.removeEventListener("keydown", this._onKey, true);
@@ -7864,6 +7941,9 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._ro?.disconnect();
       clearInterval(this._mTimer);
       this._mTimer = null;
+      this._keyHold?.();
+      ["pointerup", "pointercancel", "blur"].forEach((ev) => window.removeEventListener(ev, this._onHoldEnd, true));
+      document.removeEventListener("visibilitychange", this._onHoldEnd);
       if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
     }
     getCardSize() {

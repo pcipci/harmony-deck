@@ -30,9 +30,11 @@ assert.equal(barParts(mergeSeen(null, undefined), false).show, false);
 const simple = barParts(mergeSeen(null, { state: "on", attributes: { supported_features: MF.PAUSE | MF.PLAY } }), false);
 assert.ok(simple.show && simple.play && !simple.progress && !simple.jumps && !simple.title);
 
-// Fire TV (ADB): without title or position no bar; jumps by key presses when it reports a position.
+// Fire TV (ADB, 0.26): the bar replaces the transport row, so it shows even without title or position; jumps by key presses.
 const fire = mergeSeen(null, { state: "playing", attributes: { supported_features: MF.PAUSE | MF.PLAY | MF.STOP, app_name: "Netflix" } });
-assert.equal(barParts(fire, true).show, false);
+const fp = barParts(fire, true);
+assert.ok(fp.show && fp.replace && fp.jumps && fp.play && fp.stop && !fp.progress && !fp.title);
+assert.equal(barParts(fire, false).replace, false);
 const fire2 = barParts(mergeSeen(fire, { state: "playing", attributes: { media_title: "Show" } }), true);
 assert.ok(fire2.show && fire2.jumps && !fire2.seek);
 

@@ -809,7 +809,7 @@
     "actions": "Actions"
   },
   "hideKeys": "Hide keys",
-  "hideEditHint": "Tap keys that should no longer appear for this device (eye). They disappear in the device view and in the remotes of the activities. This is not the lock: tap again to bring them back.",
+  "hideEditHint": "Tap keys that should no longer appear for this device (eye). They disappear in the device view and in the remotes of the activities. This is not the lock: tap again to bring them back. Whole groups (cross, volume, playback …) are switched off above the keys.",
   "pkgUnmap": "Remove mapping (package: {0})",
   "actNone": "No actions yet.",
   "actTile": "Show as a tile in the activity list",
@@ -1097,5 +1097,14 @@
   "mediaProgress": "Progress",
   "mediaPlay": "Play",
   "mediaPause": "Pause",
-  "mediaStop": "Stop"
+  "mediaStop": "Stop",
+  "keyGroupsTitle": "Key groups of this device",
+  "keyGroups": {
+    "nav": "Cross",
+    "pills": "Back / Home / Menu",
+    "volume": "Volume",
+    "channel": "Channel",
+    "transport": "Playback",
+    "colors": "Colour keys"
+  }
 }

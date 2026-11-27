@@ -158,7 +158,9 @@ async def test_device_per_network_device(hass: HomeAssistant, hass_ws_client, mo
     hub_dev = devs.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_{harmony.entry_id}")})
     assert dev.via_device_id == hub_dev.id
     ents = {e.translation_key: e.entity_id for e in er.async_entries_for_device(er.async_get(hass), dev.id)}
-    assert set(ents) == {"net_platform", "net_capabilities", "net_state"}
+    from custom_components.harmony_deck.screen import ALL_KEYS
+
+    assert set(ents) == {"net_platform", "net_capabilities", "net_state", *ALL_KEYS}    # 0.27: an LG Netcast TV also has its settings and picture
     assert hass.states.get(ents["net_platform"]).state == "lg_netcast"
     caps = hass.states.get(ents["net_capabilities"])
     assert caps.state == "6 of 10" and caps.attributes["cap_volume_set"] == "yes" and caps.attributes["cap_source_select"] == "no"

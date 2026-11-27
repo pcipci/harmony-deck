@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.26.0";
+  var VERSION = "0.27.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1816,6 +1816,13 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     _hideMode() {
       return this._editMode === "favs" && this._favKind === "hide";
     },
+    // Order mode (0.27): arrows on the keys of the blocks of a device page.
+    _orderMode() {
+      return this._editMode === "favs" && this._favKind === "order";
+    },
+    _keyOrder(hubId, dev) {
+      return this._settings().keyOrder?.[hubId]?.[dev] || [];
+    },
     _devicesOf(hubId) {
       const all = this._devicesRaw(hubId);
       const hide = this._settings().hideKeys?.[hubId];
@@ -1933,6 +1940,24 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }, 20500);
     }
   };
+
+  // src/shared/keyorder.js
+  function applyOrder(cmds, order) {
+    if (!order?.length) return [...cmds];
+    const at = new Map(order.map((c, i) => [c, i]));
+    return cmds.map((c, i) => [c, at.has(c) ? at.get(c) : order.length + i]).sort((a, b) => a[1] - b[1]).map(([c]) => c);
+  }
+  function moveKey(block, cmd, dir) {
+    const out = [...block];
+    const i = out.indexOf(cmd);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= out.length) return out;
+    [out[i], out[j]] = [out[j], out[i]];
+    return out;
+  }
+  function mergeOrder(order, block) {
+    return [...block, ...(order || []).filter((c) => !block.includes(c))];
+  }
 
   // src/deck/devices.js
   var devicesMixin = {
@@ -2069,7 +2094,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
       }).join("");
       const remote = sel ? this._hideGroupsHtml(h.id, sel, t) + this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
-      const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
+      const hintKind = this._orderMode() ? ["mdi:swap-horizontal", t.orderEditHint] : this._hideMode() ? ["mdi:eye-off-outline", t.hideEditHint] : ["mdi:star-outline", t.favEditHint];
+      const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${hintKind[0]}"></ha-icon>${hintKind[1]}</div>` : "";
       if (part === "list") return `<div class="devlist">${list}</div>`;
       if (part === "below") return `<div class="devremote">${remote}</div>`;
       return `${favHint}<div class="devlayout"><div class="devlist">${list}</div><div class="devremote">${remote}</div></div>`;
@@ -2137,8 +2163,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const rest = commands.filter((c) => !used.has(c) && !power.includes(c) && digitOf(c) === void 0 && !(kb && kb.used.has(c)));
       const favs = this._favs(h.id, dev);
       const overrides = { ...this._settings().keyIcons || {}, ...this._config.key_icons || {} };
-      const btn = (c, label, icon = null, extraCls = "") => {
-        const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+      const btn = (c, label, icon = null, extraCls = "", pos = null) => {
+        const star = this._edit ? this._editMark(h.id, dev, c, favs, pos) : "";
         return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
       };
       let gs = this._groups(rest, t);
@@ -2151,11 +2177,16 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         if (oi >= 0) gs[oi] = [t.other, [...gs[oi][1], ...merged], /* @__PURE__ */ new Set()];
         else gs.push([t.other, merged, /* @__PURE__ */ new Set()]);
       }
+      const order = this._keyOrder(h.id, dev);
+      if (order.length) gs = gs.map(([label, cmds, brk]) => {
+        const o = applyOrder(cmds, order);
+        return [label, o, o.join("\0") === cmds.join("\0") ? brk : /* @__PURE__ */ new Set()];
+      });
       const blocks = gs.map(([label, cmds, brk]) => {
         const icons = cmds.map((c) => keyIcon(c, overrides, dev));
         const useIcons = label !== t.symbols && icons.some(Boolean);
         return `<div class="block ${label === t.symbols ? "sym" : ""} ${label === t.shortcuts ? "short" : ""} ${label === t.windows ? "wide" : ""}"><span class="dname">${esc(label)}</span>
-      <div class="cells ${brk.size > 1 ? "rows" : ""}">${cmds.map((c, i) => btn(c, esc(prettyCommand(c)), useIcons ? icons[i] || "mdi:circle-small" : null, brk.has(c) && brk.size > 1 ? "newrow" : "")).join("")}</div></div>`;
+      <div class="cells ${brk.size > 1 ? "rows" : ""}">${cmds.map((c, i) => btn(c, esc(prettyCommand(c)), useIcons ? icons[i] || "mdi:circle-small" : null, brk.has(c) && brk.size > 1 ? "newrow" : "", { i, n: cmds.length })).join("")}</div></div>`;
       }).join("");
       const dp = this._directHtml(h, dev, t, false, "", true) || {};
       const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);
@@ -2355,29 +2386,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       ${has("volume_set") ? this._swRow(t.ddVolDirect, `data-ddvol data-dev="${esc(d)}"`, !!link.volumeDirect) + `<div class="ehint">${t.ddVolDirectHint}</div>` + this._ddVolHint(h.id, d, t) : ""}
       ${this._ddTechHtml(item, d, t)}</div>`;
     },
-    // Technical values of a TV that only knows volume steps (LG Netcast, 0.24.1): how the volume is reached and the
-    // optional TV picture with its main colour. The integration sends them (item.tech) only for such TVs.
+    // 0.27: the technical values of such a TV (volume steps, TV picture) are entities on its device in Home Assistant,
+    // not in the card; here only a pointer to them. The integration sends item.tech only for such TVs.
     _ddTechHtml(item, device, t) {
-      const v = item.tech;
-      if (!v) return "";
-      const num2 = (key, label, min, max, step, unit) => `<label class="erow"><span>${label}</span><input type="number" min="${min}" max="${max}" step="${step}" value="${esc(String(v[key]))}" data-ddtech="${key}" data-dev="${esc(device)}" aria-label="${esc(label)} (${unit})"></label>`;
-      const mode = [["change", t.ddTechModeChange], ["poll", t.ddTechModePoll]].map(([m, label]) => `<option value="${m}" ${v.picture_mode === m ? "selected" : ""}>${esc(label)}</option>`).join("");
-      const pic = v.picture ? `<label class="erow"><span>${t.ddTechMode}</span><select data-ddtech="picture_mode" data-dev="${esc(device)}">${mode}</select></label>
-        ${v.picture_mode === "poll" ? num2("picture_interval_s", t.ddTechInterval, 1, 10, 0.5, "s") : ""}
-        ${num2("picture_timeout_s", t.ddTechTimeout, 2, 120, 1, "s")}<div class="ehint">${t.ddTechPicEnts}</div>` : "";
-      return `<details class="ddcaps ddtech" ${this._ddTechOpen ? "open" : ""} data-ddtechbox><summary>${t.ddTech}</summary>
-      <div class="ehint">${t.ddTechHint}</div>
-      <div class="dname">${t.ddTechVolume}</div>
-      ${num2("step_gap_ms", t.ddTechGap, 50, 1e3, 10, "ms")}${num2("corrections", t.ddTechCorr, 0, 5, 1, "x")}${num2("settle_s", t.ddTechSettle, 0.5, 10, 0.5, "s")}
-      <div class="ehint">${t.ddTechVolHint}</div>
-      <div class="dname">${t.ddTechPicture}</div>
-      ${this._swRow(t.ddTechPic, `data-ddtech="picture" data-dev="${esc(device)}"`, !!v.picture)}<div class="ehint">${t.ddTechPicHint}</div>${pic}</details>`;
-    },
-    _ddTechSave(hub, device, key, raw) {
-      const cur = this._dd?.hubs?.[hub]?.[device]?.tech || {};
-      const value = key === "picture" ? !!raw : key === "picture_mode" ? raw : Number(raw);
-      if (key !== "picture" && key !== "picture_mode" && !Number.isFinite(value)) return;
-      return this._ddSave(hub, device, { tech: { ...cur, [key]: value } });
+      return item.tech ? `<div class="ehint ddtech">${esc(fmtText(t.ddTechWhere, [device]))}</div>` : "";
     },
     // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
     _ddCapList(item, caps, t) {
@@ -2470,10 +2482,6 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._ddSave(hub, s.dataset.dev, { inputs });
       }));
       root.querySelectorAll("select[data-ddoff]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, { offCheck: s.value === "watch" ? void 0 : s.value })));
-      root.querySelectorAll("[data-ddtechbox]").forEach((el) => el.addEventListener("toggle", () => {
-        this._ddTechOpen = el.open;
-      }));
-      root.querySelectorAll("[data-ddtech]").forEach((el) => el.addEventListener("change", () => this._ddTechSave(el.closest("[data-hub]").dataset.hub, el.dataset.dev, el.dataset.ddtech, el.type === "checkbox" ? el.checked : el.value)));
       root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
     }
   };
@@ -2511,9 +2519,10 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     },
     _favBlock(h, device, cmds, t, overrides) {
       if (!cmds.length && !this._edit) return "";
-      const cells = cmds.map((c) => {
+      const cells = cmds.map((c, i) => {
         const icon = keyIcon(c, overrides, device);
-        return `<button class="key cell isfav" title="${esc(device)}: ${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(device)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${esc(prettyCommand(c))}</span>${this._edit ? `<ha-icon class="star" icon="mdi:star"></ha-icon>` : ""}</button>`;
+        const mark = !this._edit ? "" : this._orderMode() ? this._editMark(h.id, device, c, cmds, { i, n: cmds.length }) : '<ha-icon class="star" icon="mdi:star"></ha-icon>';
+        return `<button class="key cell isfav" title="${esc(device)}: ${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(device)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${esc(prettyCommand(c))}</span>${mark}</button>`;
       }).join("");
       return `<div class="block favs"><span class="dname">${t.favorites}${this._edit ? ` · ${esc(device)}` : ""}</span>
       <div class="cells">${cells || `<span class="ehint">${t.favHint}</span>`}</div></div>`;
@@ -2568,12 +2577,37 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (!Object.keys(all[hubId]).length) delete all[hubId];
       await this._saveSettings({ hideGroups: all });
     },
-    // Mark on a key in edit mode: star (favourites) or eye (hide keys).
-    _editMark(hubId, device, c, favs) {
+    // Mark on a key in edit mode: star (favourites), eye (hide keys) or arrows (order, only keys of a block that can
+    // move: pos = {i, n} is the place in the block).
+    _editMark(hubId, device, c, favs, pos = null) {
+      if (this._orderMode()) {
+        if (!pos || pos.n < 2) return "";
+        return `${pos.i > 0 ? '<span class="ord l" data-ord="-1"><ha-icon icon="mdi:chevron-left"></ha-icon></span>' : ""}${pos.i < pos.n - 1 ? '<span class="ord r" data-ord="1"><ha-icon icon="mdi:chevron-right"></ha-icon></span>' : ""}`;
+      }
       if (this._hideMode()) return `<ha-icon class="star eye" icon="${this._hiddenKeys(hubId, device).includes(c) ? "mdi:eye-off" : "mdi:eye-outline"}"></ha-icon>`;
       return `<ha-icon class="star" icon="${favs.includes(c) ? "mdi:star" : "mdi:star-outline"}"></ha-icon>`;
     },
+    // Order mode: the key moves one place inside its block (the keys of the block are read from the page as shown).
+    async _moveKey(btn, dir) {
+      const { hub, device, cmd } = btn.dataset;
+      const cells = btn.closest(".cells");
+      if (!cells || !hub || !device) return;
+      const block = [...cells.querySelectorAll("button[data-cmd]")].map((b) => b.dataset.cmd);
+      const next = moveKey(block, cmd, dir);
+      if (next.join("\0") === block.join("\0")) return;
+      this._buzz();
+      if (cells.closest(".block.favs")) {
+        const all2 = JSON.parse(JSON.stringify(this._settings().favorites || {}));
+        const list = (all2[hub] ||= {})[device] || [];
+        all2[hub][device] = [...next, ...list.filter((c) => !next.includes(c))];
+        return this._saveSettings({ favorites: all2 });
+      }
+      const all = JSON.parse(JSON.stringify(this._settings().keyOrder || {}));
+      (all[hub] ||= {})[device] = mergeOrder(this._keyOrder(hub, device), next);
+      return this._saveSettings({ keyOrder: all });
+    },
     async _toggleFav(hubId, device, cmd) {
+      if (this._orderMode()) return;
       if (this._hideMode()) return this._toggleHide(hubId, device, cmd);
       const all = JSON.parse(JSON.stringify(this._settings().favorites || {}));
       const list = (all[hubId] ||= {})[device] ||= [];
@@ -4659,6 +4693,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         if (this._edit) {
+          if (this._orderMode?.()) {
+            const ord = e.target?.closest?.("[data-ord]");
+            if (ord) this._moveKey(b, Number(ord.dataset.ord));
+            return;
+          }
           if (b.classList.contains("cell")) this._toggleFav(b.dataset.hub, b.dataset.device, b.dataset.cmd);
           return;
         }
@@ -5530,8 +5569,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
       if (this._editMode === "info") return `<div class="editbox infoarea">${this._infoArea(h, t)}</div>`;
       if (this._editMode === "favs") {
-        const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
-        const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
+        const kind = ["act", "hide", "order"].includes(this._favKind) ? this._favKind : "dev";
+        const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button><button class="${kind === "order" ? "sel" : ""}" data-favkind="order"><ha-icon icon="mdi:swap-horizontal"></ha-icon><span>${t.orderKeys}</span></button></div>`;
         return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : body);
       }
       return body;
@@ -7663,7 +7702,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .profchip select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
       .favkind { display: flex; gap: 6px; } .favkind button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; padding: 10px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; }
       .favkind button { min-width: 0; padding: 10px 8px; gap: 6px; } .favkind button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .favkind button.sel { background: var(--hr-accent); color: var(--hr-on-accent); } .favkind ha-icon { --mdc-icon-size: 20px; }
+      .favkind button.sel { background: var(--hr-accent); color: var(--hr-on-accent); } .favkind ha-icon { --mdc-icon-size: 20px; } .favkind { flex-wrap: wrap; } .favkind button { flex: 1 1 calc(50% - 6px); }
+      @container (min-width: 520px) { .favkind button { flex: 1 1 0; } }
       .entpick { position: relative; min-width: 0; }
       .entlist { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow: auto; border-radius: 12px; background: var(--card-background-color, #fff); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
       .entopt { display: flex; flex-direction: column; align-items: flex-start; width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: var(--primary-text-color); background: none; border: none; padding: 8px 12px; cursor: pointer; }
@@ -7697,6 +7737,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .cell ha-icon { --mdc-icon-size: 18px; flex: none; }
       .cell { position: relative; } .cell.hid { opacity: .45; } .cell .star.eye { color: var(--hr-muted); } .cell.hid .star.eye { color: var(--hr-danger, #e55); }
       .cell .star { position: absolute; top: 3px; right: 3px; --mdc-icon-size: 15px; color: var(--hr-accent); }
+      .cell .ord { position: absolute; bottom: 0; top: 0; width: 34%; display: flex; align-items: flex-end; padding: 0 0 2px; color: var(--hr-accent); cursor: pointer; }
+      .cell .ord.l { left: 0; justify-content: flex-start; } .cell .ord.r { right: 0; justify-content: flex-end; } .cell .ord ha-icon { --mdc-icon-size: 18px; }
       .cell.isfav { box-shadow: inset 0 0 0 1.5px var(--hr-accent); }
       .block.favs { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .power .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); }

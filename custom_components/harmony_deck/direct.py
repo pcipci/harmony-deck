@@ -468,3 +468,22 @@ def check(hass: HomeAssistant, hub: str, info: dict[str, Any]) -> list[dict[str,
     for item in found:
         item["can"] = directdev.OPS[item["fix"]] in caps(hass, links[item["device"]]["entity"])
     return found
+
+
+async def set_tech(hass: HomeAssistant, entity: str, patch: dict[str, Any]) -> None:
+    """Change technical values of a step-only TV (0.27: from its entities on the device in Home Assistant).
+
+    Written on every link to this player (with the values it had so far, so those of 0.24-0.26 carry over), kept in
+    the store like the card's settings; the watcher then restarts what depends on them (picture feed, entities).
+    """
+    d = hass.data[DOMAIN]
+    tech = {**device_tech(hass, entity), **patch}
+    tech = {**directdev.clean_step_options(tech), **directdev.clean_screen_options(tech)}
+    links = {hub: {label: ({**link, "tech": tech} if link.get("entity") == entity else link) for label, link in devices.items()}
+             for hub, devices in config(hass).items()}
+    d["settings"] = {**d["settings"], "directDevices": links}
+    await d["store"].async_save({"global": d["settings"], "profiles": d["profiles"], "assign": d["assign"]})
+    if screen := d.get("screen"):
+        screen.sync()           # at once, so the entity shows its new value
+    if watch := d.get("direct_watch"):
+        watch.refresh()

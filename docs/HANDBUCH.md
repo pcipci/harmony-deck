@@ -60,7 +60,9 @@ Startet eine Aktivität nicht richtig (Fernseher aus, falscher Eingang), öffnes
 
 **ⓘ › Favoriten** → Gerät wählen → Tasten antippen (Stern). Favoriten erscheinen als eigener Block über der Fernbedienung.
 
-**Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Oberhalb der Tasten lassen sich auch ganze **Tastengruppen** (Steuerkreuz, Zurück / Home / Menü, Lautstärke, Programm, Wiedergabe, Farbtasten) ausblenden (0.26). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
+**Tasten ausblenden:** Im selben Editor **Tasten ausblenden** wählen und die Tasten eines Geräts antippen, die du nie brauchst (Auge). Oberhalb der Tasten lassen sich auch ganze **Tastengruppen** (Steuerkreuz, Zurück / Home / Menü, Lautstärke, Programm, Wiedergabe, Farbtasten) ausblenden (0.26). Sie verschwinden in der Geräteansicht und in den Fernbedienungen der Aktivitäten, für das aktuelle Profil. Erneutes Antippen holt sie zurück. Das ist keine Sperre: Ausgeblendete Tasten werden nur nicht angezeigt.
+
+**Reihenfolge (0.27):** Der vierte Knopf des Editors, **Reihenfolge**, zeigt kleine Pfeile auf den Tasten jedes Abschnitts einer Geräteseite (Eingänge, Klang, Menüs …) und auf den Favoriten des Geräts. Ein Pfeil schiebt die Taste innerhalb ihres Abschnitts eine Stelle nach links oder rechts; die erste Taste hat keinen Pfeil nach links, die letzte keinen nach rechts. Gespeichert pro Gerät (und Profil); Tasten, die das Gerät später dazulernt, kommen ans Ende. Die Reihenfolge der Favoriten gilt auch in den Aktivitäten. Steuerkreuz, Lautstärke, Ziffern, Ein/Aus, Fire-TV-Tasten und Tastatur behalten ihren festen Platz. Unter „Aktivitäten" legst du Favoriten fest, die nur in einer bestimmten Aktivität erscheinen (zum Beispiel HDMI-Eingang des Fernsehers bei „Fire TV").
 
 ## 7. Aktionen und Sequenzen
 
@@ -169,7 +171,7 @@ Die Sperre ist eine Hilfe im Haushalt, kein Sicherheitsprodukt.
 
 ## 12. Entitäten
 
-Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Sequenz (Zustand und Fortschritt der Aktionen), Freigegeben bis, Letzter Eingriff, Eingriffe heute, Eingriff (Ereignis: wird bei jedem Eingriff der Sperre mit `what` ausgelöst, damit eine Automation dich benachrichtigen kann), Hub-Konfiguration lesbar, Aktivitäten und Geräte (die Namen als kurze Liste, „Bluray, Games und 4 weitere“; Anzahl und vollständige Liste als Attribute), Aktionen (dasselbe für die gespeicherten Aktionen, mit ID, Schritten und Taste pro Aktion), Abweichungen und eine Taste pro Aktion. Pro verbundenem Netzwerkgerät: ein Gerät „Name (Netzwerk)“ mit Plattform, Fähigkeiten und Zustand. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
+Pro Hub: Sperre, Sperr-Modus, Freigabedauer, Freigeben, Sperre wirksam (mit erlaubten Aktivitäten als Attribut), Sequenz (Zustand und Fortschritt der Aktionen), Freigegeben bis, Letzter Eingriff, Eingriffe heute, Eingriff (Ereignis: wird bei jedem Eingriff der Sperre mit `what` ausgelöst, damit eine Automation dich benachrichtigen kann), Hub-Konfiguration lesbar, Aktivitäten und Geräte (die Namen als kurze Liste, „Bluray, Games und 4 weitere“; Anzahl und vollständige Liste als Attribute), Aktionen (dasselbe für die gespeicherten Aktionen, mit ID, Schritten und Taste pro Aktion), Abweichungen und eine Taste pro Aktion. Pro verbundenem Netzwerkgerät: ein Gerät „Name (Netzwerk)“ mit Plattform, Fähigkeiten und Zustand. Ein LG-Netcast-Fernseher hat zusätzlich (0.27) **TV-Bild**, **Hauptfarbe** und **Bild verfügbar** (immer vorhanden; *unbekannt* / *aus*, solange das Bild ausgeschaltet ist) und unter *Konfiguration* seine Einstellungen: Abstand der Lautstärke-Schritte, Korrekturen, längste Wartezeit, Fernsehbild (Schalter), Bild-Modus, Abfrage-Intervall und Zeit bis „nicht verfügbar“. Pro Fire TV: ADB erreichbar. Dazu Diagnose-Entitäten und Reparaturhinweise. Alle sind für Automationen nutzbar.
 
 ## 13. Fehlerbehebung
 
@@ -225,3 +227,6 @@ Die Optionen der Integration gelten jetzt pro Fernseher (LG Netcast): erst den F
 
 ### 0.22.0
 Neue Einstellung *Anfragen an Hubs und Netzwerkgeräte im Log mitschreiben* (Einstellungen > Hub, standardmäßig aus): schreibt Befehle und Zustandswechsel von Hubs und verknüpften Geräten ins Home-Assistant-Log (Logger custom_components.harmony_deck.traffic). Das Fire-TV-Abzeichen ist in allen eigenen Skins nur noch ein leuchtendes Symbol. Clay und Glas haben richtige Fire-TV-App-Tasten, Clay eine Lautstärke-Blase. Die Home-Assistant-Warnungen zu veralteten Aufrufen sind behoben.
+
+### 0.27.0
+LG Netcast: Lautstärke-Zeiten und TV-Bild sind jetzt Entitäten am Gerät des Fernsehers in Home Assistant (Abschnitt Konfiguration) statt im Abschnitt Technisch der Karte; frühere Werte werden übernommen. TV-Bild, Hauptfarbe und Bild verfügbar sind immer vorhanden. Neuer Modus **Reihenfolge** im Favoriten-Editor: Pfeile verschieben Tasten innerhalb ihres Abschnitts einer Geräteseite.

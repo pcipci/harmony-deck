@@ -143,30 +143,10 @@ export const directEditorMixin = {
       ${this._ddTechHtml(item, d, t)}</div>`;
   },
 
-  // Technical values of a TV that only knows volume steps (LG Netcast, 0.24.1): how the volume is reached and the
-  // optional TV picture with its main colour. The integration sends them (item.tech) only for such TVs.
+  // 0.27: the technical values of such a TV (volume steps, TV picture) are entities on its device in Home Assistant,
+  // not in the card; here only a pointer to them. The integration sends item.tech only for such TVs.
   _ddTechHtml(item, device, t) {
-    const v = item.tech;
-    if (!v) return "";
-    const num = (key, label, min, max, step, unit) => `<label class="erow"><span>${label}</span><input type="number" min="${min}" max="${max}" step="${step}" value="${esc(String(v[key]))}" data-ddtech="${key}" data-dev="${esc(device)}" aria-label="${esc(label)} (${unit})"></label>`;
-    const mode = [["change", t.ddTechModeChange], ["poll", t.ddTechModePoll]].map(([m, label]) => `<option value="${m}" ${v.picture_mode === m ? "selected" : ""}>${esc(label)}</option>`).join("");
-    const pic = v.picture ? `<label class="erow"><span>${t.ddTechMode}</span><select data-ddtech="picture_mode" data-dev="${esc(device)}">${mode}</select></label>
-        ${v.picture_mode === "poll" ? num("picture_interval_s", t.ddTechInterval, 1, 10, 0.5, "s") : ""}
-        ${num("picture_timeout_s", t.ddTechTimeout, 2, 120, 1, "s")}<div class="ehint">${t.ddTechPicEnts}</div>` : "";
-    return `<details class="ddcaps ddtech" ${this._ddTechOpen ? "open" : ""} data-ddtechbox><summary>${t.ddTech}</summary>
-      <div class="ehint">${t.ddTechHint}</div>
-      <div class="dname">${t.ddTechVolume}</div>
-      ${num("step_gap_ms", t.ddTechGap, 50, 1000, 10, "ms")}${num("corrections", t.ddTechCorr, 0, 5, 1, "x")}${num("settle_s", t.ddTechSettle, 0.5, 10, 0.5, "s")}
-      <div class="ehint">${t.ddTechVolHint}</div>
-      <div class="dname">${t.ddTechPicture}</div>
-      ${this._swRow(t.ddTechPic, `data-ddtech="picture" data-dev="${esc(device)}"`, !!v.picture)}<div class="ehint">${t.ddTechPicHint}</div>${pic}</details>`;
-  },
-
-  _ddTechSave(hub, device, key, raw) {
-    const cur = this._dd?.hubs?.[hub]?.[device]?.tech || {};
-    const value = key === "picture" ? !!raw : key === "picture_mode" ? raw : Number(raw);
-    if (key !== "picture" && key !== "picture_mode" && !Number.isFinite(value)) return;
-    return this._ddSave(hub, device, { tech: { ...cur, [key]: value } });
+    return item.tech ? `<div class="ehint ddtech">${esc(fmtText(t.ddTechWhere, [device]))}</div>` : "";
   },
 
   // All capabilities at a glance (also for comparing two devices); "last seen" = remembered, not reported right now.
@@ -247,8 +227,6 @@ export const directEditorMixin = {
       this._ddSave(hub, s.dataset.dev, { inputs });
     }));
     root.querySelectorAll("select[data-ddoff]").forEach((s) => s.addEventListener("change", () => this._ddSave(s.closest("[data-hub]").dataset.hub, s.dataset.dev, { offCheck: s.value === "watch" ? undefined : s.value })));
-    root.querySelectorAll("[data-ddtechbox]").forEach((el) => el.addEventListener("toggle", () => { this._ddTechOpen = el.open; }));
-    root.querySelectorAll("[data-ddtech]").forEach((el) => el.addEventListener("change", () => this._ddTechSave(el.closest("[data-hub]").dataset.hub, el.dataset.dev, el.dataset.ddtech, el.type === "checkbox" ? el.checked : el.value)));
     root.querySelectorAll("input[data-ddvol]").forEach((i) => i.addEventListener("change", () => this._ddSave(i.closest("[data-hub]").dataset.hub, i.dataset.dev, { volumeDirect: i.checked })));
   },
 };

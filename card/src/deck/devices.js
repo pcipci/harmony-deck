@@ -1,5 +1,6 @@
 // Devices view: device list and the remote of one device (key groups).
 import { ALIASES, keyIcon, prettyCommand, powerCls } from "../shared/commands.js";
+import { applyOrder } from "../shared/keyorder.js";
 import { esc } from "../shared/util.js";
 import { fmtText } from "../shared/i18n.js";
 
@@ -51,7 +52,8 @@ export const devicesMixin = {
         <ha-icon icon="${this._deviceIcon(n, h.id)}"></ha-icon><span>${esc(n)}</span>${roles ? `<small>${esc(roles)}</small>` : ""}</button>`;
     }).join("");
     const remote = sel ? this._hideGroupsHtml(h.id, sel, t) + this._deviceRemote(h, sel, devices[sel], t) : `<div class="hint">${t.pickDevice}</div>`;
-    const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${this._hideMode() ? "mdi:eye-off-outline" : "mdi:star-outline"}"></ha-icon>${this._hideMode() ? t.hideEditHint : t.favEditHint}</div>` : "";
+    const hintKind = this._orderMode() ? ["mdi:swap-horizontal", t.orderEditHint] : this._hideMode() ? ["mdi:eye-off-outline", t.hideEditHint] : ["mdi:star-outline", t.favEditHint];
+    const favHint = this._editMode === "favs" ? `<div class="ehint favhint"><ha-icon icon="${hintKind[0]}"></ha-icon>${hintKind[1]}</div>` : "";
     if (part === "list") return `<div class="devlist">${list}</div>`;
     if (part === "below") return `<div class="devremote">${remote}</div>`;
     return `${favHint}<div class="devlayout"><div class="devlist">${list}</div><div class="devremote">${remote}</div></div>`;
@@ -112,8 +114,8 @@ export const devicesMixin = {
     const rest = commands.filter((c) => !used.has(c) && !power.includes(c) && digitOf(c) === undefined && !(kb && kb.used.has(c)));
     const favs = this._favs(h.id, dev);
     const overrides = { ...(this._settings().keyIcons || {}), ...(this._config.key_icons || {}) };
-    const btn = (c, label, icon = null, extraCls = "") => {
-      const star = this._edit ? this._editMark(h.id, dev, c, favs) : "";
+    const btn = (c, label, icon = null, extraCls = "", pos = null) => {
+      const star = this._edit ? this._editMark(h.id, dev, c, favs, pos) : "";
       return `<button class="key cell ${powerCls(c)} ${extraCls} ${favs.includes(c) ? "isfav" : ""} ${this._hideMode() && this._hiddenKeys(h.id, dev).includes(c) ? "hid" : ""}" title="${esc(c)}" data-hub="${esc(h.id)}" data-device="${esc(dev)}" data-cmd="${esc(c)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ""}<span>${label}</span>${star}</button>`;
     };
     // Groups with only one or two keys would each get a lonely card: collect them into "other".
@@ -126,11 +128,14 @@ export const devicesMixin = {
       const oi = gs.findIndex(([l]) => l === t.other);
       if (oi >= 0) gs[oi] = [t.other, [...gs[oi][1], ...merged], new Set()]; else gs.push([t.other, merged, new Set()]);
     }
+    // Own order of the keys (0.27, order mode): inside each block; a reordered block has no row breaks any more.
+    const order = this._keyOrder(h.id, dev);
+    if (order.length) gs = gs.map(([label, cmds, brk]) => { const o = applyOrder(cmds, order); return [label, o, o.join("\u0000") === cmds.join("\u0000") ? brk : new Set()]; });
     const blocks = gs.map(([label, cmds, brk]) => {
       const icons = cmds.map((c) => keyIcon(c, overrides, dev));
       const useIcons = label !== t.symbols && icons.some(Boolean);
       return `<div class="block ${label === t.symbols ? "sym" : ""} ${label === t.shortcuts ? "short" : ""} ${label === t.windows ? "wide" : ""}"><span class="dname">${esc(label)}</span>
-      <div class="cells ${brk.size > 1 ? "rows" : ""}">${cmds.map((c, i) => btn(c, esc(prettyCommand(c)), useIcons ? icons[i] || "mdi:circle-small" : null, brk.has(c) && brk.size > 1 ? "newrow" : "")).join("")}</div></div>`;
+      <div class="cells ${brk.size > 1 ? "rows" : ""}">${cmds.map((c, i) => btn(c, esc(prettyCommand(c)), useIcons ? icons[i] || "mdi:circle-small" : null, brk.has(c) && brk.size > 1 ? "newrow" : "", { i, n: cmds.length })).join("")}</div></div>`;
     }).join("");
     const dp = this._directHtml(h, dev, t, false, "", true) || {};
     const favBlock = this._favBlock(h, dev, favs.filter((c) => commands.includes(c)), t, overrides);

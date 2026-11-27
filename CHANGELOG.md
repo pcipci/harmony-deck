@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.27.0
+
+### Added
+- **LG Netcast settings as entities on the TV's device.** Each linked LG Netcast TV now has its settings in Home Assistant, on its device *Name (Network)* (Settings > Devices & services > Harmony Deck), section *Configuration*: **Volume step gap** (ms), **Volume corrections**, **Volume longest wait** (s), **TV picture** (switch), **Picture mode** (on change / every few seconds), **Picture poll interval** (s) and **No picture timeout** (s). They can be changed there or by automations and scripts. Values stored by 0.24 to 0.26 are taken over.
+- **Own key order per device.** The favourites editor has a fourth mode, **Order**. Each key of a block on the device page (inputs, sound, menus …) and of the device's favourites gets small arrows; a tap moves it one place left or right inside its block (the first key has no left arrow, the last no right arrow). Stored per device and profile; keys the device learns later come last. The order of the favourites also applies to them in the activities. Fixed layouts (cross, volume, numbers, power, Fire TV keys, keyboard) keep their places.
+
+### Changed
+- **TV picture, Main colour and Picture available are always there** for every linked LG Netcast TV, also while the picture is switched off (then *unknown* / *off*), so automations can refer to them at any time. They go only when the link of the TV is removed.
+- The section **Technical** on the device page of the card is gone; it now points to the device in Home Assistant. A card that is still open with old values no longer overwrites what was set on the entities.
+
 ## 0.26.0
 
 ### Added

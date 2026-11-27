@@ -1016,22 +1016,6 @@
   "ddOffQuiet": "Nur als Hinweis",
   "ddOffIgnore": "Nicht prüfen",
   "ddOffCheckHint": "Was die Karte sagt, wenn dieses Gerät an ist, obwohl die Aktivität es nicht braucht. „Nur als Hinweis“ zeigt es ohne Warnfarbe und ohne Zähler, „Nicht prüfen“ erwähnt es gar nicht. Startbildschirm und Bildschirmschoner gelten als aus, und in der ersten Minute nach einem Aktivitätswechsel wird nichts gemeldet.",
-  "ddTech": "Technisch (Fernseher nur mit Lautstärke-Stufen)",
-  "ddTechHint": "Nur für Fernseher, die Lautstärke-Stufen, aber keinen Zielwert kennen (LG Netcast). Die Standardwerte passen für die meisten.",
-  "ddTechVolume": "Lautstärke",
-  "ddTechGap": "Abstand zwischen zwei Stufen (ms)",
-  "ddTechCorr": "Nachregelungen",
-  "ddTechSettle": "Längste Wartezeit vor der Prüfung (s)",
-  "ddTechVolHint": "Der Regler erreicht den Wert mit einzelnen Lauter-/Leiser-Stufen. Nach der letzten Stufe wird der Pegel etwa jede halbe Sekunde gelesen, bis er gleich bleibt, dann kommen fehlende Stufen. Kürzere Abstände sind schneller, aber ein Fernseher kann Stufen verlieren oder überziehen (Standard 100 ms, 3 Nachregelungen, 2,5 s).",
-  "ddTechPicture": "TV-Bild",
-  "ddTechPic": "TV-Bild für Automationen",
-  "ddTechPicHint": "Fügt diesem Gerät die Entitäten TV-Bild, Hauptfarbe und Bild verfügbar hinzu, z. B. für Farblampen. Das Bild kommt vom Media Player; jedes Bild kostet den Fernseher etwas Arbeit.",
-  "ddTechMode": "Neues Bild",
-  "ddTechModeChange": "Wenn der Media Player ein neues hat",
-  "ddTechModePoll": "Alle paar Sekunden",
-  "ddTechInterval": "Abfrageabstand (s)",
-  "ddTechTimeout": "Zeit ohne Bild (s)",
-  "ddTechPicEnts": "So lange ohne Bild, dann geht Bild verfügbar aus und die Hauptfarbe auf unbekannt; bis dahin behält die Farbe ihren letzten Wert.",
   "ddFits": "Passend",
   "ddOthers": "Weitere",
   "ddVolVia": "In {0} läuft die Lautstärke über „{1}“, nicht über dieses Gerät.",
@@ -1106,5 +1090,8 @@
     "channel": "Programm",
     "transport": "Wiedergabe",
     "colors": "Farbtasten"
-  }
+  },
+  "ddTechWhere": "Lautstärke-Stufen und TV-Bild dieses Fernsehers stellst du in Home Assistant ein: Einstellungen › Geräte & Dienste › Harmony Deck › Gerät „{0} (Netzwerk)“, Abschnitt Konfiguration.",
+  "orderKeys": "Reihenfolge",
+  "orderEditHint": "Tippe die Pfeile auf einer Taste an, um sie innerhalb ihres Abschnitts eine Stelle nach links oder rechts zu schieben. Gilt für dieses Gerät, auf seiner Seite und in seinen Favoriten (auch in den Aktivitäten). Neue Tasten des Geräts kommen ans Ende."
 }

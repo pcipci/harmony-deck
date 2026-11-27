@@ -86,6 +86,14 @@ async def test_wait_stable_stops_when_level_stays(hass: HomeAssistant, monkeypat
     assert reads == []
 
 
+def _seed(hass, links):
+    """Stored links as an older version (or the entities) left them, with their technical values."""
+    from custom_components.harmony_deck.directdev import clean_config
+
+    d = hass.data[DOMAIN]
+    d["settings"] = {**d["settings"], "directDevices": clean_config(links)}
+
+
 def _netcast(hass, name="tv", uid="tv1", picture="/api/media_player_proxy/media_player.tv?token=x&cache=1"):
     er.async_get(hass).async_get_or_create("media_player", "lg_netcast", uid, suggested_object_id=name)
     hass.states.async_set(f"media_player.{name}", "on", {"supported_features": 4 | 8 | 1024, "volume_level": 0.2,
@@ -104,6 +112,7 @@ async def test_tech_values_on_the_link(hass: HomeAssistant, hass_ws_client):
     hass.config_entries.async_update_entry(entry, options={"devices": {"media_player.tv": {"step_gap_ms": 130}}})
     client = await hass_ws_client(hass)
     links = {REMOTE: {"LG": {"entity": "media_player.tv"}, "LG2": {"entity": "media_player.tv2", "tech": {"step_gap_ms": 120, "corrections": 2, "settle_s": 1.5, "picture_mode": "x"}}}}
+    _seed(hass, links)          # 0.27: values come from the entities (or older versions), not from the card
     await client.send_json_auto_id({"type": "harmony_deck/save_settings", "settings": {"directDevices": links}})
     assert (await client.receive_json())["success"]
     assert direct.step_options(hass, "media_player.tv2") == {"step_gap_ms": 120, "corrections": 2, "settle_s": 1.5}
@@ -140,6 +149,7 @@ async def test_tv_picture_and_main_color(hass: HomeAssistant, hass_ws_client, mo
 
     async def tech(**values):
         link = {"entity": "media_player.tv", **({"tech": {"step_gap_ms": 100, **values}} if values else {})}
+        _seed(hass, {REMOTE: {"LG": link}})
         await client.send_json_auto_id({"type": "harmony_deck/save_settings", "settings": {"directDevices": {REMOTE: {"LG": link}}}})
         assert (await client.receive_json())["success"]
         for _ in range(3):
@@ -153,7 +163,11 @@ async def test_tv_picture_and_main_color(hass: HomeAssistant, hass_ws_client, mo
         return {e.unique_id.split("::")[-1]: e.entity_id for e in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
                 if e.unique_id.split("::")[-1] in screen.KEYS}
 
-    assert ents() == {}         # off by default
+    ids = ents()                # 0.27: always there, without a picture "unknown" / off
+    assert set(ids) == set(screen.KEYS)
+    assert hass.states.get(ids["tv_picture"]).state == "unknown"
+    assert hass.states.get(ids["main_color"]).state == "unknown"
+    assert hass.states.get(ids["picture_available"]).state == "off"
     await tech(picture=True, picture_mode="change", picture_timeout_s=5)
     ids = ents()
     assert set(ids) == set(screen.KEYS)
@@ -203,9 +217,18 @@ async def test_tv_picture_and_main_color(hass: HomeAssistant, hass_ws_client, mo
     await hass.async_block_till_done()
     assert len(asked) == n
 
-    # switched off on the device page: the entities go
+    # switched off: the entities stay (0.27), the feed goes, the values are unknown
     hass.states.async_set("media_player.tv", "on", {"entity_picture": "/x"})
     await tech(picture=False, picture_mode="poll")
-    assert ents() == {}
+    assert set(ents()) == set(screen.KEYS)
     assert not hass.data[DOMAIN]["screen"].feeds
+    assert hass.states.get(ids["main_color"]).state == "unknown"
+    assert hass.states.get(ids["picture_available"]).state == "off"
+    # link gone: the entities go
+    await client.send_json_auto_id({"type": "harmony_deck/save_settings", "settings": {"directDevices": {}}})
+    assert (await client.receive_json())["success"]
+    freezer.tick(timedelta(seconds=0.1))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert ents() == {}
     await asyncio.sleep(0)

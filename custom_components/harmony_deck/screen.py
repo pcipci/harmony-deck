@@ -1,6 +1,8 @@
 """TV picture of a linked network TV (LG Netcast) and its main colour, for automations (e.g. coloured lamps).
 
-Optional per device (card: device page > Technical, off by default). The picture comes from the media player itself
+Every linked LG Netcast TV has these entities on its network device (0.27: always, "unknown" while the picture is
+off), next to its settings (techent.py: volume steps and picture, "Configuration" on the device page in Home Assistant).
+The picture itself is off by default (switch "TV picture" on the device). The picture comes from the media player itself
 (its entity_picture, the same one Home Assistant shows), so there is no own connection to the TV and no token is kept.
 Per device: "TV picture" (image), "Main colour" (sensor, #rrggbb with rgb_color) and "Picture available" (binary sensor).
 
@@ -30,6 +32,9 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 KEYS = ("tv_picture", "main_color", "picture_available")
+# Settings of the TV as entities (0.27, techent.py); kept with the measurements by the same manager.
+TECH_KEYS = ("step_gap_ms", "corrections", "settle_s", "picture", "picture_mode", "picture_interval_s", "picture_timeout_s")
+ALL_KEYS = KEYS + TECH_KEYS
 _SEP = "::"
 _FETCH_TIMEOUT = 10     # seconds one picture may take
 _SMOOTH = 0.5           # share of the new colour (the rest is the last one), against flicker
@@ -191,8 +196,8 @@ def _player(hass: HomeAssistant, entity: str) -> Any:
     return component.get_entity(entity) if component is not None else None
 
 
-def picture_devices(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, dict[str, Any]]:
-    """Linked players with the TV picture switched on: entity -> their technical values."""
+def tv_devices(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
+    """All linked players with own settings (LG Netcast): entity -> their technical values."""
     from . import direct
 
     out: dict[str, dict[str, Any]] = {}
@@ -201,20 +206,38 @@ def picture_devices(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, dict[s
             entity = link["entity"]
             if entity in out or direct.platform(hass, entity) not in directdev.OPTION_PLATFORMS:
                 continue
-            opts = direct.device_tech(hass, entity)
-            if opts["picture"]:
-                out[entity] = opts
+            out[entity] = direct.device_tech(hass, entity)
     return out
 
 
+def picture_devices(hass: HomeAssistant, entry: ConfigEntry | None = None) -> dict[str, dict[str, Any]]:
+    """Linked players with the TV picture switched on: entity -> their technical values."""
+    return {e: o for e, o in tv_devices(hass).items() if o["picture"]}
+
+
 class ScreenManager:
-    """Keeps one feed per player with the picture on, and the three entities of each on its network device."""
+    """Keeps one feed per player with the picture on, and the entities of every linked TV on its network device."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass, self.entry = hass, entry
         self.feeds: dict[str, Feed] = {}
+        self._listeners: dict[str, list[Callable[[], None]]] = {}
         self._adders: dict[str, Callable[[list[Any]], None]] = {}
         self._added: set[tuple[str, str]] = set()
+
+    def listen(self, player: str, listener: Callable[[], None]) -> Callable[[], None]:
+        """Called on a new picture, when it expires, and when the settings of the player change."""
+        self._listeners.setdefault(player, []).append(listener)
+
+        def remove() -> None:
+            if listener in self._listeners.get(player, []):
+                self._listeners[player].remove(listener)
+        return remove
+
+    @callback
+    def _notify(self, player: str) -> None:
+        for listener in list(self._listeners.get(player, [])):
+            listener()
 
     @callback
     def register(self, key: str, adder: Callable[[list[Any]], None]) -> None:
@@ -227,7 +250,8 @@ class ScreenManager:
         from .lock import lock_hubs
         from .netent import link_of_entity, link_id
 
-        wanted = picture_devices(self.hass, self.entry)
+        tvs = tv_devices(self.hass)
+        wanted = {e: o for e, o in tvs.items() if o["picture"]}
         for entity in list(self.feeds):
             feed = self.feeds[entity]
             if entity not in wanted or feed.opts != wanted[entity]:
@@ -239,11 +263,12 @@ class ScreenManager:
                     del self.feeds[entity]
         for entity, opts in wanted.items():
             if entity not in self.feeds:
-                self.feeds[entity] = Feed(self.hass, entity, opts)
-                self.feeds[entity].start()
+                self.feeds[entity] = feed = Feed(self.hass, entity, opts)
+                feed.add_listener(lambda e=entity: self._notify(e))
+                feed.start()
         hubs = {info["remote"]: hub_id for hub_id, info in lock_hubs(self.hass).items()}
         bases: dict[str, str] = {}
-        for entity in wanted:
+        for entity in tvs:
             link = link_of_entity(self.hass, entity)
             if link is None:
                 continue
@@ -253,13 +278,15 @@ class ScreenManager:
                 if (key, entity) not in self._added:
                     self._added.add((key, entity))
                     adder([_make(key, self, self.entry, entity, hub, device, hubs.get(hub))])
-        # entities of players whose picture was switched off (or whose link is gone) go
-        keep = {f"{b}{_SEP}{k}" for b in bases.values() for k in KEYS}
+        # entities of TVs whose link is gone (or that are no LG Netcast any more) go
+        keep = {f"{b}{_SEP}{k}" for b in bases.values() for k in ALL_KEYS}
         ents = er.async_get(self.hass)
         for ent in er.async_entries_for_config_entry(ents, self.entry.entry_id):
-            if ent.unique_id.split(_SEP, 1)[-1] in KEYS and _SEP in ent.unique_id and ent.unique_id not in keep:
+            if _SEP in ent.unique_id and ent.unique_id.split(_SEP, 1)[-1] in ALL_KEYS and ent.unique_id not in keep:
                 ents.async_remove(ent.entity_id)
         self._added = {(k, e) for k, e in self._added if e in bases}
+        for entity in bases:        # settings or picture on/off may have changed: entities show the new state
+            self._notify(entity)
 
     @callback
     def stop(self) -> None:
@@ -280,6 +307,7 @@ def manager(hass: HomeAssistant, entry: ConfigEntry) -> ScreenManager:
 
 
 def _make(key: str, mgr: ScreenManager, entry: ConfigEntry, entity: str, hub: str, device: str, hub_id: str | None) -> Any:
-    from . import screenent
+    from . import screenent, techent
 
-    return screenent.CLASSES[key](mgr, entry, entity, hub, device, hub_id)
+    cls = screenent.CLASSES.get(key) or techent.CLASSES[key]
+    return cls(mgr, entry, entity, hub, device, hub_id)

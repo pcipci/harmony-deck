@@ -22,8 +22,8 @@ export const settingsEditorMixin = {
     if (this._editMode === "actions") return `<div class="editbox">${this._actionsEdit(h, t)}</div>`;
     if (this._editMode === "info") return `<div class="editbox infoarea">${this._infoArea(h, t)}</div>`;
     if (this._editMode === "favs") {
-      const kind = ["act", "hide"].includes(this._favKind) ? this._favKind : "dev";
-      const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button></div>`;
+      const kind = ["act", "hide", "order"].includes(this._favKind) ? this._favKind : "dev";
+      const sw = `<div class="favkind"><button class="${kind === "dev" ? "sel" : ""}" data-favkind="dev"><ha-icon icon="mdi:devices"></ha-icon><span>${t.devicesTab}</span></button><button class="${kind === "act" ? "sel" : ""}" data-favkind="act"><ha-icon icon="mdi:remote"></ha-icon><span>${t.activities}</span></button><button class="${kind === "hide" ? "sel" : ""}" data-favkind="hide"><ha-icon icon="mdi:eye-off-outline"></ha-icon><span>${t.hideKeys}</span></button><button class="${kind === "order" ? "sel" : ""}" data-favkind="order"><ha-icon icon="mdi:swap-horizontal"></ha-icon><span>${t.orderKeys}</span></button></div>`;
       return sw + (kind === "act" ? `<div class="editbox">${this._favEdit(h, t, true)}</div>` : body);
     }
     return body;

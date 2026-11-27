@@ -60,7 +60,9 @@ When an activity does not start right (TV off, wrong input), open the **life rin
 
 **ⓘ › Favorites** → choose a device → tap keys (star). Favourites appear as their own block above the remote.
 
-**Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. Above the keys of the device the **key groups** (cross, Back / Home / Menu, volume, channel, playback, colour keys) can be hidden as a whole (0.26). This is not the lock: hidden keys are only not shown. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
+**Hide keys:** in the same editor choose **Hide keys**, then tap the keys of a device you never use (eye). They disappear in the device view and in the remotes of the activities, for the current profile. Tap again to bring them back. Above the keys of the device the **key groups** (cross, Back / Home / Menu, volume, channel, playback, colour keys) can be hidden as a whole (0.26). This is not the lock: hidden keys are only not shown.
+
+**Order (0.27):** the fourth button of the editor, **Order**, puts small arrows on the keys of each block of a device page (inputs, sound, menus …) and on the device's favourites. Tap an arrow to move the key one place left or right inside its block; the first key has no left arrow, the last no right arrow. Stored per device (and profile); keys the device learns later come last. The order of the favourites also counts in the activities. Cross, volume, numbers, power, Fire TV keys and the keyboard keep their fixed layout. Under Settings › Activities you set favourites that appear only in one activity (for example the HDMI input of the TV in "Fire TV").
 
 ## 7. Actions and sequences
 
@@ -169,7 +171,7 @@ The lock is a household aid, not a security product.
 
 ## 12. Entities
 
-Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Sequence (state and progress of the actions), Released until, Last intervention, Interventions today, Intervention (event: fires with `what` each time the lock switches something off, so an automation can notify you), Hub configuration readable, Activities and Devices (the names as a short list, "Bluray, Games and 4 more"; the number and the full list as attributes), Actions (the same for the stored actions, with id, steps and button per action), Differences, and one button per action. Per linked network device: a device "Name (Network)" with Platform, Capabilities and State. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
+Per hub: Lock, Lock mode, Release duration, Release, Lock active (with the allowed activities as attribute), Sequence (state and progress of the actions), Released until, Last intervention, Interventions today, Intervention (event: fires with `what` each time the lock switches something off, so an automation can notify you), Hub configuration readable, Activities and Devices (the names as a short list, "Bluray, Games and 4 more"; the number and the full list as attributes), Actions (the same for the stored actions, with id, steps and button per action), Differences, and one button per action. Per linked network device: a device "Name (Network)" with Platform, Capabilities and State. An LG Netcast TV also has (0.27) **TV picture**, **Main colour** and **Picture available** (always there; *unknown* / *off* while the picture is switched off) and, under *Configuration*, its settings: Volume step gap, Volume corrections, Volume longest wait, TV picture (switch), Picture mode, Picture poll interval and No picture timeout. Per Fire TV: ADB reachable. Plus diagnostic entities and repair hints. All can be used in automations.
 
 ## 13. Troubleshooting
 
@@ -225,3 +227,6 @@ Options of the integration are now per TV (LG Netcast): pick the TV, then gap be
 
 ### 0.22.0
 New setting *Log requests to hubs and network devices* (Settings > Hub, off by default) writes commands and state changes of hubs and linked devices into the Home Assistant log (logger custom_components.harmony_deck.traffic). The Fire TV badge is now only a glowing symbol in every own skin. Clay and Glass got proper Fire TV app keys, Clay a bubble volume bar. Fixed the Home Assistant deprecation warnings.
+
+### 0.27.0
+LG Netcast: volume timings and TV picture are now entities on the TV's device in Home Assistant (section Configuration) instead of the section Technical of the card; earlier values are taken over. TV picture, Main colour and Picture available are always there. New mode **Order** in the favourites editor: arrows move keys inside their block of a device page.

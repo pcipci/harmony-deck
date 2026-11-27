@@ -33,12 +33,12 @@ class _ScreenEntity(Entity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        if feed := self._feed:
-            self.async_on_remove(feed.add_listener(self._update))
+        self.async_on_remove(self._mgr.listen(self._player, self._update))
 
     @callback
     def _update(self) -> None:
-        self.async_write_ha_state()
+        if self.hass is not None:
+            self.async_write_ha_state()
 
 
 class TvPicture(_ScreenEntity, ImageEntity):
@@ -54,12 +54,10 @@ class TvPicture(_ScreenEntity, ImageEntity):
         if feed is not None and feed.updated is not None:
             self._attr_image_last_updated = feed.updated
             self._attr_content_type = feed.content_type
-        self.async_write_ha_state()
-
-    @property
-    def available(self) -> bool:
-        feed = self._feed
-        return feed is not None and feed.image is not None
+        else:       # picture off (0.27: the entity stays, "unknown")
+            self._attr_image_last_updated = None
+        if self.hass is not None:
+            self.async_write_ha_state()
 
     async def async_image(self) -> bytes | None:
         feed = self._feed
@@ -121,7 +119,7 @@ CLASSES = {"tv_picture": TvPicture, "main_color": MainColor, "picture_available"
 
 
 def setup_platform(key: str):
-    """async_setup_entry part for one platform: the manager adds the entity of each player with the picture on."""
+    """async_setup_entry part for one platform: the manager adds the entity of each linked TV."""
 
     async def _setup(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
         screen.manager(hass, entry).register(key, async_add_entities)

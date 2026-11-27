@@ -185,6 +185,23 @@ async def ws_info(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     connection.send_result(msg["id"], result)
 
 
+def _keep_tech(hass: HomeAssistant, links: dict[str, Any]) -> dict[str, Any]:
+    """The technical values of a TV belong to its entities in Home Assistant (0.27, techent.py): a card never changes
+    them (an open card may still hold old ones), so each link keeps what is stored for its player."""
+    from .direct import config
+
+    stored = {l["entity"]: l["tech"] for devs in config(hass).values() for l in devs.values() if "tech" in l}
+    out: dict[str, Any] = {}
+    for hub, devices in links.items():
+        out[hub] = {}
+        for label, link in devices.items():
+            link = {k: v for k, v in link.items() if k != "tech"}
+            if link.get("entity") in stored:
+                link["tech"] = stored[link["entity"]]
+            out[hub][label] = link
+    return out
+
+
 @websocket_api.websocket_command(
     {vol.Required("type"): f"{DOMAIN}/save_settings", vol.Required("settings"): dict, vol.Optional("profile"): str}
 )
@@ -200,7 +217,7 @@ async def ws_save_settings(hass: HomeAssistant, connection: websocket_api.Active
     if "irVolume" in settings:
         settings["irVolume"] = clean_config(settings["irVolume"])
     if "directDevices" in settings:
-        settings["directDevices"] = clean_direct(settings["directDevices"])
+        settings["directDevices"] = _keep_tech(hass, clean_direct(settings["directDevices"]))
     if "directSuggest" in settings:
         settings["directSuggest"] = clean_suggest(settings["directSuggest"])
     if "activityPlayers" in settings:

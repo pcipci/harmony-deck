@@ -1016,22 +1016,6 @@
   "ddOffQuiet": "Just a note",
   "ddOffIgnore": "Don't check",
   "ddOffCheckHint": "What the card says when this device is on although the activity doesn't need it. “Just a note” lists it without warning colour or count; “Don't check” never mentions it. Home screen and screensaver count as off, and for the first minute after an activity change nothing is reported.",
-  "ddTech": "Technical (TV with volume steps only)",
-  "ddTechHint": "Only for TVs that know volume steps but no target level (LG Netcast). The defaults fit most TVs.",
-  "ddTechVolume": "Volume",
-  "ddTechGap": "Gap between two steps (ms)",
-  "ddTechCorr": "Corrections",
-  "ddTechSettle": "Longest wait before checking (s)",
-  "ddTechVolHint": "The slider reaches the level with single louder / quieter steps. After the last step the level is read about every half second until it stays the same, then missing steps are sent. Shorter gaps are faster, but a TV may drop or overshoot steps (default 100 ms, 3 corrections, 2.5 s).",
-  "ddTechPicture": "TV picture",
-  "ddTechPic": "TV picture for automations",
-  "ddTechPicHint": "Adds the entities TV picture, Main colour and Picture available to this device, e.g. to colour lamps. The picture comes from the media player; every picture costs the TV a little work.",
-  "ddTechMode": "New picture",
-  "ddTechModeChange": "When the media player has a new one",
-  "ddTechModePoll": "Every few seconds",
-  "ddTechInterval": "Poll gap (s)",
-  "ddTechTimeout": "Time without picture (s)",
-  "ddTechPicEnts": "Without a picture for this long, Picture available goes off and the main colour unknown; until then the colour keeps its last value.",
   "ddFits": "Matching",
   "ddOthers": "Others",
   "ddVolVia": "In {0} the volume goes through \"{1}\", not through this device.",
@@ -1106,5 +1090,8 @@
     "channel": "Channel",
     "transport": "Playback",
     "colors": "Colour keys"
-  }
+  },
+  "ddTechWhere": "Volume steps and TV picture of this TV are set in Home Assistant: Settings › Devices & services › Harmony Deck › device “{0} (Network)”, section Configuration.",
+  "orderKeys": "Order",
+  "orderEditHint": "Tap the arrows on a key to move it one place left or right inside its block. Applies to this device, on its page and in its favourites (also in the activities). Keys the device learns later come last."
 }

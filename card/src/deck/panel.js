@@ -152,6 +152,11 @@ export const panelMixin = {
     b.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       if (this._edit) {
+        if (this._orderMode?.()) {
+          const ord = e.target?.closest?.("[data-ord]");
+          if (ord) this._moveKey(b, Number(ord.dataset.ord));
+          return;
+        }
         if (b.classList.contains("cell")) this._toggleFav(b.dataset.hub, b.dataset.device, b.dataset.cmd);
         return;
       }

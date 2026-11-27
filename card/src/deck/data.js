@@ -167,6 +167,9 @@ export const dataMixin = {
   // Keys the user hid for a device (own list per hub, separate from the lock); the editor in hide mode still sees everything.
   _hiddenKeys(hubId, dev) { return this._settings().hideKeys?.[hubId]?.[dev] || []; },
   _hideMode() { return this._editMode === "favs" && this._favKind === "hide"; },
+  // Order mode (0.27): arrows on the keys of the blocks of a device page.
+  _orderMode() { return this._editMode === "favs" && this._favKind === "order"; },
+  _keyOrder(hubId, dev) { return this._settings().keyOrder?.[hubId]?.[dev] || []; },
 
   _devicesOf(hubId) {
     const all = this._devicesRaw(hubId);

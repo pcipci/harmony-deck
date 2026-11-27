@@ -32,10 +32,10 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 | **Activities** | Tiles with icons, the running one highlighted, hold to switch off, optional hold to switch between activities |
 | **Remote** | Volume, D‑pad, channel, transport, colour keys, number pad, each sent to the right device of the activity |
 | **Devices** | One remote per device, keys grouped (inputs, sound, menus …), keyboard for PC/Mac devices |
-| **Favourites** | Per device and per activity; keys you never use can be hidden per device |
+| **Favourites** | Per device and per activity; keys you never use can be hidden per device, and the key order set by yourself |
 | **Actions** | Own buttons and sequences of Harmony keys, pauses and Home Assistant actions, with conditions (wait until, if), values (brightness, colour, volume, source …), volume for infrared devices, network commands, step list, progress and stop, favorites per action, as a button or a tile; every action is also a Home Assistant button |
 | **Network control** | Link a Harmony device to its media player (TV, receiver): state, exact volume (a slider instead of +/- in the remote) and source over the network, detected platform with its peculiarities, target vs. actual check with a one-tap fix, careful suggestions you can switch off |
-| **TV picture** | Optional for LG Netcast TVs: picture, main colour and "picture available" as entities for automations (e.g. coloured lamps); options per TV |
+| **TV picture** | Optional for LG Netcast TVs: picture, main colour and "picture available" as entities for automations (e.g. coloured lamps); settings as entities on the TV's device |
 | **Fire TV** | Apps, play/pause, standby, text input and extra keys over ADB; on a Fire TV Cube the volume can go through its infrared sender |
 | **Lock** | Off / always / schedule, timed release, allowed activities and apps, devices switched off with the Fire TV, last 100 interventions |
 | **Looks** | 15 skins incl. the effect skins Terminal, Tube radio, Thermal (heat vision with soft heat spots, segment letters), Nixie (graphite keys with chrome edge, glowing direct keys, toggle switches), Nostromo (amber ship computer), Glass (acrylic plates lit from behind, three light styles), Clay (puffy bubbles you press) and Pebble (grey river stones with painted symbols, water in the volume groove); an own skin per room; tile and key styles, coloured icons, light and dark |

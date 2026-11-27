@@ -234,11 +234,29 @@
     "switch": {
       "lock": {
         "name": "Lock"
+      },
+      "picture": {
+        "name": "TV picture"
       }
     },
     "number": {
       "release_minutes": {
         "name": "Release duration"
+      },
+      "step_gap_ms": {
+        "name": "Volume step gap"
+      },
+      "corrections": {
+        "name": "Volume corrections"
+      },
+      "settle_s": {
+        "name": "Volume longest wait"
+      },
+      "picture_interval_s": {
+        "name": "Picture poll interval"
+      },
+      "picture_timeout_s": {
+        "name": "No picture timeout"
       }
     },
     "button": {
@@ -253,6 +271,13 @@
           "off": "Off",
           "always": "Always",
           "schedule": "Schedule"
+        }
+      },
+      "picture_mode": {
+        "name": "Picture mode",
+        "state": {
+          "change": "On change",
+          "poll": "Every few seconds"
         }
       }
     },

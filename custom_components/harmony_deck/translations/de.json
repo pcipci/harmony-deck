@@ -234,11 +234,29 @@
     "switch": {
       "lock": {
         "name": "Sperre"
+      },
+      "picture": {
+        "name": "Fernsehbild"
       }
     },
     "number": {
       "release_minutes": {
         "name": "Freigabe-Dauer"
+      },
+      "step_gap_ms": {
+        "name": "Lautstärke: Abstand der Schritte"
+      },
+      "corrections": {
+        "name": "Lautstärke: Korrekturen"
+      },
+      "settle_s": {
+        "name": "Lautstärke: längste Wartezeit"
+      },
+      "picture_interval_s": {
+        "name": "Bild: Abfrage-Intervall"
+      },
+      "picture_timeout_s": {
+        "name": "Bild: Zeit bis „nicht verfügbar“"
       }
     },
     "button": {
@@ -253,6 +271,13 @@
           "off": "Aus",
           "always": "Immer",
           "schedule": "Zeitplan"
+        }
+      },
+      "picture_mode": {
+        "name": "Bild-Modus",
+        "state": {
+          "change": "Bei Änderung",
+          "poll": "Alle paar Sekunden"
         }
       }
     },

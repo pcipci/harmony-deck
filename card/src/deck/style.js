@@ -551,7 +551,8 @@ export const styleMixin = {
       .profchip select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
       .favkind { display: flex; gap: 6px; } .favkind button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; font: inherit; padding: 10px 12px; border-radius: 999px; background: var(--hr-tile-bg); color: var(--hr-muted); cursor: pointer; }
       .favkind button { min-width: 0; padding: 10px 8px; gap: 6px; } .favkind button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .favkind button.sel { background: var(--hr-accent); color: var(--hr-on-accent); } .favkind ha-icon { --mdc-icon-size: 20px; }
+      .favkind button.sel { background: var(--hr-accent); color: var(--hr-on-accent); } .favkind ha-icon { --mdc-icon-size: 20px; } .favkind { flex-wrap: wrap; } .favkind button { flex: 1 1 calc(50% - 6px); }
+      @container (min-width: 520px) { .favkind button { flex: 1 1 0; } }
       .entpick { position: relative; min-width: 0; }
       .entlist { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow: auto; border-radius: 12px; background: var(--card-background-color, #fff); border: 1px solid var(--divider-color, rgba(128,128,128,.4)); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
       .entopt { display: flex; flex-direction: column; align-items: flex-start; width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: var(--primary-text-color); background: none; border: none; padding: 8px 12px; cursor: pointer; }
@@ -585,6 +586,8 @@ export const styleMixin = {
       .cell ha-icon { --mdc-icon-size: 18px; flex: none; }
       .cell { position: relative; } .cell.hid { opacity: .45; } .cell .star.eye { color: var(--hr-muted); } .cell.hid .star.eye { color: var(--hr-danger, #e55); }
       .cell .star { position: absolute; top: 3px; right: 3px; --mdc-icon-size: 15px; color: var(--hr-accent); }
+      .cell .ord { position: absolute; bottom: 0; top: 0; width: 34%; display: flex; align-items: flex-end; padding: 0 0 2px; color: var(--hr-accent); cursor: pointer; }
+      .cell .ord.l { left: 0; justify-content: flex-start; } .cell .ord.r { right: 0; justify-content: flex-end; } .cell .ord ha-icon { --mdc-icon-size: 18px; }
       .cell.isfav { box-shadow: inset 0 0 0 1.5px var(--hr-accent); }
       .block.favs { background: color-mix(in srgb, var(--hr-accent) 10%, transparent); }
       .power .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); }

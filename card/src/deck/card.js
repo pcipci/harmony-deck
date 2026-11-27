@@ -41,6 +41,8 @@ import { infoMixin } from "./info.js";
 import { keyboardMixin } from "./keyboard.js";
 import { loadText } from "../shared/i18n.js";
 import { lockMarkMixin } from "./lock-mark.js";
+import { mediaBarEditorMixin } from "./mediabar-editor.js";
+import { mediaBarMixin } from "./mediabar.js";
 import { mismatchMixin } from "./mismatch.js";
 import { optionsMixin } from "./options.js";
 import { panelMixin } from "./panel.js";
@@ -82,11 +84,11 @@ export class HarmonyDeckCard extends HTMLElement {
     const hubs = this._hubs();
     this._mmWatch(hubs);
     this._slWatch(hubs);
-    const key = JSON.stringify([this._mm, this._sl, hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]), this._info, this._editMode, this._modeState, this._device, this._hubSel, this._menuOpen, this._hintSeen, this._actPanel, this._actPanelOff, hubs.map((h) => this._watched(h)), hubs.map((h) => { const f = this._fireInfo(h.id); return f && [f.mode, f.app]; }),
+    const key = JSON.stringify([this._mm, this._sl, hubs.map((h) => [h.id, h.name, h.state, h.current, h.starting, h.list]), this._info, this._editMode, this._modeState, this._device, this._hubSel, this._menuOpen, this._hintSeen, this._actPanel, this._actPanelOff, hubs.map((h) => this._watched(h)), this._mediaSig(hubs), hubs.map((h) => { const f = this._fireInfo(h.id); return f && [f.mode, f.app]; }),
       hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])]);
     // While a running action is held to stop it, a new step must not redraw the button under the finger.
     this._eyeUpdate(hubs);
-    if (key === this._key || this._holdingAct || this._volDrag) return;
+    if (key === this._key || this._holdingAct || this._volDrag || this._mDrag) return;
     this._key = key;
     // Every redraw keeps the scroll position (a state change must not throw the page back to the top); jumps to the remote are asked for explicitly.
     const keep = this._scrollRemote ? null : this._scrollState();
@@ -113,6 +115,7 @@ export class HarmonyDeckCard extends HTMLElement {
     window.removeEventListener("pagehide", this._onViewLeave);
     window.removeEventListener("scroll", this._onViewScroll, { capture: true });
     this._ro?.disconnect();
+    clearInterval(this._mTimer); this._mTimer = null;
     if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
   }
 
@@ -122,6 +125,6 @@ export class HarmonyDeckCard extends HTMLElement {
 }
 
 // The functions of the card live in one module per area; here they are attached to the class.
-for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, mediaBarMixin, mediaBarEditorMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
   Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
 }

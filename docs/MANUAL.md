@@ -41,6 +41,9 @@ The **gear** (top right, next to the room tabs) opens a small window with the th
 - **Status line (0.15.5):** one chip per thing that runs: the Harmony activity, the Fire TV (app, pause, standby) and each linked network device with its source ("LG TV · HDMI 1"; tap it to open the device). When everything is off there are no chips. Lock, profile, help, info and the collapse arrow sit at the right of the row with the room tabs.
 - **Collapse header** (on by default): when a remote is open, the chips shrink to one text line ("Bluray · Fire TV Netflix · LG TV HDMI 1", or "all off"). Tap it or the arrow to expand.
 
+- **Media bar (0.25):** in *Settings › Activities › Media player* choose one media player per activity (never automatic; players of the hub's room come first). The bar under the keys shows title and app, progress with *elapsed / total* (draggable if the player can seek), play / pause / stop and jumps of 10 and 30 seconds, and only what the player can do. A Fire TV jumps with fast-forward / rewind key presses and shows the bar only when it reports a title or position. *Show media bar* hides it per activity.
+- **Fire TV keys in activities (0.25):** with a linked Fire TV a row under the cross offers Search and Settings (and Back / Home / Menu when the cross belongs to another device).
+
 ## 4. Devices
 
 The slider **Activities / Devices** switches to the device view. Tap a device to open its own remote with all its commands in groups (inputs, sound, menus, numbers …). Devices are never locked, not even by the lock.

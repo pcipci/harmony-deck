@@ -188,17 +188,43 @@
   "deviceIcons": "Device icons",
   "iconAuto": "Automatic",
   "glassLook": "Light style",
-  "glassLooks": { "a": "Plate lights", "b": "Text lights", "c": "Mix" },
+  "glassLooks": {
+    "a": "Plate lights",
+    "b": "Text lights",
+    "c": "Mix"
+  },
   "glassBg": "Background",
-  "glassBgs": {"dark": "Black", "carbon": "Black with texture", "alu": "Aluminium", "board": "Circuit board"},
+  "glassBgs": {
+    "dark": "Black",
+    "carbon": "Black with texture",
+    "alu": "Aluminium",
+    "board": "Circuit board"
+  },
   "pebblePaint": "Painted",
-  "pebblePaints": {"off": "Off", "a": "A: One colour", "b": "B: Rainbow", "c": "C: Painted pictures"},
+  "pebblePaints": {
+    "off": "Off",
+    "a": "A: One colour",
+    "b": "B: Rainbow",
+    "c": "C: Painted pictures"
+  },
   "pebbleBg": "Background",
   "pebbleFlaw": "Paint flaws",
-  "pebbleFlaws": {"clean": "Clean", "light": "Light", "strong": "Strong"},
-  "pebbleBgs": {"a": "Aquamarine", "b": "Lagoon", "c": "Caribbean", "d": "Dark teal"},
+  "pebbleFlaws": {
+    "clean": "Clean",
+    "light": "Light",
+    "strong": "Strong"
+  },
+  "pebbleBgs": {
+    "a": "Aquamarine",
+    "b": "Lagoon",
+    "c": "Caribbean",
+    "d": "Dark teal"
+  },
   "glassActColors": "Colour per activity",
-  "glassActColorsOpts": {"off": "Uniform (violet)", "on": "Per activity"},
+  "glassActColorsOpts": {
+    "off": "Uniform (violet)",
+    "on": "Per activity"
+  },
   "keyStyle": "Key shape",
   "keyStyles": {
     "skin": "As the look",
@@ -334,9 +360,9 @@
     "pebbleFlaw": "Only for the Pebble look. How strongly the painting shows small flaws where the grey stone shows through: clean, light (default) or strong.",
     "pebbleBg": "Only for the Pebble look. Caribbean is the default: bright turquoise with a sandy beach. Aquamarine and Lagoon are plainer, Dark teal is the calm dark variant.",
     "glassActColors": "Only for the Glass look. Uniform: the running activity and its devices glow violet. Per activity: each activity has its own colour (violet, cyan, magenta, orange, indigo), the devices of the running activity glow in that colour.",
-  "fillView": "The card fills the full height of the view so the background does not stop halfway. The width is set by the dashboard.",
-  "jumpRunning": "When the card opens it jumps to the room where something is running (activity, Fire TV or a linked device). If several run, the one used last wins. If everything is off you see the default view.",
-  "rememberView": "Coming back to the card (e.g. after switching apps) opens the room, the chosen device and the scroll position you left, per phone or tablet. After this time without use, or when an activity was changed elsewhere meanwhile, the card starts as usual. Windows such as settings are not reopened.",
+    "fillView": "The card fills the full height of the view so the background does not stop halfway. The width is set by the dashboard.",
+    "jumpRunning": "When the card opens it jumps to the room where something is running (activity, Fire TV or a linked device). If several run, the one used last wins. If everything is off you see the default view.",
+    "rememberView": "Coming back to the card (e.g. after switching apps) opens the room, the chosen device and the scroll position you left, per phone or tablet. After this time without use, or when an activity was changed elsewhere meanwhile, the card starts as usual. Windows such as settings are not reopened.",
     "offRelated": "Applies to this room. When you switch the Fire TV off with its power key or the red off button, everything the Fire TV activity switches on (e.g. TV, amplifier) goes off too, if the device has a PowerOff command. Devices another running activity needs, and devices hidden in the help, stay on.",
     "helpManual": "Some devices are not switched by the hub itself (in the hub: “switch on by hand”). With this switch the help mentions them in one line so you do not forget them.",
     "irVolume": "Only while the Fire TV runs without a Harmony activity. Volume up, down and mute then go through the infrared sender of the Cube 3 straight to the TV, without the hub. Only for the model Fire TV Cube.",
@@ -483,7 +509,12 @@
   "fillView": "Background fills the view",
   "jumpRunning": "Jump to the running activity on open",
   "rememberView": "Remember the view",
-  "rememberViewOpts": {"0": "Off", "30": "30 minutes", "120": "2 hours", "360": "6 hours"},
+  "rememberViewOpts": {
+    "0": "Off",
+    "30": "30 minutes",
+    "120": "2 hours",
+    "360": "6 hours"
+  },
   "discEject": "Eject",
   "discMenu": "Disc menu",
   "discTop": "Top menu",
@@ -1053,5 +1084,18 @@
   "hintsTip": "{0} hint(s) – tap to see",
   "hintDown": "{0} not reachable since {1}",
   "menuInfo": "Info",
-  "hubsTitle": "Hubs"
+  "hubsTitle": "Hubs",
+  "mediaPlayers": "Media player",
+  "mediaPlayersHint": "Pick the media player of each activity yourself; nothing is chosen automatically. Players in the room of this hub come first. The bar appears below the keys while the activity runs and shows only what the player can do.",
+  "mediaNone": "– none –",
+  "mediaInRoom": "In this room ({room})",
+  "mediaOtherRooms": "Other rooms",
+  "mediaAllPlayers": "Media players",
+  "mediaShowBar": "Show media bar",
+  "mediaNothing": "Nothing playing",
+  "mediaOff": "Off",
+  "mediaProgress": "Progress",
+  "mediaPlay": "Play",
+  "mediaPause": "Pause",
+  "mediaStop": "Stop"
 }

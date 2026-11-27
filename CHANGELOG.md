@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0
+
+### Added
+- **Media bar in an activity.** Pick **one media player per activity** yourself (Settings > Activities > *Media player*; nothing is chosen automatically, players of the hub's room are offered first, then the others). While the activity runs, a bar below the keys shows what the player can do and leaves out everything else: title and app, a progress bar with the time as one text *elapsed / total* (inside the bar on wide cards, below it on narrow ones), play / pause / stop and jumps of **-30, -10, +10, +30 seconds**. The progress counts on every second by itself and can be dragged where the player supports seeking. The layout follows what the player is able to do (remembered), not whether it is playing or off, so nothing jumps. A switch *Show media bar* per activity hides it. Players that can seek jump by seeking; a **Fire TV** (no seeking) jumps with fast-forward / rewind key presses over ADB (depends on the app) and shows the bar only when it reports a title or position, because its remote has the same keys already. New websocket command `harmony_deck/media/control`, same user rights as the volume slider, only for the player of the running activity. Look and feel for all 15 skins.
+- **Fire TV activities get their keys by themselves.** In an activity with a linked Fire TV, a row under the cross offers **Search** and **Settings**, and **Back / Home / Menu** when the cross of the activity belongs to another device (Harmony or the Fire TV's own pills show them otherwise). Keys already shown, hidden keys and the Fire TV model are respected.
+
 ## 0.24.1
 
 ### Added

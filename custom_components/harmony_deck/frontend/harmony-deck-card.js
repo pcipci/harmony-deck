@@ -206,7 +206,7 @@
   };
 
   // src/shared/version.js
-  var VERSION = "0.24.1";
+  var VERSION = "0.25.0";
 
   // src/shared/i18n.js
   var TEXT_URL = "/harmony_deck/translations";
@@ -1425,7 +1425,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const cols = Number(this._config.columns) || 3;
       const rest = (shown.length + aTiles.length) % cols;
       const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
-      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
+      const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { media: this._mediaBarHtml(h, t), fire: this._fireActKeys(h, this._roles(h.id, cur), cur, t), small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
       if (part === "grid") return `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>`;
       if (part === "below") return body;
       return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>${body}`;
@@ -1552,6 +1552,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       this._bindDirectDev(root);
       this._bindMismatch(root);
       this._bindVolSlider(root);
+      this._bindMedia(root);
+      this._bindMpEdit(root);
       this._bindSkinDecor(root);
       this._bindKeyboard(root);
       this._bindDevices(root);
@@ -2937,6 +2939,23 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       }
       return this._directHtml(h, dev, t, false);
     },
+    // 0.25: Fire TV keys that appear by themselves in an activity with a linked Fire TV, in one row under the cross:
+    // Back / Home / Menu when the cross belongs to another device, then Search and Settings (if the model has them).
+    // Keys that the remote shows already (pills, the "Fire TV keys" block of the setting "Also in activities") are left out.
+    _fireActKeys(h, roles, act, t) {
+      if (this._edit || this._config.compact || !act) return "";
+      const navFire = roles.nav ? this._linkedFire(h.id, roles.nav) : null;
+      const d = navFire || this._directFor(h.id, roles.nav, act) || this._setupOf(h, act).map((it) => this._linkedFire(h.id, it.device)).find(Boolean);
+      if (!d?.entity) return "";
+      const model = d.model || this._config.direct_model || "all";
+      const has = (l) => model === "all" || !FIRE_MODELS[model] || FIRE_MODELS[model].includes(l);
+      const hidden = new Set(d.hiddenKeys || []);
+      const want = [...navFire ? [] : ["Zurück", "Home", "Menü"], ...d.inActivities ? [] : ["Suchen", "Einstellungen"]];
+      const keys = want.map((l) => FIRE_KEYS.find(([x]) => x === l)).filter((k) => k && has(k[0]) && !hidden.has(k[0]));
+      if (!keys.length) return "";
+      const btn = ([l, ic, code]) => `<button class="key pill adbk" data-adb="${esc(d.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon></button>`;
+      return `<div class="pills firekeys" style="grid-template-columns: repeat(${Math.min(3, Math.max(2, keys.length))}, minmax(0, 1fr))">${keys.map(btn).join("")}</div>`;
+    },
     // Activity to describe while only the Fire TV runs: the one that contains the linked device, else the one named like Fire.
     _fireActivity(h) {
       const hit = h.list.find((n) => this._setupOf(h, n).some((it) => this._linkedFire(h.id, it.device)));
@@ -3689,6 +3708,256 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
     }
   };
 
+  // src/deck/mediabar-editor.js
+  function areaOf(hass, entity) {
+    const e = hass?.entities?.[entity];
+    if (!e) return null;
+    return e.area_id || hass?.devices?.[e.device_id]?.area_id || null;
+  }
+  function playerGroups(hass, hubEntity) {
+    const area = areaOf(hass, hubEntity);
+    const states2 = hass?.states || {};
+    const items = Object.keys(states2).filter((id) => id.startsWith("media_player.")).map((id) => {
+      const a = areaOf(hass, id);
+      return { id, name: states2[id].attributes?.friendly_name || id, area: a, areaName: a ? hass?.areas?.[a]?.name || a : "" };
+    }).sort((x, y) => x.name.localeCompare(y.name));
+    const room = area ? items.filter((i) => i.area === area) : [];
+    const other = items.filter((i) => !room.includes(i));
+    return { area: area ? hass?.areas?.[area]?.name || area : "", room, other };
+  }
+  var mediaBarEditorMixin = {
+    _mpEditHtml(h, t) {
+      const acts = h.list.filter((n) => n !== "PowerOff");
+      if (!acts.length) return "";
+      const g = playerGroups(this._hass, h.id);
+      const all = this._settings().activityPlayers?.[h.id] || {};
+      const opt = (cur) => (i) => `<option value="${esc(i.id)}" ${i.id === cur ? "selected" : ""}>${esc(i.name)}${i.areaName && !g.room.includes(i) ? ` (${esc(i.areaName)})` : ""}</option>`;
+      const rows = acts.map((n) => {
+        const cur = all[n]?.entity || "";
+        const missing = cur && !g.room.concat(g.other).some((i) => i.id === cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : "";
+        const sel = `<label class="erow"><span>${esc(n)}</span><select data-mpact="${esc(n)}" data-hub="${esc(h.id)}"><option value="">${t.mediaNone}</option>${missing}
+        ${g.room.length ? `<optgroup label="${esc(t.mediaInRoom.replace("{room}", g.area))}">${g.room.map(opt(cur)).join("")}</optgroup>` : ""}
+        ${g.other.length ? `<optgroup label="${esc(g.room.length ? t.mediaOtherRooms : t.mediaAllPlayers)}">${g.other.map(opt(cur)).join("")}</optgroup>` : ""}</select></label>`;
+        const sw = cur ? this._swRow(t.mediaShowBar, `data-mpbar="${esc(n)}" data-hub="${esc(h.id)}"`, all[n]?.bar !== false) : "";
+        return sel + sw;
+      }).join("");
+      return `<div class="esec mpedit" data-t="acts"><div class="etitle">${t.mediaPlayers}</div>${this._grp("", `<div class="ehint">${t.mediaPlayersHint}</div>${rows}`)}</div>`;
+    },
+    _mpSave(hub, act, patch) {
+      const all = { ...this._settings().activityPlayers || {} };
+      const mine = { ...all[hub] || {} };
+      const next = { ...mine[act] || {}, ...patch };
+      if (!next.entity) delete mine[act];
+      else mine[act] = { entity: next.entity, bar: next.bar !== false };
+      if (Object.keys(mine).length) all[hub] = mine;
+      else delete all[hub];
+      this._saveSettings({ activityPlayers: all });
+    },
+    _bindMpEdit(root) {
+      root.querySelectorAll("select[data-mpact]").forEach((s) => s.addEventListener("change", () => this._mpSave(s.dataset.hub, s.dataset.mpact, { entity: s.value })));
+      root.querySelectorAll("input[data-mpbar]").forEach((i) => i.addEventListener("change", () => this._mpSave(i.dataset.hub, i.dataset.mpbar, { bar: i.checked })));
+    }
+  };
+
+  // src/deck/mediabar.js
+  var MF = { PAUSE: 1, SEEK: 2, STOP: 4096, PLAY: 16384 };
+  var CAPS_KEY = "harmony_deck_mcaps";
+  var JUMP_ICON = { "-30": "mdi:rewind-30", "-10": "mdi:rewind-10", 10: "mdi:fast-forward-10", 30: "mdi:fast-forward-30" };
+  var OFF = ["off", "standby", "unavailable", "unknown"];
+  function fmtTime(s) {
+    if (!Number.isFinite(s) || s < 0) return "–:––";
+    s = Math.floor(s);
+    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    const p = (n) => String(n).padStart(2, "0");
+    return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
+  }
+  function mediaPos(st, now = Date.now()) {
+    const a = st?.attributes || {};
+    if (!Number.isFinite(a.media_position)) return null;
+    let pos = a.media_position;
+    if (st.state === "playing" && a.media_position_updated_at) {
+      const at = Date.parse(a.media_position_updated_at);
+      if (Number.isFinite(at)) pos += Math.max(0, (now - at) / 1e3);
+    }
+    return Number.isFinite(a.media_duration) && a.media_duration > 0 ? Math.min(pos, a.media_duration) : pos;
+  }
+  function mergeSeen(seen, st) {
+    const out = { f: seen?.f || 0, t: !!seen?.t, p: !!seen?.p };
+    if (!st || OFF.includes(st.state)) return out;
+    const a = st.attributes || {};
+    out.f |= Number(a.supported_features) || 0;
+    if (a.media_title || a.media_series_title) out.t = true;
+    if (Number.isFinite(a.media_position) && Number.isFinite(a.media_duration) && a.media_duration > 0) out.p = true;
+    return out;
+  }
+  function barParts(seen, adb) {
+    const f = seen?.f || 0;
+    const seek = !!(f & MF.SEEK);
+    const parts = {
+      title: !!seen?.t,
+      progress: !!seen?.p,
+      seek,
+      play: !!(f & (MF.PLAY | MF.PAUSE)),
+      pause: !!(f & MF.PAUSE),
+      stop: !!(f & MF.STOP),
+      jumps: seek || !!adb
+    };
+    parts.show = adb ? parts.title || parts.progress : parts.title || parts.progress || parts.play || parts.stop || parts.jumps;
+    return parts;
+  }
+  var mediaBarMixin = {
+    // The assignment of an activity: {entity, bar} or null.
+    _actPlayer(hubId, act) {
+      const it = this._settings().activityPlayers?.[hubId]?.[act];
+      return it?.entity ? { entity: it.entity, bar: it.bar !== false } : null;
+    },
+    // Fire TV over ADB (androidtv): jumps by key presses, bar only with title or position.
+    _isAdbPlayer(entity) {
+      const reg = this._hass?.entities?.[entity];
+      if (reg?.platform) return reg.platform === "androidtv";
+      return this._hass?.states?.[entity]?.attributes?.adb_response !== void 0;
+    },
+    _mSeen(entity) {
+      if (!this._mCaps) {
+        try {
+          this._mCaps = JSON.parse(localStorage.getItem(CAPS_KEY) || "{}") || {};
+        } catch (e) {
+          this._mCaps = {};
+        }
+      }
+      const before = this._mCaps[entity];
+      const now = mergeSeen(before, this._hass?.states?.[entity]);
+      if (JSON.stringify(before) !== JSON.stringify(now)) {
+        this._mCaps = { ...this._mCaps, [entity]: now };
+        try {
+          localStorage.setItem(CAPS_KEY, JSON.stringify(this._mCaps));
+        } catch (e) {
+        }
+      }
+      return now;
+    },
+    // Part of the redraw key: what the bars of the running activities show.
+    _mediaSig(hubs) {
+      return hubs.map((h) => {
+        const p = h.current && this._actPlayer(h.id, h.current);
+        const st = p && this._hass?.states?.[p.entity];
+        const a = st?.attributes || {};
+        return p ? [p.entity, p.bar, st?.state, a.media_title, a.media_artist, a.media_series_title, a.app_name, a.media_duration, a.media_position, a.media_position_updated_at, a.supported_features] : null;
+      });
+    },
+    _mediaBarHtml(h, t) {
+      if (this._edit || this._config.compact || !h.current || h.starting) return "";
+      const p = this._actPlayer(h.id, h.current);
+      if (!p || !p.bar) return "";
+      const st = this._hass?.states?.[p.entity];
+      const parts = barParts(this._mSeen(p.entity), this._isAdbPlayer(p.entity));
+      if (!parts.show) return "";
+      const a = st?.attributes || {};
+      const live = !!st && !OFF.includes(st.state);
+      const playing = st?.state === "playing";
+      const hub = esc(h.id);
+      const key = (act, icon, label, on3 = false, value = null) => `<button class="key mkey ${on3 ? "on" : ""}" data-mhub="${hub}" data-mact="${act}" ${value != null ? `data-mval="${value}"` : ""} title="${esc(label)}" ${live ? "" : "disabled"}><ha-icon icon="${icon}"></ha-icon></button>`;
+      let title = "";
+      if (parts.title) {
+        const main = live ? a.media_title || a.media_series_title || a.app_name || "" : "";
+        const sub = live ? [a.media_artist || a.media_title && a.media_series_title || "", a.app_name && a.app_name !== main ? a.app_name : ""].filter(Boolean).join(" · ") : "";
+        title = `<div class="mtitle"><b>${esc(main || (live ? t.mediaNothing : t.mediaOff))}</b><span>${esc(sub || (st?.attributes?.friendly_name || p.entity))}</span></div>`;
+      }
+      let prog = "";
+      if (parts.progress) {
+        const dur = live && Number.isFinite(a.media_duration) && a.media_duration > 0 ? a.media_duration : 0;
+        const pos = dur ? mediaPos(st) || 0 : 0;
+        const v = dur ? Math.round(pos / dur * 1e3) / 10 : 0;
+        const text = dur ? `${fmtTime(pos)} / ${fmtTime(dur)}` : "–:–– / –:––";
+        const ro = !parts.seek || !dur;
+        prog = `<div class="mprog"><div class="mwrap"><input type="range" class="volslider h mseek ${ro ? "ro" : ""}" min="0" max="${Math.max(1, Math.round(dur))}" step="1" value="${Math.round(pos)}" style="--v:${v}" data-mseek="${hub}" aria-label="${esc(t.mediaProgress)}" ${ro ? 'tabindex="-1"' : ""}><span class="mlab" data-mtime>${text}</span></div></div>`;
+      }
+      const jb = (s) => parts.jumps ? key("seek_by", JUMP_ICON[s], `${s > 0 ? "+" : "−"}${Math.abs(s)} s`, false, s) : "";
+      const keys = [
+        jb(-30),
+        jb(-10),
+        parts.play ? key("play", "mdi:play", t.mediaPlay, playing) : "",
+        parts.pause ? key("pause", "mdi:pause", t.mediaPause, st?.state === "paused") : "",
+        parts.stop ? key("stop", "mdi:stop", t.mediaStop) : "",
+        jb(10),
+        jb(30)
+      ].join("");
+      const tr = keys ? `<div class="transport mtrans">${keys}</div>` : "";
+      return `<div class="mbar ${live ? "" : "idle"}" data-mbar="${hub}" ${playing && parts.progress ? "data-mplaying" : ""} data-ment="${esc(p.entity)}">${title}${prog}${tr}</div>`;
+    },
+    async _mediaSend(hub, action, value) {
+      this._buzz?.();
+      try {
+        await this._hass.callWS({ type: "harmony_deck/media/control", hub, action, ...value != null ? { value } : {} });
+      } catch (e) {
+      }
+    },
+    // Counts the time on every second while playing, without redrawing the card.
+    _mediaTick() {
+      const root = this.shadowRoot;
+      if (!this.isConnected || !root) {
+        clearInterval(this._mTimer);
+        this._mTimer = null;
+        return;
+      }
+      const bars = root.querySelectorAll(".mbar[data-mplaying]");
+      if (!bars.length) {
+        clearInterval(this._mTimer);
+        this._mTimer = null;
+        return;
+      }
+      bars.forEach((bar) => {
+        const st = this._hass?.states?.[bar.dataset.ment];
+        const dur = st?.attributes?.media_duration;
+        const input = bar.querySelector("input[data-mseek]");
+        if (!st || !(dur > 0) || !input || this._mDrag === input) return;
+        const pos = mediaPos(st) || 0;
+        input.value = String(Math.round(pos));
+        input.style.setProperty("--v", String(Math.round(pos / dur * 1e3) / 10));
+        const lab = bar.querySelector("[data-mtime]");
+        if (lab) lab.textContent = `${fmtTime(pos)} / ${fmtTime(dur)}`;
+      });
+    },
+    _bindMedia(root) {
+      root.querySelectorAll("button[data-mact]").forEach((b) => b.addEventListener("click", () => {
+        if (this._edit) return;
+        const v = b.dataset.mval != null ? Number(b.dataset.mval) : null;
+        this._mediaSend(b.dataset.mhub, b.dataset.mact, v);
+      }));
+      root.querySelectorAll("input[data-mseek]").forEach((el) => {
+        if (el.classList.contains("ro")) {
+          el.addEventListener("pointerdown", (e) => e.preventDefault());
+          el.addEventListener("keydown", (e) => e.preventDefault());
+          return;
+        }
+        const show = () => {
+          const max = Number(el.max) || 1;
+          el.style.setProperty("--v", String(Math.round(Number(el.value) / max * 1e3) / 10));
+          const lab = el.parentElement.querySelector("[data-mtime]");
+          if (lab) lab.textContent = `${fmtTime(Number(el.value))} / ${fmtTime(max)}`;
+        };
+        el.addEventListener("pointerdown", () => {
+          this._mDrag = el;
+        });
+        el.addEventListener("input", () => {
+          this._mDrag = el;
+          show();
+        });
+        el.addEventListener("change", () => {
+          this._mDrag = null;
+          this._mediaSend(el.dataset.mseek, "seek_to", Number(el.value));
+        });
+        ["pointerup", "pointercancel"].forEach((ev) => el.addEventListener(ev, () => {
+          setTimeout(() => {
+            if (this._mDrag === el) this._mDrag = null;
+          }, 400);
+        }));
+      });
+      clearInterval(this._mTimer);
+      this._mTimer = root.querySelector(".mbar[data-mplaying]") ? setInterval(() => this._mediaTick(), 1e3) : null;
+    }
+  };
+
   // src/deck/mismatch.js
   var WAIT = 4e3;
   var mismatchMixin = {
@@ -4221,6 +4490,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const extra = typeof extraIn === "string" ? { small: "", big: extraIn } : extraIn;
       const lockKeys = extra.noLock ? /* @__PURE__ */ new Set() : this._locks(h).keys;
       const L = (role, html) => lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html;
+      const FK = L("nav", extra.fire || "");
       const K = (dev, a, icon, cls, label) => extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label);
       const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
       const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
@@ -4271,11 +4541,11 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const kbAct = kbCmds ? this._keyboard(h, r.nav, kbCmds, t, { compact: true }) : null;
       if (kbAct) {
         const kv = hasVol ? `<div class="kbvol">${slV || K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${slV ? "" : K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
-        return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+        return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
       }
       if (hasVol && !hasNav && !hasCh) {
         const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
-        return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+        return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
       }
       const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
       const discCol = disc.length ? `<div class="sidecol">${disc.map((d) => this._cmdKey(h.id, r.nav, d.c, d.ic, "tall", t[d.k] || d.k)).join("")}</div>` : "";
@@ -4284,15 +4554,15 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       const lmode = !extra.noKeypad && h.current ? this._layoutMode(h.id, h.current) : "remote";
       if (!extra.noKeypad && navCmds.length && !this._edit && (lmode === "keypad" || lmode === "auto" && !fullPad && !hasCh)) {
         const volRow = hasVol ? `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
-        return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
+        return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}${FK}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
       }
       const third = hasCh ? L("channel", ch) : discCol ? L("nav", discCol) : pillCol ? L("nav", pillCol) : "";
       const topPills = pillCol ? "" : pills;
       const panel = hasVol || hasNav || hasCh ? `<div class="panel ${discCol ? "wide3" : pillCol ? "mid3" : ""} ${vol ? "" : "nol"} ${third ? "" : "nor"}">${L("nav", topPills)}${vol ? L("volume", vol) : ""}${L("nav", nav)}${third}</div>` : "";
       const textRow = dcfg?.entity && !this._edit && hasNav ? this._textBlock(h.id, dcfg.entity, t) : "";
-      const pcol = `${panel}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
+      const pcol = `${panel}${FK}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
       if (!pcol && !extra.noKeypad && !extra.small && !extra.big) return `<div class="hint nokeys">${t.noKeys}</div>`;
-      return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+      return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
     },
     // Events of the remote keys (light up, send).
     _bindKeys(root) {
@@ -5254,6 +5524,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
           ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
         ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
+      ${this._mpEditHtml(h, t)}
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
       ${this._directDevHtml(h, t)}
@@ -6967,6 +7238,28 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       .d.left { grid-area: l; border-radius: var(--hr-d-big, 50%) var(--hr-d-small, 8px) var(--hr-d-small, 8px) var(--hr-d-big, 50%); } .d.right { grid-area: r; border-radius: var(--hr-d-small, 8px) var(--hr-d-big, 50%) var(--hr-d-big, 50%) var(--hr-d-small, 8px); }
       .d.ok { grid-area: o; width: 84%; height: 84%; border-radius: var(--hr-ok-radius, 50%); background: var(--hr-key-bg); font-weight: 600; letter-spacing: 0.04em; }
       .transport { display: flex; gap: 8px; } .transport .key { flex: 1; min-height: 46px; }
+      /* Media bar (0.25): below the keys of the activity; the time sits below the progress, inside it on wide cards. */
+      .mbar { container: mbar / inline-size; display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+      .mbar .mtitle { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; color: var(--hr-text, inherit); min-width: 0; }
+      .mbar .mtitle b { font-size: 1.05em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mbar .mtitle span { font-size: 0.85em; color: var(--hr-muted, inherit); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mbar.idle .mtitle { opacity: 0.7; }
+      .mbar .mwrap { position: relative; display: flex; flex-direction: column; gap: 0; }
+      .mbar .mseek { width: 100%; min-height: 40px; } .mbar .mseek.ro { pointer-events: none; }
+      /* Plain skins: a filled bar (the time fits inside on wide cards); skins with their own slider look keep theirs. */
+      :where(.mbar) .mseek { -webkit-appearance: none; appearance: none; height: 30px; min-height: 30px; margin: 5px 0; border-radius: var(--hr-rk-radius, 15px); overflow: hidden;
+        background: linear-gradient(90deg, var(--hr-accent, var(--primary-color)) calc(var(--v, 0) * 1%), transparent 0), var(--hr-key-bg, rgba(127, 127, 127, 0.25)); }
+      :where(.mbar) .mseek::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 30px; background: var(--hr-text, #fff); border-radius: 2px; }
+      :where(.mbar) .mseek::-moz-range-thumb { width: 4px; height: 30px; border: 0; background: var(--hr-text, #fff); border-radius: 2px; }
+      :where(.mbar) .mseek::-moz-range-track { background: transparent; }
+      :where(.mbar) .mseek.ro::-webkit-slider-thumb { width: 0; } :where(.mbar) .mseek.ro::-moz-range-thumb { width: 0; }
+      .mbar .mlab { text-align: center; font-weight: 600; font-size: 0.85em; color: var(--hr-muted, inherit); font-variant-numeric: tabular-nums; pointer-events: none; }
+      @container mbar (min-width: 560px) {
+        .mbar .mlab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9em;
+          color: var(--hr-mlab, #fff); text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 7px rgba(0, 0, 0, 0.7); }
+      }
+      .mbar .mtrans .key[disabled] { pointer-events: none; }
+      .pills.firekeys { margin-top: 8px; }
       .colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
       .color { width: 100%; height: 12px; border-radius: 6px; min-height: 0; }
       .color.red { background: #e53935; } .color.green { background: #43a047; } .color.yellow { background: #fdd835; } .color.blue { background: #1e88e5; }
@@ -7532,6 +7825,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         this._actPanel,
         this._actPanelOff,
         hubs.map((h) => this._watched(h)),
+        this._mediaSig(hubs),
         hubs.map((h) => {
           const f = this._fireInfo(h.id);
           return f && [f.mode, f.app];
@@ -7539,7 +7833,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
         hubs.map((h) => [this._lockInfo(h.id), [...this._secLocked(h.id)], this._actionList(h.id).flatMap((a) => a.steps.filter((s) => s.type === "ha").map((s) => this._hass.states?.[s.entity]?.state)), (({ state, step, error, action }) => [state, step, error, action])(this._seqState(h.id))])
       ]);
       this._eyeUpdate(hubs);
-      if (key === this._key || this._holdingAct || this._volDrag) return;
+      if (key === this._key || this._holdingAct || this._volDrag || this._mDrag) return;
       this._key = key;
       const keep = this._scrollRemote ? null : this._scrollState();
       this._render(hubs);
@@ -7568,6 +7862,8 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       window.removeEventListener("pagehide", this._onViewLeave);
       window.removeEventListener("scroll", this._onViewScroll, { capture: true });
       this._ro?.disconnect();
+      clearInterval(this._mTimer);
+      this._mTimer = null;
       if (this._stickFn) window.removeEventListener("scroll", this._stickFn, true);
     }
     getCardSize() {
@@ -7577,7 +7873,7 @@ ${a.steps.map((x, i) => `${i + 1}. ${stepLabel(x, t, this)}`).join("\n")}` : a.n
       return {};
     }
   };
-  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
+  for (const part of [dataMixin, optionsMixin, renderMixin, physicalKeyboardMixin, activitiesMixin, devicesMixin, keyboardMixin, lockMarkMixin, panelMixin, fireMixin, helpMixin, favoritesMixin, actionsMixin, actionEditorMixin, sequencePanelMixin, directEditorMixin, mismatchMixin, viewStateMixin, volSliderMixin, mediaBarMixin, mediaBarEditorMixin, deviceStateMixin, callMixin, skinDecorMixin, infoMixin, profilesMixin, settingsEditorMixin, fireEditorMixin, bindMixin, styleMixin]) {
     Object.defineProperties(HarmonyDeckCard.prototype, Object.getOwnPropertyDescriptors(part));
   }
 

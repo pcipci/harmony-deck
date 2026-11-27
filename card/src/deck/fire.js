@@ -151,6 +151,24 @@ export const fireMixin = {
     return this._directHtml(h, dev, t, false);
   },
 
+  // 0.25: Fire TV keys that appear by themselves in an activity with a linked Fire TV, in one row under the cross:
+  // Back / Home / Menu when the cross belongs to another device, then Search and Settings (if the model has them).
+  // Keys that the remote shows already (pills, the "Fire TV keys" block of the setting "Also in activities") are left out.
+  _fireActKeys(h, roles, act, t) {
+    if (this._edit || this._config.compact || !act) return "";
+    const navFire = roles.nav ? this._linkedFire(h.id, roles.nav) : null;
+    const d = navFire || this._directFor(h.id, roles.nav, act) || this._setupOf(h, act).map((it) => this._linkedFire(h.id, it.device)).find(Boolean);
+    if (!d?.entity) return "";
+    const model = d.model || this._config.direct_model || "all";
+    const has = (l) => model === "all" || !FIRE_MODELS[model] || FIRE_MODELS[model].includes(l);
+    const hidden = new Set(d.hiddenKeys || []);
+    const want = [...(navFire ? [] : ["Zurück", "Home", "Menü"]), ...(d.inActivities ? [] : ["Suchen", "Einstellungen"])];
+    const keys = want.map((l) => FIRE_KEYS.find(([x]) => x === l)).filter((k) => k && has(k[0]) && !hidden.has(k[0]));
+    if (!keys.length) return "";
+    const btn = ([l, ic, code]) => `<button class="key pill adbk" data-adb="${esc(d.entity)}" data-adbcmd="input keyevent ${code}" title="${esc(t.fireKeys?.[l] || l)}"><ha-icon icon="${ic}"></ha-icon></button>`;
+    return `<div class="pills firekeys" style="grid-template-columns: repeat(${Math.min(3, Math.max(2, keys.length))}, minmax(0, 1fr))">${keys.map(btn).join("")}</div>`;
+  },
+
   // Activity to describe while only the Fire TV runs: the one that contains the linked device, else the one named like Fire.
   _fireActivity(h) {
     const hit = h.list.find((n) => this._setupOf(h, n).some((it) => this._linkedFire(h.id, it.device)));

@@ -41,6 +41,9 @@ Mit **Fertig** speicherst du, mit **Abbrechen** verwirfst du alle Änderungen di
 - **Statuszeile (0.15.5):** ein Chip pro laufendem Gerät: die Harmony-Aktivität, der Fire TV (App, Pause, Standby) und jedes verknüpfte Netzwerkgerät mit seiner Quelle („LG TV · HDMI 1“; Antippen öffnet das Gerät). Ist alles aus, gibt es keine Chips. Schloss, Profil, Hilfe, Info und der Einklapp-Pfeil sitzen rechts in der Zeile mit den Raum-Reitern.
 - **Kopf einklappen** (Standard an): Sobald eine Fernbedienung offen ist, schrumpfen die Chips auf eine Textzeile („Bluray · Fire TV Netflix · LG TV HDMI 1“ oder „alles aus“). Antippen oder der Pfeil klappt wieder auf.
 
+- **Medienleiste (0.25):** Unter *Einstellungen › Aktivitäten › Mediaplayer* wählst du je Aktivität einen Mediaplayer (nie automatisch; Player im Raum des Hubs stehen oben). Die Leiste unter den Tasten zeigt Titel und App, Fortschritt als „abgelaufen / gesamt“ (ziehbar, wenn der Player spulen kann), Wiedergabe / Pause / Stopp und Sprünge um 10 und 30 Sekunden, und nur, was der Player kann. Ein Fire TV springt mit Vor-/Zurückspul-Tasten und zeigt die Leiste nur, wenn er Titel oder Position meldet. *Medienleiste zeigen* blendet sie je Aktivität aus.
+- **Fire-TV-Tasten in Aktivitäten (0.25):** Bei verknüpftem Fire TV bietet eine Reihe unter dem Steuerkreuz Suchen und Einstellungen (und Zurück / Home / Menü, wenn das Steuerkreuz zu einem anderen Gerät gehört).
+
 ## 4. Geräte
 
 Der Schieber **Aktivitäten / Geräte** wechselt in die Geräteansicht. Ein Gerät antippen öffnet seine eigene Fernbedienung mit allen Befehlen, sortiert nach Gruppen (Eingänge, Ton, Menüs, Ziffern …). Geräte sind nie gesperrt, auch nicht bei aktiver Sperre.

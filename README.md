@@ -23,6 +23,7 @@ Harmony Deck is a custom integration plus two dashboard cards. It reads the conf
 - **Help when an activity does not start right.** The life ring shows the devices the activity needs and their inputs, with one tap per device to fix it, and leads to the remote of each device.
 - **Several rooms.** Every hub is a tab with its state at a glance.
 - **Network control on top of infrared.** Link a Harmony device to its Home Assistant media player: Harmony Deck reads whether it is really on and on the right input, sets an exact volume, and offers a one-tap fix when an activity did not start right.
+- **Media bar per activity.** Assign a media player to an activity and get title, progress (*elapsed / total*, draggable where possible), play / pause / stop and 10 / 30 second jumps below the keys, showing only what that player can do.
 
 ## Features
 

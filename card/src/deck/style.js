@@ -194,6 +194,28 @@ export const styleMixin = {
       .d.left { grid-area: l; border-radius: var(--hr-d-big, 50%) var(--hr-d-small, 8px) var(--hr-d-small, 8px) var(--hr-d-big, 50%); } .d.right { grid-area: r; border-radius: var(--hr-d-small, 8px) var(--hr-d-big, 50%) var(--hr-d-big, 50%) var(--hr-d-small, 8px); }
       .d.ok { grid-area: o; width: 84%; height: 84%; border-radius: var(--hr-ok-radius, 50%); background: var(--hr-key-bg); font-weight: 600; letter-spacing: 0.04em; }
       .transport { display: flex; gap: 8px; } .transport .key { flex: 1; min-height: 46px; }
+      /* Media bar (0.25): below the keys of the activity; the time sits below the progress, inside it on wide cards. */
+      .mbar { container: mbar / inline-size; display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+      .mbar .mtitle { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; color: var(--hr-text, inherit); min-width: 0; }
+      .mbar .mtitle b { font-size: 1.05em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mbar .mtitle span { font-size: 0.85em; color: var(--hr-muted, inherit); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mbar.idle .mtitle { opacity: 0.7; }
+      .mbar .mwrap { position: relative; display: flex; flex-direction: column; gap: 0; }
+      .mbar .mseek { width: 100%; min-height: 40px; } .mbar .mseek.ro { pointer-events: none; }
+      /* Plain skins: a filled bar (the time fits inside on wide cards); skins with their own slider look keep theirs. */
+      :where(.mbar) .mseek { -webkit-appearance: none; appearance: none; height: 30px; min-height: 30px; margin: 5px 0; border-radius: var(--hr-rk-radius, 15px); overflow: hidden;
+        background: linear-gradient(90deg, var(--hr-accent, var(--primary-color)) calc(var(--v, 0) * 1%), transparent 0), var(--hr-key-bg, rgba(127, 127, 127, 0.25)); }
+      :where(.mbar) .mseek::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 30px; background: var(--hr-text, #fff); border-radius: 2px; }
+      :where(.mbar) .mseek::-moz-range-thumb { width: 4px; height: 30px; border: 0; background: var(--hr-text, #fff); border-radius: 2px; }
+      :where(.mbar) .mseek::-moz-range-track { background: transparent; }
+      :where(.mbar) .mseek.ro::-webkit-slider-thumb { width: 0; } :where(.mbar) .mseek.ro::-moz-range-thumb { width: 0; }
+      .mbar .mlab { text-align: center; font-weight: 600; font-size: 0.85em; color: var(--hr-muted, inherit); font-variant-numeric: tabular-nums; pointer-events: none; }
+      @container mbar (min-width: 560px) {
+        .mbar .mlab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9em;
+          color: var(--hr-mlab, #fff); text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 7px rgba(0, 0, 0, 0.7); }
+      }
+      .mbar .mtrans .key[disabled] { pointer-events: none; }
+      .pills.firekeys { margin-top: 8px; }
       .colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
       .color { width: 100%; height: 12px; border-radius: 6px; min-height: 0; }
       .color.red { background: #e53935; } .color.green { background: #43a047; } .color.yellow { background: #fdd835; } .color.blue { background: #1e88e5; }

@@ -38,7 +38,7 @@ export const activitiesMixin = {
     const cols = Number(this._config.columns) || 3;
     const rest = (shown.length + aTiles.length) % cols;
     const offBtn = this._edit ? "" : `<button class="tile off holdoff" style="grid-column: span ${rest ? cols - rest : cols}" title="${esc(this._config.off_label || t.off)}" data-hub="${esc(h.id)}" data-hold="tile" data-hinttext="${esc(t.holdHint)}">${RING_TILE}<ha-icon icon="mdi:power"></ha-icon></button>`;
-    const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
+    const body = this._edit ? this._editHtml(t, h) : cur ? this._panelHtml(h, this._roles(h.id, cur), t, { media: this._mediaBarHtml(h, t), fire: this._fireActKeys(h, this._roles(h.id, cur), cur, t), small: this._activityFavs(h, this._roles(h.id, cur), t, cur), big: this._directHtml(h, this._roles(h.id, cur).nav, t, true, cur) }) : this._fireOnlyHtml(h, t);
     if (part === "grid") return `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>`;
     if (part === "below") return body;
     return this._edit ? `${body}<div class="grid" data-t="acts">${tiles}</div>` : `<div class="grid">${tiles}${aTiles.join("")}${offBtn}</div>${body}`;

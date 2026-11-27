@@ -18,7 +18,7 @@ MAX_NAME = 40
 
 # Not part of a profile: describe the installation, not a person's taste.
 # Actions belong here too: they send keys to the devices of a room, whoever looks at the card.
-GLOBAL_KEYS = ("names", "devices", "links", "direct", "actions", "irVolume", "volumeCap", "directDevices", "directSuggest", "trafficLog")
+GLOBAL_KEYS = ("names", "devices", "links", "direct", "actions", "irVolume", "volumeCap", "directDevices", "directSuggest", "trafficLog", "activityPlayers")
 
 
 def _clean(settings: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:

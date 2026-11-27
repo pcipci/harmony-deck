@@ -27,6 +27,9 @@ def async_register_direct_websocket(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_sliders)
     websocket_api.async_register_command(hass, ws_volume)
     websocket_api.async_register_command(hass, ws_rescan)
+    from .media import ws_media
+
+    websocket_api.async_register_command(hass, ws_media)
     data["direct_ws_registered"] = True
 
 

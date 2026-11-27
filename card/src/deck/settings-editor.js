@@ -80,6 +80,7 @@ export const settingsEditorMixin = {
           ${this._swRow(t.helpNames, 'data-setting="helpNames"', this._helpNames())}`)}
         ${this._grp(g.actions, this._selRow(t.volumeCap, "data-volcap", Object.fromEntries([50, 60, 70, 80, 90, 100].map((n) => [String(n), `${n} %`])), String(this._settings().volumeCap || 80)) + `<div class="ehint">${t.volumeCapHint}</div>`)}</div>
       <div class="esec" data-t="devs"><div class="etitle">${t.deviceIcons}</div>${Object.keys(this._devicesOf(h.id)).map((n) => this._iconPicker(h.id, n, t)).join("")}</div>
+      ${this._mpEditHtml(h, t)}
       <div class="esec" data-t="acts"><div class="etitle">${t.activityIcons}</div>${h.list.filter((n) => n !== "PowerOff").map((n) => this._iconPicker(h.id, n, t, "act")).join("")}</div>
       ${this._linkEdit(h, t)}
       ${this._directDevHtml(h, t)}

@@ -188,17 +188,43 @@
   "deviceIcons": "Gerätesymbole",
   "iconAuto": "Automatisch",
   "glassLook": "Leuchtart",
-  "glassLooks": { "a": "Platte leuchtet", "b": "Schrift leuchtet", "c": "Mischung" },
+  "glassLooks": {
+    "a": "Platte leuchtet",
+    "b": "Schrift leuchtet",
+    "c": "Mischung"
+  },
   "glassBg": "Hintergrund",
-  "glassBgs": {"dark": "Schwarz", "carbon": "Schwarz mit Textur", "alu": "Aluminium", "board": "Platine"},
+  "glassBgs": {
+    "dark": "Schwarz",
+    "carbon": "Schwarz mit Textur",
+    "alu": "Aluminium",
+    "board": "Platine"
+  },
   "pebblePaint": "Bemalt",
-  "pebblePaints": {"off": "Aus", "a": "A: Eine Farbe", "b": "B: Regenbogen", "c": "C: Bemalte Bilder"},
+  "pebblePaints": {
+    "off": "Aus",
+    "a": "A: Eine Farbe",
+    "b": "B: Regenbogen",
+    "c": "C: Bemalte Bilder"
+  },
   "pebbleBg": "Hintergrund",
   "pebbleFlaw": "Bemalungsfehler",
-  "pebbleFlaws": {"clean": "Sauber", "light": "Leicht", "strong": "Deutlich"},
-  "pebbleBgs": {"a": "Aquamarin", "b": "Lagune", "c": "Karibik", "d": "Dunkles Blaugrün"},
+  "pebbleFlaws": {
+    "clean": "Sauber",
+    "light": "Leicht",
+    "strong": "Deutlich"
+  },
+  "pebbleBgs": {
+    "a": "Aquamarin",
+    "b": "Lagune",
+    "c": "Karibik",
+    "d": "Dunkles Blaugrün"
+  },
   "glassActColors": "Farbe pro Aktivität",
-  "glassActColorsOpts": {"off": "Einheitlich (Violett)", "on": "Pro Aktivität"},
+  "glassActColorsOpts": {
+    "off": "Einheitlich (Violett)",
+    "on": "Pro Aktivität"
+  },
   "keyStyle": "Tastenform",
   "keyStyles": {
     "skin": "Wie der Look",
@@ -334,9 +360,9 @@
     "pebbleFlaw": "Nur für den Look Kiesel. Wie stark die Bemalung kleine Fehler zeigt, bei denen der graue Stein durchscheint: sauber, leicht (Standard) oder deutlich.",
     "pebbleBg": "Nur für den Look Kiesel. Karibik ist der Standard: helles Türkis mit Sandstrand. Aquamarin und Lagune sind einfarbiger, Dunkles Blaugrün ist die ruhige dunkle Variante.",
     "glassActColors": "Nur für den Look Glas. Einheitlich: laufende Aktivität und ihre Geräte leuchten violett. Pro Aktivität: jede Aktivität hat ihre eigene Farbe (Violett, Cyan, Magenta, Orange, Indigo), die Geräte der laufenden Aktivität leuchten in deren Farbe.",
-  "fillView": "Die Karte füllt die ganze Höhe der Ansicht, damit der Hintergrund nicht unten abbricht. Die Breite bestimmt das Dashboard.",
-  "jumpRunning": "Beim Öffnen der Karte springt sie zu dem Raum, in dem gerade etwas läuft (Aktivität, Fire TV oder ein verknüpftes Gerät). Laufen mehrere, gilt der zuletzt benutzte. Ist alles aus, siehst du die Standardansicht.",
-  "rememberView": "Kehrst du zur Karte zurück (z. B. nach einem App-Wechsel), öffnet sie den Raum, das gewählte Gerät und die Scrollposition, die du verlassen hast, pro Handy oder Tablet. Nach dieser Zeit ohne Nutzung oder wenn inzwischen woanders eine Aktivität geändert wurde, startet die Karte wie gewohnt. Fenster wie die Einstellungen werden nicht wieder geöffnet.",
+    "fillView": "Die Karte füllt die ganze Höhe der Ansicht, damit der Hintergrund nicht unten abbricht. Die Breite bestimmt das Dashboard.",
+    "jumpRunning": "Beim Öffnen der Karte springt sie zu dem Raum, in dem gerade etwas läuft (Aktivität, Fire TV oder ein verknüpftes Gerät). Laufen mehrere, gilt der zuletzt benutzte. Ist alles aus, siehst du die Standardansicht.",
+    "rememberView": "Kehrst du zur Karte zurück (z. B. nach einem App-Wechsel), öffnet sie den Raum, das gewählte Gerät und die Scrollposition, die du verlassen hast, pro Handy oder Tablet. Nach dieser Zeit ohne Nutzung oder wenn inzwischen woanders eine Aktivität geändert wurde, startet die Karte wie gewohnt. Fenster wie die Einstellungen werden nicht wieder geöffnet.",
     "offRelated": "Gilt für diesen Raum. Schaltest du den Fire TV mit dem Power-Knopf oder dem roten Aus-Knopf aus, geht auch alles aus, was die Fire-TV-Aktivität einschaltet (z. B. Fernseher, Verstärker), sofern das Gerät einen PowerOff-Befehl hat. Geräte, die eine andere laufende Aktivität braucht, und in der Hilfe ausgeblendete Geräte bleiben an.",
     "helpManual": "Manche Geräte schaltet der Hub nicht selbst (im Hub: „von Hand einschalten“). Mit diesem Schalter nennt die Hilfe sie in einer Zeile, damit du sie nicht vergisst.",
     "irVolume": "Gilt nur, wenn der Fire TV läuft und keine Harmony-Aktivität. Lauter, Leiser und Stumm gehen dann über den Infrarot-Sender des Cube 3 direkt an den Fernseher, ohne Hub. Nur für das Modell Fire TV Cube.",
@@ -483,7 +509,12 @@
   "fillView": "Hintergrund füllt die Ansicht",
   "jumpRunning": "Beim Öffnen zur laufenden Aktivität springen",
   "rememberView": "Ansicht merken",
-  "rememberViewOpts": {"0": "Aus", "30": "30 Minuten", "120": "2 Stunden", "360": "6 Stunden"},
+  "rememberViewOpts": {
+    "0": "Aus",
+    "30": "30 Minuten",
+    "120": "2 Stunden",
+    "360": "6 Stunden"
+  },
   "discEject": "Auswerfen",
   "discMenu": "Disc-Menü",
   "discTop": "Top-Menü",
@@ -1053,5 +1084,18 @@
   "hintsTip": "{0} Hinweis(e) – antippen",
   "hintDown": "{0} nicht erreichbar seit {1}",
   "menuInfo": "Info",
-  "hubsTitle": "Hubs"
+  "hubsTitle": "Hubs",
+  "mediaPlayers": "Mediaplayer",
+  "mediaPlayersHint": "Den Mediaplayer jeder Aktivität wählst du selbst; nichts wird automatisch gewählt. Player im Raum dieses Hubs stehen oben. Die Leiste erscheint unter den Tasten, solange die Aktivität läuft, und zeigt nur, was der Player kann.",
+  "mediaNone": "– keiner –",
+  "mediaInRoom": "In diesem Raum ({room})",
+  "mediaOtherRooms": "Andere Räume",
+  "mediaAllPlayers": "Mediaplayer",
+  "mediaShowBar": "Medienleiste zeigen",
+  "mediaNothing": "Es läuft nichts",
+  "mediaOff": "Aus",
+  "mediaProgress": "Fortschritt",
+  "mediaPlay": "Wiedergabe",
+  "mediaPause": "Pause",
+  "mediaStop": "Stopp"
 }

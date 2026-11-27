@@ -42,6 +42,8 @@ export const panelMixin = {
     // The key locks of the links apply to the remote of a running activity only, never to the device view (direct control of a device).
     const lockKeys = extra.noLock ? new Set() : this._locks(h).keys;
     const L = (role, html) => (lockKeys.has(role) && html ? html.replace('class="', 'class="locked ') : html);
+    // Fire TV keys of an activity (Home, Back, Search ...), placed under the cross; see _fireActKeys in fire.js.
+    const FK = L("nav", extra.fire || "");
     const K = (dev, a, icon, cls, label) => (extra.forceAdb && dev === r.nav ? this._adbKey(h.id, dev, a, icon, cls, label) : this._key_(h.id, dev, a, icon, cls, label));
     const slH = this._volSlider(h, r, "h", !!extra.noLock), slV = this._volSlider(h, r, "v", !!extra.noLock);
     const hasVol = r.volume && (slH || this._has(h.id, r.volume, "volume_up"));
@@ -91,12 +93,12 @@ export const panelMixin = {
     const kbAct = kbCmds ? this._keyboard(h, r.nav, kbCmds, t, { compact: true }) : null;
     if (kbAct) {
       const kv = hasVol ? `<div class="kbvol">${slV || K(r.volume, "volume_up", "mdi:volume-plus", "kvk")}${this._has(h.id, r.volume, "mute") ? K(r.volume, "mute", "mdi:volume-mute", "kvk mute") : ""}${slV ? "" : K(r.volume, "volume_down", "mdi:volume-minus", "kvk")}</div>` : "";
-      return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+      return `<div class="pwrap"><div class="pcol"><div class="kbact">${L("volume", kv)}${L("nav", kbAct.html)}</div></div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
     }
     // Only volume (games consoles, controlled elsewhere): one wide row instead of an empty remote.
     if (hasVol && !hasNav && !hasCh) {
       const bar = `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>`;
-      return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+      return `<div class="pwrap"><div class="pcol">${L("volume", bar)}${FK}${L("transport", tr)}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
     }
     const disc = hasNav ? this._discKeys(h.id, r.nav) : [];
     const discCol = disc.length ? `<div class="sidecol">${disc.map((d) => this._cmdKey(h.id, r.nav, d.c, d.ic, "tall", t[d.k] || d.k)).join("")}</div>` : "";
@@ -106,15 +108,15 @@ export const panelMixin = {
     const lmode = !extra.noKeypad && h.current ? this._layoutMode(h.id, h.current) : "remote";
     if (!extra.noKeypad && navCmds.length && !this._edit && (lmode === "keypad" || (lmode === "auto" && !fullPad && !hasCh))) {
       const volRow = hasVol ? `<div class="volbar">${slH || K(r.volume, "volume_down", "mdi:volume-minus")}${muteK ? K(r.volume, "mute", "mdi:volume-mute", "mute") : ""}${slH ? "" : K(r.volume, "volume_up", "mdi:volume-plus")}</div>` : "";
-      return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}</div><div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
+      return `<div class="pwrap"><div class="pcol">${L("volume", volRow)}${FK}</div><div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>${this._deviceRemote(h, r.nav, navCmds, t, true)}`;
     }
     const third = hasCh ? L("channel", ch) : discCol ? L("nav", discCol) : pillCol ? L("nav", pillCol) : "";
     const topPills = pillCol ? "" : pills;
     const panel = hasVol || hasNav || hasCh ? `<div class="panel ${discCol ? "wide3" : pillCol ? "mid3" : ""} ${vol ? "" : "nol"} ${third ? "" : "nor"}">${L("nav", topPills)}${vol ? L("volume", vol) : ""}${L("nav", nav)}${third}</div>` : "";
     const textRow = dcfg?.entity && !this._edit && hasNav ? this._textBlock(h.id, dcfg.entity, t) : "";
-    const pcol = `${panel}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
+    const pcol = `${panel}${FK}${textRow}${L("transport", tr)}${L("nav", colors)}`.trim();
     if (!pcol && !extra.noKeypad && !extra.small && !extra.big) return `<div class="hint nokeys">${t.noKeys}</div>`;
-    return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div><div class="xwide">${extra.big || ""}</div>`;
+    return `<div class="pwrap">${pcol ? `<div class="pcol">${pcol}</div>` : ""}<div class="pside">${extra.small || ""}</div></div>${extra.media || ""}<div class="xwide">${extra.big || ""}</div>`;
   },
 
   // Events of the remote keys (light up, send).

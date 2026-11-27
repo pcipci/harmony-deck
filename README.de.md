@@ -23,6 +23,7 @@ Harmony Deck ist eine eigene Integration mit zwei Dashboard-Karten. Sie liest di
 - **Hilfe, wenn eine Aktivität nicht richtig startet.** Der Rettungsring zeigt die nötigen Geräte und Eingänge, mit einem Tipp pro Gerät zum Beheben, und führt zur Fernbedienung jedes Geräts.
 - **Mehrere Räume.** Jeder Hub ist ein Reiter mit seinem Zustand auf einen Blick.
 - **Netzwerksteuerung zusätzlich zu Infrarot.** Harmony-Gerät mit seinem Mediaplayer in Home Assistant verbinden: Harmony Deck liest, ob es wirklich an und auf dem richtigen Eingang ist, setzt die Lautstärke genau und bietet eine Korrektur per Tipp an, wenn eine Aktivität nicht richtig gestartet ist.
+- **Medienleiste je Aktivität.** Ordne einer Aktivität einen Mediaplayer zu und bekomme unter den Tasten Titel, Fortschritt („abgelaufen / gesamt“, ziehbar wo möglich), Wiedergabe / Pause / Stopp und Sprünge um 10 / 30 Sekunden, nur mit dem, was der Player kann.
 
 ## Funktionen
 
